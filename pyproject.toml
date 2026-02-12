@@ -1,18 +1,18 @@
-[tool.poetry]
+[project]
 name = "taskiq-pipelines"
-# The version is set automatically by the CI/CD pipeline
-version = "0.0.0"
+version = "0.0.1"
 description = "Taskiq pipelines for task chaining."
-authors = ["Pavel Kirilin <win10@list.ru>"]
+authors = [{ name = "Pavel Kirilin", email = "<win10@list.ru>" }]
+maintainers = [{ name = "Pavel Kirilin", email = "<win10@list.ru>" }]
 readme = "README.md"
 repository = "https://github.com/taskiq-python/taskiq-pipelines"
-license = "LICENSE"
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Typing :: Typed",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -25,21 +25,29 @@ classifiers = [
 homepage = "https://github.com/taskiq-python/taskiq-pipelines"
 keywords = ["taskiq", "pipelines", "tasks", "distributed", "async"]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-taskiq = ">=0.11.12, <1"
-typing-extensions = "^4.3.0"
-pydantic = "^2"
+requires-python = ">=3.10,<4"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8"
-black = { version = "^25", allow-prereleases = true }
-pytest-cov = "^6"
-anyio = "^4"
-pre-commit = "^4"
-mypy = "^1"
-pytest-xdist = { version = "^3", extras = ["psutil"] }
-ruff = "^0.9.9"
+dependencies = [
+    "taskiq>=0.11.12,<1",
+    "typing-extensions>=4.3.0,<5",
+    "pydantic>=2,<3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "black>=26.3.1",
+    "pytest-cov>=7.1.0",
+    "anyio>=4",
+    "pre-commit>=4",
+    "mypy>=1",
+    "pytest-xdist[psutil]>=3",
+    "ruff>=0.15.0",
+]
+
+[project.urls]
+Repository = "https://github.com/taskiq-python/taskiq-pipelines"
+
 
 [tool.mypy]
 strict = true
@@ -58,8 +66,12 @@ profile = "black"
 multi_line_output = 3
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "taskiq_pipelines"
+module-root = ""
 
 [tool.ruff]
 # List of enabled rulsets.
@@ -103,7 +115,6 @@ lint.ignore = [
     "D106",    # Missing docstring in public nested class
     "SLF001", # Private member accessed
 ]
-exclude = [".venv/"]
 lint.mccabe = { max-complexity = 10 }
 line-length = 88
 

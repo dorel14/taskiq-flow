@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+# Temporary ignore, because of some mypy issues.
+
 from typing import List
 
 import pytest

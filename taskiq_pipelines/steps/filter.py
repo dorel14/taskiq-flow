@@ -38,7 +38,7 @@ async def filter_tasks(  # noqa: C901
     :param context: context of the execution, defaults to default_context
     :param skip_errors: skip errors of subtasks, defaults to False
     :raises TaskiqError: if any subtask has returned error.
-    :return: fitlered results.
+    :return: filtered results.
     """
     ordered_ids = task_ids[:]
     tasks_set = set(task_ids)
@@ -56,7 +56,8 @@ async def filter_tasks(  # noqa: C901
     filtered_results = []
     for task_id, value in zip(
         ordered_ids,
-        results.return_value,  # type: ignore
+        results.return_value,
+        strict=False,  # type: ignore
     ):
         result = await context.broker.result_backend.get_result(task_id)
         if result.is_err:

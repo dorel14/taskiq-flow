@@ -6,42 +6,44 @@ jobs:
   lint:
     strategy:
       matrix:
-        cmd:
-          - black
-          - ruff
-          - mypy
+        cmd: [ "black", "ruff-check", "mypy" ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v5
         with:
-          python-version: "3.11"
-          cache: "poetry"
+          persist-credentials: false
+      - id: setup-uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-suffix: 3.14
+          version: "latest"
+          python-version: 3.14
       - name: Install deps
-        run: poetry install --all-extras
+        run: uv sync --frozen --all-extras
       - name: Run lint check
-        run: poetry run pre-commit run -a ${{ matrix.cmd }}
+        run: uv run pre-commit run -a ${{ matrix.cmd }}
   pytest:
     strategy:
       matrix:
-        py_version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-    runs-on: "ubuntu-latest"
+        py_version: [ "3.10", "3.11", "3.12", "3.13", "3.14" ]
+        pydantic_ver: [ "<2", ">=2.5,<3" ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: "${{ matrix.os }}"
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v5
         with:
-          python-version: "${{ matrix.py_version }}"
-      - name: Update pip
-        run: python -m pip install -U pip
-      - name: Install poetry
-        run: python -m pip install poetry
+          persist-credentials: false
+      - id: setup-uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-suffix: ${{ matrix.py_version }}
+          version: "latest"
+          python-version: ${{ matrix.py_version }}
       - name: Install deps
-        run: poetry install
-        env:
-          POETRY_VIRTUALENVS_CREATE: false
+        run: uv sync --frozen --all-extras
+      - name: Setup pydantic version
+        run: uv pip install "pydantic ${{ matrix.pydantic_ver }}"
       - name: Run pytest check
-        run: poetry run pytest -vv -n auto --cov="taskiq_pipelines" .
+        run: uv run pytest -vv -n auto .
