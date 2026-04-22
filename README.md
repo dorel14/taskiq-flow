@@ -75,7 +75,7 @@ async def main():
         .map(add_one)  # Here we execute given function for each value.
         # [3, 3, 3, 3]
         .filter(check)  # Here we filter some values.
-        # But sice our filter filters out all numbers less than zero,
+        # But since our filter filters out all numbers less than zero,
         # our value won't change.
         # [3, 3, 3, 3]
     )
@@ -101,7 +101,7 @@ Two notable things here:
 2. We can use only tasks as functions we wan to execute in pipeline.
     If you want to execute ordinary python function - you must wrap it in task.
 
-Pipeline itself is just a convinient wrapper over list of steps.
+Pipeline itself is just a convenient wrapper over list of steps.
 Constructed pipeline has the same semantics as the ordinary task, and you can add steps
 manually. But all steps of the pipeline must implement `taskiq_pipelines.abc.AbstractStep` class.
 

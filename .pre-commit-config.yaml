@@ -23,7 +23,7 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.45.1
     hooks:
       - id: typos
 
@@ -33,19 +33,19 @@ repos:
     -   id: detect-secrets
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.2
+    rev: 0.11.7
     hooks:
       - id: uv-lock
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8
+    rev: v0.15.11
     hooks:
       - id: ruff-format
       - id: ruff-check
         args: [ --fix, --unsafe-fixes ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.19.1'
+    rev: 'v1.20.1'
     hooks:
       - id: mypy
         additional_dependencies: [ "no_implicit_optional" ]

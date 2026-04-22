@@ -9,9 +9,10 @@ jobs:
         cmd: [ "black", "ruff-check", "mypy" ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
       - id: setup-uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -31,9 +32,10 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
     runs-on: "${{ matrix.os }}"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
       - id: setup-uv
         uses: astral-sh/setup-uv@v7
         with:

@@ -56,7 +56,7 @@ async def filter_tasks(  # noqa: C901
     filtered_results = []
     for task_id, value in zip(
         ordered_ids,
-        results.return_value,
+        results.return_value,  # type: ignore
         strict=False,  # type: ignore
     ):
         result = await context.broker.result_backend.get_result(task_id)
