@@ -23,14 +23,14 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.45.1
+    rev: v1
     hooks:
       - id: typos
 
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
-    -   id: detect-secrets
+      - id: detect-secrets
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.11.7
@@ -42,19 +42,15 @@ repos:
     hooks:
       - id: ruff-format
       - id: ruff-check
-        args: [ --fix, --unsafe-fixes ]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.20.1'
-    hooks:
-      - id: mypy
-        additional_dependencies: [ "no_implicit_optional" ]
-        args: [ "--config-file=pyproject.toml", "--install-types", "--non-interactive" ]
+        args: [--fix, --unsafe-fixes]
 
   - repo: local
     hooks:
-      - id: black
-        name: Format with Black
-        entry: uv run black
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
         language: system
-        types: [python]
+        always_run: true
+        pass_filenames: false
+        args:
+          - taskiq_pipelines
