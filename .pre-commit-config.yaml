@@ -38,19 +38,27 @@ repos:
       - id: uv-lock
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.11
+    rev: v0.15.12
     hooks:
       - id: ruff-format
       - id: ruff-check
-        args: [--fix, --unsafe-fixes]
+        args: [ --fix, --unsafe-fixes ]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.20.2'
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - "no_implicit_optional"
+          - "pydantic>=2,<3"
+          - "taskiq>=0.11.12,<1"
+          - "typing-extensions>=4.3.0,<5"
+        args: [ "--config-file=pyproject.toml", "--install-types", "--non-interactive" ]
 
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: uv run mypy
+      - id: black
+        name: Format with Black
+        entry: uv run black
         language: system
-        always_run: true
-        pass_filenames: false
-        args:
-          - taskiq_pipelines
+        types: [python]
