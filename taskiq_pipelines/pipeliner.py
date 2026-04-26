@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Coroutine
 from types import CoroutineType
 from typing import (
