@@ -19,13 +19,13 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
 dependencies = [
   "pydantic>=2,<3",
   "taskiq>=0.11.12,<1",
-  "typing-extensions>=4.3.0,<5",
 ]
 dynamic = ["version"]
 
@@ -96,6 +96,7 @@ lint.select = [
   "ERA",  # Checks for commented out code
   "PL",  # PyLint checks
   "RUF",  # Specific to Ruff checks
+  "UP",  # Pyupgrade
 ]
 lint.ignore = [
   "D105",  # Missing docstring in magic method
@@ -131,3 +132,6 @@ allow-magic-value-types = ["int", "str", "float"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["taskiq_dependencies.Depends", "taskiq.TaskiqDepends"]
+
+[tool.pytest.ini_options]
+anyio_mode = "auto"

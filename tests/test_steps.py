@@ -1,15 +1,12 @@
 # mypy: ignore-errors
 # Temporary ignore, because of some mypy issues.
 
-from typing import List
 
-import pytest
 from taskiq import InMemoryBroker
 
 from taskiq_pipelines import AbortPipeline, Pipeline, PipelineMiddleware
 
 
-@pytest.mark.anyio
 async def test_success() -> None:
     """Tests that sequential step works as expected."""
     broker = InMemoryBroker().with_middlewares(PipelineMiddleware())
@@ -28,13 +25,12 @@ async def test_success() -> None:
     assert res.return_value == 4
 
 
-@pytest.mark.anyio
 async def test_mapping_success() -> None:
     """Test that map step works as expected."""
     broker = InMemoryBroker().with_middlewares(PipelineMiddleware())
 
     @broker.task
-    def ranger(i: int) -> List[int]:
+    def ranger(i: int) -> list[int]:
         return list(range(i))
 
     @broker.task
@@ -47,7 +43,6 @@ async def test_mapping_success() -> None:
     assert res.return_value == list(map(double, ranger(4)))
 
 
-@pytest.mark.anyio
 async def test_abort_pipeline() -> None:
     """Test AbortPipeline."""
     broker = InMemoryBroker().with_middlewares(PipelineMiddleware())

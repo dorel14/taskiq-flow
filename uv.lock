@@ -1433,7 +1433,6 @@ source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
     { name = "taskiq" },
-    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -1452,7 +1451,6 @@ dev = [
 requires-dist = [
     { name = "pydantic", specifier = ">=2,<3" },
     { name = "taskiq", specifier = ">=0.11.12,<1" },
-    { name = "typing-extensions", specifier = ">=4.3.0,<5" },
 ]
 
 [package.metadata.requires-dev]
