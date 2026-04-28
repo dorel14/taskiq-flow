@@ -1,120 +1,125 @@
-[tool.poetry]
+[project]
 name = "taskiq-pipelines"
-# The version is set automatically by the CI/CD pipeline
-version = "0.0.0"
 description = "Taskiq pipelines for task chaining."
-authors = ["Pavel Kirilin <win10@list.ru>"]
 readme = "README.md"
-repository = "https://github.com/taskiq-python/taskiq-pipelines"
-license = "LICENSE"
+requires-python = ">=3.10,<4"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
+maintainers = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
+keywords = ["async", "distributed", "pipelines", "taskiq", "tasks"]
 classifiers = [
-    "Typing :: Typed",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Developers",
-    "Topic :: System :: Networking",
-    "Development Status :: 3 - Alpha",
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Networking",
+  "Typing :: Typed",
 ]
-homepage = "https://github.com/taskiq-python/taskiq-pipelines"
-keywords = ["taskiq", "pipelines", "tasks", "distributed", "async"]
+dependencies = [
+  "pydantic>=2,<3",
+  "taskiq>=0.11.12,<1",
+  "typing-extensions>=4.3.0,<5",
+]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-taskiq = ">=0.11.12, <1"
-typing-extensions = "^4.3.0"
-pydantic = "^2"
+[project.urls]
+Homepage = "https://github.com/taskiq-python/taskiq-pipelines"
+Repository = "https://github.com/taskiq-python/taskiq-pipelines"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8"
-black = { version = "^25", allow-prereleases = true }
-pytest-cov = "^6"
-anyio = "^4"
-pre-commit = "^4"
-mypy = "^1"
-pytest-xdist = { version = "^3", extras = ["psutil"] }
-ruff = "^0.9.9"
+[dependency-groups]
+dev = [
+  "anyio>=4",
+  "black>=26.3.1",
+  "mypy>=1.8,<2",
+  "pre-commit>=4",
+  "pytest>=9.0.2",
+  "pytest-cov>=7.1.0",
+  "pytest-xdist[psutil]>=3",
+  "ruff>=0.15.0",
+]
 
-[tool.mypy]
-strict = true
-ignore_missing_imports = true
-allow_subclassing_any = true
-allow_untyped_calls = true
-pretty = true
-show_error_codes = true
-implicit_reexport = true
-allow_untyped_decorators = true
-warn_return_any = false
-warn_unused_ignores = false
+[build-system]
+requires = ["hatchling", "versioningit"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "versioningit"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+disallow_subclassing_any = false
+disallow_untyped_calls = false
+pretty = true
+implicit_reexport = true
+allow_untyped_decorators = true
+warn_return_any = false
+warn_unused_ignores = false
 
 [tool.ruff]
 # List of enabled rulsets.
 # See https://docs.astral.sh/ruff/rules/ for more information.
 lint.select = [
-    "E",   # Error
-    "F",   # Pyflakes
-    "W",   # Pycodestyle
-    "C90", # McCabe complexity
-    "I",   # Isort
-    "N",   # pep8-naming
-    "D",   # Pydocstyle
-    "ANN", # Pytype annotations
-    "S",   # Bandit
-    "B",   # Bugbear
-    "COM", # Commas
-    "C4",  # Comprehensions
-    "ISC", # Implicit string concat
-    "PIE", # Unnecessary code
-    "T20", # Catch prints
-    "PYI", # validate pyi files
-    "Q",   # Checks for quotes
-    "RSE", # Checks raise statements
-    "RET", # Checks return statements
-    "SLF", # Self checks
-    "SIM", # Simplificator
-    "PTH", # Pathlib checks
-    "ERA", # Checks for commented out code
-    "PL",  # PyLint checks
-    "RUF", # Specific to Ruff checks
+  "E",  # Error
+  "F",  # Pyflakes
+  "W",  # Pycodestyle
+  "C90",  # McCabe complexity
+  "I",  # Isort
+  "N",  # pep8-naming
+  "D",  # Pydocstyle
+  "ANN",  # Pytype annotations
+  "S",  # Bandit
+  "B",  # Bugbear
+  "COM",  # Commas
+  "C4",  # Comprehensions
+  "ISC",  # Implicit string concat
+  "PIE",  # Unnecessary code
+  "T20",  # Catch prints
+  "PYI",  # validate pyi files
+  "Q",  # Checks for quotes
+  "RSE",  # Checks raise statements
+  "RET",  # Checks return statements
+  "SLF",  # Self checks
+  "SIM",  # Simplificator
+  "PTH",  # Pathlib checks
+  "ERA",  # Checks for commented out code
+  "PL",  # PyLint checks
+  "RUF",  # Specific to Ruff checks
 ]
 lint.ignore = [
-    "D105",    # Missing docstring in magic method
-    "D107",    # Missing docstring in __init__
-    "D212",    # Multi-line docstring summary should start at the first line
-    "D401",    # First line should be in imperative mood
-    "D104",    # Missing docstring in public package
-    "D100",    # Missing docstring in public module
-    "ANN401",  # typing.Any are disallowed in `**kwargs
-    "PLR0913", # Too many arguments for function call
-    "D106",    # Missing docstring in public nested class
-    "SLF001", # Private member accessed
+  "D105",  # Missing docstring in magic method
+  "D107",  # Missing docstring in __init__
+  "D212",  # Multi-line docstring summary should start at the first line
+  "D401",  # First line should be in imperative mood
+  "D104",  # Missing docstring in public package
+  "D100",  # Missing docstring in public module
+  "ANN401",  # typing.Any are disallowed in `**kwargs
+  "PLR0913",  # Too many arguments for function call
+  "D106",  # Missing docstring in public nested class
+  "SLF001",  # Private member accessed
 ]
-exclude = [".venv/"]
 lint.mccabe = { max-complexity = 10 }
 line-length = 88
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "S101",   # Use of assert detected
-    "S301",   # Use of pickle detected
-    "D103",   # Missing docstring in public function
-    "SLF001", # Private member accessed
-    "S311",   # Standard pseudo-random generators are not suitable for security/cryptographic purposes
-    "D101",   # Missing docstring in public class
+  "S101",  # Use of assert detected
+  "S301",  # Use of pickle detected
+  "D103",  # Missing docstring in public function
+  "SLF001",  # Private member accessed
+  "S311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
+  "D101",  # Missing docstring in public class
 ]
 
 [tool.ruff.lint.pydocstyle]

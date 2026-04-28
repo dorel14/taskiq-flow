@@ -38,7 +38,7 @@ async def wait_tasks(
     :param check_interval: how often task completions are checked.
     :param context: current execution context, defaults to default_context
     :param skip_errors: doesn't fail pipeline if error is found.
-    :raises TaskiqError: if error is found and skip_erros is false.
+    :raises TaskiqError: if error is found and skip_errors is false.
     :return: list of results.
     """
     ordered_ids = task_ids[:]
