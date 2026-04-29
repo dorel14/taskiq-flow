@@ -46,7 +46,7 @@ class PipelineOptions:
         timeout: int | None = None,
         fail_fast: bool = True,
         continue_on_error: bool = False,
-    ):
+    ) -> None:
         self.default_retries = retries
         self.default_timeout = timeout
         self.fail_fast = fail_fast
@@ -129,13 +129,13 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         self,
         enabled: bool = True,
         manager: Any = None,  # PipelineTrackingManager
-    ) -> "Pipeline[_FuncParams, _ReturnType]":
+    ) -> Pipeline[_FuncParams, _ReturnType]:
         """Enable pipeline tracking."""
         self.tracking_enabled = enabled
         self.tracking_manager = manager
         return self
 
-    def with_hooks(self, manager: Any) -> "Pipeline[_FuncParams, _ReturnType]":  # HookManager
+    def with_hooks(self, manager: Any) -> Pipeline[_FuncParams, _ReturnType]:  # HookManager
         """Set hook manager for events."""
         self.hook_manager = manager
         return self
@@ -146,7 +146,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         timeout: int | None = None,
         fail_fast: bool | None = None,
         continue_on_error: bool | None = None,
-    ) -> "Pipeline[_FuncParams, _ReturnType]":
+    ) -> Pipeline[_FuncParams, _ReturnType]:
         """Set pipeline execution options."""
         self.options.update(retries, timeout, fail_fast, continue_on_error)
         return self

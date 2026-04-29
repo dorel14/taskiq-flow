@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 
 from .models import PipelineStatus, PipelineStatusInfo, StepStatus, StepStatusInfo
 from .storage import PipelineStorage
@@ -11,10 +11,10 @@ from .storage import PipelineStorage
 class InMemoryPipelineStorage(PipelineStorage):
     """In-memory pipeline storage for development/testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pipelines: Dict[str, PipelineStatusInfo] = {}
         self._lock = asyncio.Lock()
-        self._cleanup_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task[None] | None = None
 
     async def create_pipeline(self, pipeline_id: str, total_steps: int) -> None:
         """Create a new pipeline with initial status."""
@@ -28,7 +28,7 @@ class InMemoryPipelineStorage(PipelineStorage):
                     task_name="",
                     task_id="",
                     status=StepStatus.PENDING,
-                ) for i in range(total_steps)]
+                ) for i in range(total_steps)],
             )
 
     async def start_pipeline(self, pipeline_id: str) -> None:
@@ -99,7 +99,7 @@ class InMemoryPipelineStorage(PipelineStorage):
             sorted_pipelines = sorted(
                 self._pipelines.values(),
                 key=lambda p: p.created_at,
-                reverse=True
+                reverse=True,
             )
             return sorted_pipelines[:limit]
 

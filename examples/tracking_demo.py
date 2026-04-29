@@ -1,10 +1,9 @@
 """Tracking demo example."""
 
-from taskiq import TaskiqTask
 from taskiq_redis import RedisBroker
 
 from taskiq_pipelines import Pipeline
-from taskiq_pipelines.tracking import PipelineTrackingManager, TrackingStorageFactory
+from taskiq_pipelines.tracking import PipelineTrackingManager
 
 
 @taskiq.task

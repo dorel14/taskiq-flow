@@ -8,13 +8,13 @@ from .redis_storage import RedisPipelineStorage
 from .storage import PipelineStorage
 
 __all__ = [
-    "PipelineStorage",
-    "RedisPipelineStorage",
     "InMemoryPipelineStorage",
-    "TrackingStorageFactory",
-    "PipelineTrackingManager",
     "PipelineStatus",
     "PipelineStatusInfo",
+    "PipelineStorage",
+    "PipelineTrackingManager",
+    "RedisPipelineStorage",
     "StepStatus",
     "StepStatusInfo",
+    "TrackingStorageFactory",
 ]

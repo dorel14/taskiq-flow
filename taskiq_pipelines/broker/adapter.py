@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from taskiq.brokers import AsyncBroker
+from taskiq import AsyncBroker
 
 
 class BrokerAdapter:
     """Adapter for broker result backend operations."""
 
-    def __init__(self, broker: AsyncBroker):
+    def __init__(self, broker: AsyncBroker) -> None:
         self.broker = broker
 
     async def is_result_ready(self, task_id: str) -> bool:
@@ -23,6 +23,6 @@ class BrokerAdapter:
         """Set result for task."""
         await self.broker.result_backend.set_result(task_id, result)
 
-    async def get_task_id(self, task_id: str) -> str:
+    def get_task_id(self, task_id: str) -> str:
         """Get task ID (pass through)."""
         return task_id

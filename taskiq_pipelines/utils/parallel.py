@@ -1,7 +1,7 @@
 """Parallel utilities for pipelines."""
 
-import asyncio
-from typing import Any, Iterable, TypeVar
+from collections.abc import Iterable
+from typing import Any, TypeVar
 
 from taskiq.kicker import AsyncKicker
 
@@ -15,7 +15,7 @@ def parallel_map(
     task: AsyncKicker[[T], R],
     iterable: Iterable[T],
     **task_kwargs: Any,
-) -> Pipeline:
+) -> Pipeline[Any, Any]:
     """
     Create a pipeline executing task on each item in parallel.
 
@@ -26,8 +26,8 @@ def parallel_map(
     :param task_kwargs: Additional kwargs for the task.
     :return: Pipeline with parallel execution.
     """
-    pipeline = Pipeline(task.broker)
-    for item in iterable:
+    pipeline: Pipeline[Any, Any] = Pipeline(task.broker)
+    for _item in iterable:
         # Add each task as a sequential step
         pipeline = pipeline.call_next(task, **task_kwargs)
     return pipeline
@@ -40,7 +40,7 @@ def chunked_map(
     max_concurrency: int | None = None,
     auto_concurrency: bool = False,
     **task_kwargs: Any,
-) -> Pipeline:
+) -> Pipeline[Any, Any]:
     """
     Chunk items and process chunks in parallel with concurrency control.
 
@@ -53,7 +53,9 @@ def chunked_map(
     :return: Pipeline for chunked processing.
     """
     if chunk_size is None:
-        chunk_size = max(1, len(items) // (asyncio.get_event_loop()._default_executor._threads or 4))
+        # Simple heuristic: divide into chunks of roughly equal size
+        # Default to chunks of size 10 or 10% of items, whichever is larger
+        chunk_size = max(10, len(items) // 10)
 
     chunks = [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
 
@@ -64,8 +66,8 @@ def chunked_map(
 
     # For simplicity, create a pipeline that calls the task for each chunk
     # Concurrency control would need to be implemented in the execution
-    pipeline = Pipeline(task.broker)
-    for chunk in chunks:
+    pipeline: Pipeline[Any, Any] = Pipeline(task.broker)
+    for _chunk in chunks:
         pipeline = pipeline.call_next(task, **task_kwargs)
 
     return pipeline

@@ -2,14 +2,14 @@
 
 from typing import TYPE_CHECKING
 
-from taskiq.brokers import AsyncBroker
+from taskiq import AsyncBroker
 
 from .memory_storage import InMemoryPipelineStorage
 from .redis_storage import RedisPipelineStorage
 from .storage import PipelineStorage
 
 if TYPE_CHECKING:
-    from ..broker.detector import BrokerType
+    pass
 
 
 class TrackingStorageFactory:
@@ -33,20 +33,17 @@ class TrackingStorageFactory:
                 redis_url = TrackingStorageFactory._extract_redis_url(broker)
             if redis_url:
                 return RedisPipelineStorage(redis_url, ttl_seconds)
-            else:
-                # Fallback to memory if Redis URL not available
-                return InMemoryPipelineStorage()
+            # Fallback to memory if Redis URL not available
+            return InMemoryPipelineStorage()
 
-        elif broker_type in (BrokerType.RABBITMQ, BrokerType.KAFKA):
+        if broker_type in (BrokerType.RABBITMQ, BrokerType.KAFKA):
             # For brokers without shared storage, use Redis if URL provided
             if redis_url:
                 return RedisPipelineStorage(redis_url, ttl_seconds)
-            else:
-                return InMemoryPipelineStorage()
-
-        else:
-            # InMemory or unknown
             return InMemoryPipelineStorage()
+
+        # InMemory or unknown
+        return InMemoryPipelineStorage()
 
     @staticmethod
     def _extract_redis_url(broker: AsyncBroker) -> str | None:
@@ -56,7 +53,7 @@ class TrackingStorageFactory:
             if isinstance(broker, RedisBroker):
                 # Assuming broker has a url attribute or similar
                 # This might need adjustment based on actual taskiq-redis implementation
-                return getattr(broker, 'url', None) or "redis://localhost:6379"
+                return getattr(broker, "url", None) or "redis://localhost:6379"
         except ImportError:
             pass
         return None

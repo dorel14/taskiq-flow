@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from taskiq import AsyncBroker
+
 from .factory import TrackingStorageFactory
 from .models import PipelineStatusInfo
 from .storage import PipelineStorage
@@ -10,7 +12,7 @@ from .storage import PipelineStorage
 class PipelineTrackingManager:
     """Manager for pipeline tracking operations."""
 
-    def __init__(self, storage: PipelineStorage | None = None):
+    def __init__(self, storage: PipelineStorage | None = None) -> None:
         self.storage = storage
 
     def with_storage(self, storage: PipelineStorage) -> "PipelineTrackingManager":
@@ -20,7 +22,7 @@ class PipelineTrackingManager:
 
     def with_auto_storage(
         self,
-        broker,
+        broker: AsyncBroker,
         redis_url: str | None = None,
         ttl_seconds: int = 3600,
     ) -> "PipelineTrackingManager":

@@ -7,7 +7,6 @@ import pydantic
 from taskiq import AsyncBroker, TaskiqResult
 
 from taskiq_pipelines.abc import AbstractStep
-from taskiq_pipelines.pipeliner import Pipeline
 
 
 class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
@@ -21,10 +20,13 @@ class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
         step_number: int,
         parent_task_id: str,
         task_id: str,
-        pipe_data: bytes,
+        pipe_data: str,
         result: TaskiqResult[Any],
     ) -> None:
         """Execute branches in parallel."""
+        # Import here to avoid circular import
+        from taskiq_pipelines.pipeliner import Pipeline
+
         async def run_branch(branch_steps):
             # Create a sub-pipeline for this branch
             sub_pipeline = Pipeline(broker)
@@ -38,7 +40,7 @@ class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
 
         # For now, pass the list of results to the next step
         # In a more advanced implementation, could combine or select
-        combined_result = TaskiqResult(
+        TaskiqResult(
             is_err=False,
             return_value=branch_results,
             error=None,

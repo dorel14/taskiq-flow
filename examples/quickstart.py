@@ -1,6 +1,5 @@
 """Quickstart example for taskiq-pipelines."""
 
-from taskiq import TaskiqTask
 from taskiq_redis import RedisBroker
 
 from taskiq_pipelines import Pipeline

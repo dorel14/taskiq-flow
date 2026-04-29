@@ -1,0 +1,76 @@
+"""Tests for parallel utilities."""
+
+
+import pytest
+from taskiq import InMemoryBroker
+
+from taskiq_pipelines.pipeliner import Pipeline
+from taskiq_pipelines.utils.parallel import chunked_map, parallel_map
+
+
+@pytest.fixture
+def broker():
+    """Create test broker."""
+    return InMemoryBroker()
+
+
+@pytest.fixture
+def mock_task(broker):
+    """Create mock task."""
+    @broker.task
+    def test_task(x):
+        return x * 2
+
+    return test_task
+
+
+def test_parallel_map_creation(broker, mock_task):
+    """Test parallel_map creates a pipeline."""
+    pipeline = parallel_map(mock_task, [1, 2, 3])
+    assert pipeline is not None
+    assert len(pipeline.steps) == 3  # One step per item
+
+
+def test_parallel_map_with_kwargs(broker, mock_task):
+    """Test parallel_map with additional kwargs."""
+    pipeline = parallel_map(mock_task, [1, 2], multiplier=3)
+    assert len(pipeline.steps) == 2
+
+
+def test_chunked_map_creation(broker, mock_task):
+    """Test chunked_map creates a pipeline."""
+    items = list(range(10))
+    pipeline = chunked_map(mock_task, items, chunk_size=3)
+    assert pipeline is not None
+    # Should create steps for chunks: [0,1,2], [3,4,5], [6,7,8], [9]
+    assert len(pipeline.steps) == 4
+
+
+def test_chunked_map_chunk_size(broker, mock_task):
+    """Test chunked_map with different chunk sizes."""
+    items = [1, 2, 3, 4, 5]
+
+    # Chunk size 2
+    pipeline = chunked_map(mock_task, items, chunk_size=2)
+    assert len(pipeline.steps) == 3  # [1,2], [3,4], [5]
+
+    # Chunk size 1
+    pipeline = chunked_map(mock_task, items, chunk_size=1)
+    assert len(pipeline.steps) == 5  # One per item
+
+
+def test_chunked_map_auto_concurrency(broker, mock_task):
+    """Test chunked_map with auto concurrency."""
+    items = list(range(20))
+    pipeline = chunked_map(mock_task, items, auto_concurrency=True)
+    # Should create multiple chunks
+    assert len(pipeline.steps) > 1
+
+
+def test_chunked_map_max_concurrency(broker, mock_task):
+    """Test chunked_map with max concurrency (currently not implemented in pipeline creation)."""
+    items = list(range(20))
+    pipeline = chunked_map(mock_task, items, max_concurrency=5)
+    # Currently, max_concurrency doesn't affect pipeline creation
+    # This is a placeholder for future implementation
+    assert isinstance(pipeline, Pipeline)

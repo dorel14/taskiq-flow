@@ -1,6 +1,7 @@
 """Trigger helpers for scheduling."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Any
 
 try:
     from apscheduler.triggers.cron import CronTrigger
@@ -16,7 +17,7 @@ def create_cron_trigger(
     expression: str,
     timezone: str = "UTC",
     jitter: int | None = None,
-):
+) -> Any:
     """Create a cron trigger."""
     if CronTrigger is None:
         raise ImportError("APScheduler required")
@@ -26,7 +27,7 @@ def create_cron_trigger(
 def create_date_trigger(
     run_date: datetime,
     timezone: str = "UTC",
-):
+) -> Any:
     """Create a date trigger."""
     if DateTrigger is None:
         raise ImportError("APScheduler required")
@@ -43,7 +44,7 @@ def create_interval_trigger(
     end_date: datetime | None = None,
     timezone: str = "UTC",
     jitter: int | None = None,
-):
+) -> Any:
     """Create an interval trigger."""
     if IntervalTrigger is None:
         raise ImportError("APScheduler required")
@@ -60,31 +61,31 @@ def create_interval_trigger(
     )
 
 
-def every_minute(jitter: int | None = None):
+def every_minute(jitter: int | None = None) -> Any:
     """Trigger every minute."""
     return create_cron_trigger("* * * * *", jitter=jitter)
 
 
-def every_hour(jitter: int | None = None):
+def every_hour(jitter: int | None = None) -> Any:
     """Trigger every hour."""
     return create_cron_trigger("0 * * * *", jitter=jitter)
 
 
-def every_day(hour: int = 0, minute: int = 0, jitter: int | None = None):
+def every_day(hour: int = 0, minute: int = 0, jitter: int | None = None) -> Any:
     """Trigger every day at specified time."""
     return create_cron_trigger(f"{minute} {hour} * * *", jitter=jitter)
 
 
-def in_seconds(seconds: int, jitter: int | None = None):
+def in_seconds(seconds: int, jitter: int | None = None) -> Any:
     """Trigger in specified seconds."""
     return create_interval_trigger(seconds=seconds, jitter=jitter)
 
 
-def in_minutes(minutes: int, jitter: int | None = None):
+def in_minutes(minutes: int, jitter: int | None = None) -> Any:
     """Trigger in specified minutes."""
     return create_interval_trigger(minutes=minutes, jitter=jitter)
 
 
-def in_hours(hours: int, jitter: int | None = None):
+def in_hours(hours: int, jitter: int | None = None) -> Any:
     """Trigger in specified hours."""
     return create_interval_trigger(hours=hours, jitter=jitter)

@@ -1,7 +1,6 @@
 """Storage interface for pipeline tracking."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import Any
 
 from .models import PipelineStatusInfo

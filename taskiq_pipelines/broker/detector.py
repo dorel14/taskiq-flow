@@ -2,13 +2,14 @@
 
 from enum import StrEnum
 
-from taskiq.brokers import AsyncBroker
+from taskiq import AsyncBroker
 from taskiq.brokers.inmemory_broker import InMemoryBroker
-from taskiq.brokers.shared_broker import SharedBroker
+from taskiq.brokers.shared_broker import AsyncSharedBroker
 
 
 class BrokerType(StrEnum):
     """Supported broker types."""
+
     REDIS = "redis"
     RABBITMQ = "rabbitmq"
     KAFKA = "kafka"
@@ -23,7 +24,7 @@ class BrokerDetector:
     def detect(broker: AsyncBroker) -> BrokerType:
         """Detect the type of the given broker."""
         # Handle SharedBroker (unwrap to actual broker)
-        if isinstance(broker, SharedBroker):
+        if isinstance(broker, AsyncSharedBroker):
             broker = broker.broker
 
         # Try Redis

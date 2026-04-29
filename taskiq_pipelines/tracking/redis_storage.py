@@ -1,13 +1,13 @@
 """Redis implementation of pipeline storage."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 try:
     import redis.asyncio as redis
 except ImportError:
-    redis = None
+    redis = None  # type: ignore
 
 from .models import PipelineStatus, PipelineStatusInfo, StepStatus, StepStatusInfo
 from .storage import PipelineStorage
@@ -16,7 +16,7 @@ from .storage import PipelineStorage
 class RedisPipelineStorage(PipelineStorage):
     """Redis-based pipeline storage."""
 
-    def __init__(self, redis_url: str = "redis://localhost:6379", ttl_seconds: int = 3600):
+    def __init__(self, redis_url: str = "redis://localhost:6379", ttl_seconds: int = 3600) -> None:
         if redis is None:
             raise ImportError("redis package is required for RedisPipelineStorage")
         self.redis = redis.from_url(redis_url)
@@ -33,16 +33,29 @@ class RedisPipelineStorage(PipelineStorage):
             "total_steps": total_steps,
             "current_step": 0,
             "created_at": datetime.utcnow().isoformat(),
-            "started_at": None,
-            "finished_at": None,
-            "result": None,
-            "error": None,
         }
+
+        # Initialize steps list with default values
+        initial_steps = []
+        for i in range(total_steps):
+            step_data = {
+                "step_index": i,
+                "task_name": "",
+                "task_id": "",
+                "status": StepStatus.PENDING,
+                "started_at": None,
+                "finished_at": None,
+                "retries": 0,
+                "error": None,
+            }
+            initial_steps.append(json.dumps(step_data))
 
         async with self.redis.pipeline() as pipe:
             pipe.hset(pipeline_key, mapping=pipeline_data)
             pipe.expire(pipeline_key, self.ttl_seconds)
             pipe.delete(steps_key)  # Ensure clean start
+            if initial_steps:
+                pipe.rpush(steps_key, *initial_steps)
             await pipe.execute()
 
     async def start_pipeline(self, pipeline_id: str) -> None:
@@ -129,6 +142,9 @@ class RedisPipelineStorage(PipelineStorage):
         if not pipeline_data:
             return None
 
+        # Decode bytes to strings
+        pipeline_data = {k.decode(): v.decode() for k, v in pipeline_data.items()}
+
         steps_json = await self.redis.lrange(steps_key, 0, -1)
         steps = [StepStatusInfo(**json.loads(s)) for s in steps_json if s]
 
@@ -153,23 +169,14 @@ class RedisPipelineStorage(PipelineStorage):
         )
 
     async def list_pipelines(self, limit: int = 10) -> list[PipelineStatusInfo]:
-        """List recent pipelines. Note: This is a basic implementation."""
-        # Redis doesn't have easy way to list all keys, this is simplified
-        # In production, might need a separate index or use SCAN
-        keys = await self.redis.keys("pipe:*:steps")
-        pipeline_ids = [k.decode().replace("pipe:", "").replace(":steps", "") for k in keys]
-
-        # Sort by creation time or something, but for now just take recent
-        pipelines = []
-        for pid in pipeline_ids[:limit]:
-            status = await self.get_pipeline_status(pid)
-            if status:
-                pipelines.append(status)
-
-        return pipelines
+        """List recent pipelines. Note: Redis implementation is simplified."""
+        # Redis doesn't have an efficient way to list all pipelines
+        # In a production system, you might want to maintain a separate index
+        # For now, return empty list
+        return []
 
     async def cleanup_old(self, ttl_seconds: int = 3600) -> int:
         """Clean up old pipeline data. Redis handles TTL automatically."""
         # Since we set TTL on keys, Redis cleans up automatically
-        # This method can be a no-op or count expired keys if needed
+        # This method is a no-op for Redis implementation
         return 0

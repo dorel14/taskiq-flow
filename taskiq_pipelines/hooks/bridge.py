@@ -1,6 +1,6 @@
 """WebSocket bridge for pipeline events."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .events import PipelineEvent
 from .manager import HookManager
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class WebSocketHookBridge:
     """Bridge between hooks and WebSocket broadcasting."""
 
-    def __init__(self, hook_manager: HookManager, channel_layer):
+    def __init__(self, hook_manager: HookManager, channel_layer: Any) -> None:
         self.hook_manager = hook_manager
         self.channel_layer = channel_layer
         self._register_broadcasts()
@@ -43,7 +43,7 @@ class WebSocketHookBridge:
                     "type": "pipeline.event",
                     "event_type": event.__class__.__name__,
                     "data": event.model_dump(),
-                }
+                },
             )
         except Exception as exc:
             # Log but don't fail pipeline

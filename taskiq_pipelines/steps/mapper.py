@@ -18,8 +18,8 @@ from taskiq_pipelines.constants import (
     CURRENT_STEP,
     PIPELINE_DATA,
     STEP_RETRIES,
-    STEP_TIMEOUT,
     STEP_RETRY_DELAY,
+    STEP_TIMEOUT,
 )
 from taskiq_pipelines.exceptions import AbortPipeline, MappingError
 

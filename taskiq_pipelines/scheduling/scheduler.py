@@ -1,8 +1,7 @@
 """Pipeline scheduler using APScheduler."""
 
-import asyncio
 from datetime import datetime
-from typing import Any, Tuple
+from typing import Any
 
 from taskiq import AsyncBroker
 
@@ -28,7 +27,7 @@ class PipelineScheduler:
         broker: AsyncBroker,
         scheduler: AsyncIOScheduler | None = None,
         job_store_url: str | None = None,
-    ):
+    ) -> None:
         if AsyncIOScheduler is None:
             raise ImportError("APScheduler is required for PipelineScheduler")
 
@@ -52,10 +51,10 @@ class PipelineScheduler:
 
     async def schedule(
         self,
-        pipeline: Pipeline,
+        pipeline: Pipeline[Any, Any],
         cron: str,
-        args: Tuple = (),
-        kwargs: dict | None = None,
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
         timezone: str = "UTC",
         misfire_grace_time: int = 300,
         jitter: int | None = None,
@@ -76,10 +75,10 @@ class PipelineScheduler:
 
     async def schedule_at(
         self,
-        pipeline: Pipeline,
+        pipeline: Pipeline[Any, Any],
         run_at: datetime,
-        args: Tuple = (),
-        kwargs: dict | None = None,
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
         timezone: str = "UTC",
         misfire_grace_time: int = 300,
     ) -> str:
@@ -95,12 +94,12 @@ class PipelineScheduler:
 
     async def schedule_interval(
         self,
-        pipeline: Pipeline,
+        pipeline: Pipeline[Any, Any],
         hours: int = 0,
         minutes: int = 0,
         seconds: int = 0,
-        args: Tuple = (),
-        kwargs: dict | None = None,
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
         timezone: str = "UTC",
         misfire_grace_time: int = 300,
         jitter: int | None = None,
@@ -123,9 +122,9 @@ class PipelineScheduler:
 
     async def _run_pipeline(
         self,
-        pipeline: Pipeline,
-        args: Tuple,
-        kwargs: dict,
+        pipeline: Pipeline[Any, Any],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
     ) -> Any:
         """Execute the pipeline."""
         return await pipeline.kiq(*args, **kwargs)
@@ -138,7 +137,7 @@ class PipelineScheduler:
         """Shutdown the scheduler."""
         await self.scheduler.shutdown(wait=wait)
 
-    def list_jobs(self):
+    def list_jobs(self) -> Any:
         """List all scheduled jobs."""
         return self.scheduler.get_jobs()
 

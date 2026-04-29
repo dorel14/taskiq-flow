@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from taskiq.brokers import AsyncBroker
+from taskiq import AsyncBroker
 
 
 class PipelineContext:
     """Context for accessing results from previous pipeline steps."""
 
-    def __init__(self, broker: AsyncBroker):
+    def __init__(self, broker: AsyncBroker) -> None:
         self.broker = broker
 
     async def get_result(self, task_id: str) -> Any:

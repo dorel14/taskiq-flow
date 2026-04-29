@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class PipelineStatus(str, Enum):
     """Pipeline execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -17,6 +18,7 @@ class PipelineStatus(str, Enum):
 
 class StepStatus(str, Enum):
     """Step execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -25,6 +27,7 @@ class StepStatus(str, Enum):
 
 class StepStatusInfo(BaseModel):
     """Status information for a pipeline step."""
+
     step_index: int
     task_name: str
     task_id: str
@@ -37,6 +40,7 @@ class StepStatusInfo(BaseModel):
 
 class PipelineStatusInfo(BaseModel):
     """Status information for a pipeline."""
+
     pipeline_id: str
     status: PipelineStatus
     total_steps: int

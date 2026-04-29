@@ -10,8 +10,8 @@ from taskiq_pipelines.constants import (
     EMPTY_PARAM_NAME,
     PIPELINE_DATA,
     STEP_RETRIES,
-    STEP_TIMEOUT,
     STEP_RETRY_DELAY,
+    STEP_TIMEOUT,
 )
 
 

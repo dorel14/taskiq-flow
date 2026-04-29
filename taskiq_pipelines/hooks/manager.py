@@ -2,7 +2,8 @@
 
 import asyncio
 import logging
-from typing import Any, Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from .events import PipelineEvent
 
@@ -12,14 +13,17 @@ logger = logging.getLogger(__name__)
 class HookManager:
     """Manager for registering and dispatching pipeline event hooks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._callbacks: dict[str, list[Callable[[PipelineEvent], Any]]] = {}
         self._lock = asyncio.Lock()
 
     def register(
         self,
         event_type: str,
-        callback: Callable[[PipelineEvent], Any] | Callable[[PipelineEvent], Awaitable[Any]],
+        callback: (
+            Callable[[PipelineEvent], Any]
+            | Callable[[PipelineEvent], Awaitable[Any]]
+        ),
     ) -> None:
         """Register a callback for an event type."""
         if event_type not in self._callbacks:
@@ -55,7 +59,10 @@ class HookManager:
 
     async def _safe_call(
         self,
-        callback: Callable[[PipelineEvent], Any] | Callable[[PipelineEvent], Awaitable[Any]],
+        callback: (
+            Callable[[PipelineEvent], Any]
+            | Callable[[PipelineEvent], Awaitable[Any]]
+        ),
         event: PipelineEvent,
     ) -> None:
         """Call a callback safely, handling exceptions."""

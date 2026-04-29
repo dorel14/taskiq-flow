@@ -1,36 +1,32 @@
 """Pipelines for taskiq tasks."""
 
+import contextlib
+
 from taskiq_pipelines.exceptions import AbortPipeline, PipelineError
 from taskiq_pipelines.middleware import PipelineMiddleware
 from taskiq_pipelines.pipeliner import Pipeline
 
 # New exports
-try:
+with contextlib.suppress(ImportError):
     from taskiq_pipelines.tracking import (
         PipelineTrackingManager,
         TrackingStorageFactory,
     )
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from taskiq_pipelines.hooks import HookManager
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from taskiq_pipelines.scheduling import PipelineScheduler
-except ImportError:
-    pass
 
 __all__ = [
     "AbortPipeline",
+    "HookManager",
     "Pipeline",
     "PipelineError",
     "PipelineMiddleware",
+    "PipelineScheduler",
     # New
     "PipelineTrackingManager",
     "TrackingStorageFactory",
-    "HookManager",
-    "PipelineScheduler",
 ]

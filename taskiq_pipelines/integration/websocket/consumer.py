@@ -3,18 +3,18 @@
 try:
     from chanx import ChannelLayer
 except ImportError:
-    ChannelLayer = None
+    ChannelLayer = type(None)  # type: ignore
 
 
 class PipelineWebSocketConsumer:
     """WebSocket consumer for pipeline events."""
 
-    def __init__(self, channel_layer: ChannelLayer):
+    def __init__(self, channel_layer: ChannelLayer) -> None:
         if ChannelLayer is None:
             raise ImportError("chanx required for WebSocket consumer")
         self.channel_layer = channel_layer
 
-    async def connect(self, scope, receive, send):
+    async def connect(self, scope: Any, receive: Any, send: Any) -> None:
         """Handle WebSocket connection."""
         # Extract pipeline_id from URL or scope
         pipeline_id = self._get_pipeline_id(scope)
@@ -23,17 +23,15 @@ class PipelineWebSocketConsumer:
 
         await send({"type": "websocket.accept"})
 
-    async def disconnect(self, code):
+    async def disconnect(self, code: int) -> None:
         """Handle WebSocket disconnection."""
         # Clean up group membership if needed
-        pass
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data: Any = None, bytes_data: Any = None) -> None:
         """Handle incoming messages."""
         # For now, just echo or handle commands
-        pass
 
-    def _get_pipeline_id(self, scope) -> str | None:
+    def _get_pipeline_id(self, scope: Any) -> str | None:
         """Extract pipeline ID from scope."""
         # Example: from URL path /ws/pipeline/{pipeline_id}/
         path = scope.get("path", "")
