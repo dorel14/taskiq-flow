@@ -29,7 +29,8 @@ class BrokerDetector:
 
         # Try Redis
         try:
-            from taskiq_redis import redis_broker as RedisBroker
+            # Import here since taskiq_redis is optional and we want to check at runtime
+            from taskiq_redis import RedisBroker  # type: ignore
             if isinstance(broker, RedisBroker):
                 return BrokerType.REDIS
         except ImportError:
@@ -37,7 +38,7 @@ class BrokerDetector:
 
         # Try RabbitMQ
         try:
-            from taskiq_rabbit.broker import RabbitBroker
+            from taskiq_rabbit import rabbit_broker as RabbitBroker
             if isinstance(broker, RabbitBroker):
                 return BrokerType.RABBITMQ
         except ImportError:
