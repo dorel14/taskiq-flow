@@ -4,8 +4,11 @@ from logging import getLogger
 from typing import Any
 
 from taskiq_pipelines.abc import AbstractStep
+from taskiq_pipelines.steps.branch import BranchStep
+from taskiq_pipelines.steps.condition import ConditionStep
 from taskiq_pipelines.steps.filter import FilterStep
 from taskiq_pipelines.steps.mapper import MapperStep
+from taskiq_pipelines.steps.reduce import ReduceStep
 from taskiq_pipelines.steps.sequential import SequentialStep
 
 logger = getLogger(__name__)
@@ -20,7 +23,10 @@ def parse_step(step_type: str, step_data: dict[str, Any]) -> AbstractStep:
 
 
 __all__ = [
+    "BranchStep",
+    "ConditionStep",
     "FilterStep",
     "MapperStep",
+    "ReduceStep",
     "SequentialStep",
 ]

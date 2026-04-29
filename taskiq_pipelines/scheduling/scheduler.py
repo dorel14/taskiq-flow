@@ -1,0 +1,155 @@
+"""Pipeline scheduler using APScheduler."""
+
+import asyncio
+from datetime import datetime
+from typing import Any, Tuple
+
+from taskiq import AsyncBroker
+
+try:
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    from apscheduler.triggers.date import DateTrigger
+    from apscheduler.triggers.interval import IntervalTrigger
+except ImportError:
+    AsyncIOScheduler = None
+    CronTrigger = None
+    DateTrigger = None
+    IntervalTrigger = None
+
+from taskiq_pipelines.pipeliner import Pipeline
+
+
+class PipelineScheduler:
+    """Scheduler for pipeline execution using APScheduler."""
+
+    def __init__(
+        self,
+        broker: AsyncBroker,
+        scheduler: AsyncIOScheduler | None = None,
+        job_store_url: str | None = None,
+    ):
+        if AsyncIOScheduler is None:
+            raise ImportError("APScheduler is required for PipelineScheduler")
+
+        self.broker = broker
+        self.scheduler = scheduler or AsyncIOScheduler()
+        self._configure_job_store(job_store_url or "sqlite:///./scheduler_jobs.db")
+
+    def _configure_job_store(self, url: str) -> None:
+        """Configure job store based on URL."""
+        if url.startswith("sqlite"):
+            from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+            self.scheduler.add_jobstore(SQLAlchemyJobStore(url=url), alias="default")
+        elif url.startswith("redis"):
+            # Placeholder for Redis support
+            raise NotImplementedError("Redis job store not implemented yet")
+        elif url.startswith(("postgresql", "mysql")):
+            from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+            self.scheduler.add_jobstore(SQLAlchemyJobStore(url=url), alias="default")
+        else:
+            raise ValueError(f"Unsupported job store URL: {url}")
+
+    async def schedule(
+        self,
+        pipeline: Pipeline,
+        cron: str,
+        args: Tuple = (),
+        kwargs: dict | None = None,
+        timezone: str = "UTC",
+        misfire_grace_time: int = 300,
+        jitter: int | None = None,
+    ) -> str:
+        """Schedule pipeline with cron trigger."""
+        trigger = CronTrigger(
+            cron,
+            timezone=timezone,
+            jitter=jitter,
+        )
+        job = self.scheduler.add_job(
+            func=self._run_pipeline,
+            trigger=trigger,
+            args=[pipeline, args, kwargs or {}],
+            misfire_grace_time=misfire_grace_time,
+        )
+        return job.id
+
+    async def schedule_at(
+        self,
+        pipeline: Pipeline,
+        run_at: datetime,
+        args: Tuple = (),
+        kwargs: dict | None = None,
+        timezone: str = "UTC",
+        misfire_grace_time: int = 300,
+    ) -> str:
+        """Schedule pipeline to run once at specific datetime."""
+        trigger = DateTrigger(run_at, timezone=timezone)
+        job = self.scheduler.add_job(
+            func=self._run_pipeline,
+            trigger=trigger,
+            args=[pipeline, args, kwargs or {}],
+            misfire_grace_time=misfire_grace_time,
+        )
+        return job.id
+
+    async def schedule_interval(
+        self,
+        pipeline: Pipeline,
+        hours: int = 0,
+        minutes: int = 0,
+        seconds: int = 0,
+        args: Tuple = (),
+        kwargs: dict | None = None,
+        timezone: str = "UTC",
+        misfire_grace_time: int = 300,
+        jitter: int | None = None,
+    ) -> str:
+        """Schedule pipeline with interval trigger."""
+        trigger = IntervalTrigger(
+            hours=hours,
+            minutes=minutes,
+            seconds=seconds,
+            timezone=timezone,
+            jitter=jitter,
+        )
+        job = self.scheduler.add_job(
+            func=self._run_pipeline,
+            trigger=trigger,
+            args=[pipeline, args, kwargs or {}],
+            misfire_grace_time=misfire_grace_time,
+        )
+        return job.id
+
+    async def _run_pipeline(
+        self,
+        pipeline: Pipeline,
+        args: Tuple,
+        kwargs: dict,
+    ) -> Any:
+        """Execute the pipeline."""
+        return await pipeline.kiq(*args, **kwargs)
+
+    async def start(self) -> None:
+        """Start the scheduler."""
+        await self.scheduler.start()
+
+    async def shutdown(self, wait: bool = True) -> None:
+        """Shutdown the scheduler."""
+        await self.scheduler.shutdown(wait=wait)
+
+    def list_jobs(self):
+        """List all scheduled jobs."""
+        return self.scheduler.get_jobs()
+
+    async def remove_job(self, job_id: str) -> bool:
+        """Remove a job by ID."""
+        return self.scheduler.remove_job(job_id)
+
+    async def pause_job(self, job_id: str) -> bool:
+        """Pause a job."""
+        return self.scheduler.pause_job(job_id)
+
+    async def resume_job(self, job_id: str) -> bool:
+        """Resume a job."""
+        return self.scheduler.resume_job(job_id)

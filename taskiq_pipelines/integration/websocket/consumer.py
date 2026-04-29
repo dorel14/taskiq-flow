@@ -1,0 +1,47 @@
+"""WebSocket consumer for pipeline events."""
+
+try:
+    from chanx import ChannelLayer
+except ImportError:
+    ChannelLayer = None
+
+
+class PipelineWebSocketConsumer:
+    """WebSocket consumer for pipeline events."""
+
+    def __init__(self, channel_layer: ChannelLayer):
+        if ChannelLayer is None:
+            raise ImportError("chanx required for WebSocket consumer")
+        self.channel_layer = channel_layer
+
+    async def connect(self, scope, receive, send):
+        """Handle WebSocket connection."""
+        # Extract pipeline_id from URL or scope
+        pipeline_id = self._get_pipeline_id(scope)
+        if pipeline_id:
+            await self.channel_layer.group_add(f"pipeline_{pipeline_id}", self.channel_name)
+
+        await send({"type": "websocket.accept"})
+
+    async def disconnect(self, code):
+        """Handle WebSocket disconnection."""
+        # Clean up group membership if needed
+        pass
+
+    async def receive(self, text_data=None, bytes_data=None):
+        """Handle incoming messages."""
+        # For now, just echo or handle commands
+        pass
+
+    def _get_pipeline_id(self, scope) -> str | None:
+        """Extract pipeline ID from scope."""
+        # Example: from URL path /ws/pipeline/{pipeline_id}/
+        path = scope.get("path", "")
+        if "/ws/pipeline/" in path:
+            parts = path.split("/")
+            try:
+                idx = parts.index("pipeline")
+                return parts[idx + 1]
+            except (ValueError, IndexError):
+                pass
+        return None
