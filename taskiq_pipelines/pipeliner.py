@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import Coroutine
 from types import CoroutineType
 from typing import Any, Generic, Literal, ParamSpec, TypeVar, overload
@@ -9,7 +10,14 @@ from taskiq import AsyncBroker, AsyncTaskiqTask
 from taskiq.decor import AsyncTaskiqDecoratedTask
 from taskiq.kicker import AsyncKicker
 
-from taskiq_pipelines.constants import CURRENT_STEP, EMPTY_PARAM_NAME, PIPELINE_DATA
+from taskiq_pipelines.constants import (
+    CURRENT_STEP,
+    EMPTY_PARAM_NAME,
+    PIPELINE_DATA,
+    PIPELINE_ID,
+    STEP_RETRIES,
+    STEP_TIMEOUT,
+)
 from taskiq_pipelines.steps import FilterStep, MapperStep, SequentialStep, parse_step
 
 _ReturnType = TypeVar("_ReturnType")
@@ -27,6 +35,39 @@ class DumpedStep(pydantic.BaseModel):
 
 
 DumpedSteps = pydantic.RootModel[list[DumpedStep]]
+
+
+class PipelineOptions:
+    """Options for pipeline execution."""
+
+    def __init__(
+        self,
+        retries: int | None = None,
+        timeout: int | None = None,
+        fail_fast: bool = True,
+        continue_on_error: bool = False,
+    ):
+        self.default_retries = retries
+        self.default_timeout = timeout
+        self.fail_fast = fail_fast
+        self.continue_on_error = continue_on_error
+
+    def update(
+        self,
+        retries: int | None = None,
+        timeout: int | None = None,
+        fail_fast: bool | None = None,
+        continue_on_error: bool | None = None,
+    ) -> None:
+        """Update options."""
+        if retries is not None:
+            self.default_retries = retries
+        if timeout is not None:
+            self.default_timeout = timeout
+        if fail_fast is not None:
+            self.fail_fast = fail_fast
+        if continue_on_error is not None:
+            self.continue_on_error = continue_on_error
 
 
 class Pipeline(Generic[_FuncParams, _ReturnType]):
@@ -76,8 +117,39 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
     ) -> None:
         self.broker = broker
         self.steps: list[DumpedStep] = []
+        self.pipeline_id: str | None = None
+        self.tracking_enabled: bool = False
+        self.tracking_manager: Any = None  # PipelineTrackingManager | None
+        self.hook_manager: Any = None  # HookManager | None
+        self.options: PipelineOptions = PipelineOptions()
         if task:
             self.call_next(task)
+
+    def with_tracking(
+        self,
+        enabled: bool = True,
+        manager: Any = None,  # PipelineTrackingManager
+    ) -> "Pipeline[_FuncParams, _ReturnType]":
+        """Enable pipeline tracking."""
+        self.tracking_enabled = enabled
+        self.tracking_manager = manager
+        return self
+
+    def with_hooks(self, manager: Any) -> "Pipeline[_FuncParams, _ReturnType]":  # HookManager
+        """Set hook manager for events."""
+        self.hook_manager = manager
+        return self
+
+    def with_options(
+        self,
+        retries: int | None = None,
+        timeout: int | None = None,
+        fail_fast: bool | None = None,
+        continue_on_error: bool | None = None,
+    ) -> "Pipeline[_FuncParams, _ReturnType]":
+        """Set pipeline execution options."""
+        self.options.update(retries, timeout, fail_fast, continue_on_error)
+        return self
 
     @overload
     def call_next(
@@ -367,11 +439,33 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         """
         if not self.steps:
             raise ValueError("Pipeline is empty.")
+
+        # Generate pipeline ID and init tracking
+        if self.tracking_enabled:
+            self.pipeline_id = str(uuid.uuid4())
+            if self.tracking_manager:
+                await self.tracking_manager.initiate(self.pipeline_id, len(self.steps))
+
+        # Dispatch pipeline start event
+        if self.hook_manager:
+            from taskiq_pipelines.hooks.events import PipelineStartEvent
+            await self.hook_manager.dispatch(PipelineStartEvent(pipeline_id=self.pipeline_id or ""))
+
         self._update_task_ids()
         step = self.steps[0]
         parsed_step = parse_step(step.step_type, step.step_data)
         if not isinstance(parsed_step, SequentialStep):
             raise ValueError("First step must be sequential.")
+
+        # Prepare labels
+        labels = {CURRENT_STEP: 0, PIPELINE_DATA: self.dumpb()}
+        if self.pipeline_id:
+            labels[PIPELINE_ID] = self.pipeline_id
+        if self.options.default_retries is not None:
+            labels[STEP_RETRIES] = str(self.options.default_retries)
+        if self.options.default_timeout is not None:
+            labels[STEP_TIMEOUT] = str(self.options.default_timeout)
+
         kicker = (
             AsyncKicker(
                 parsed_step.task_name,
@@ -379,9 +473,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
                 labels=parsed_step.labels,
             )
             .with_task_id(step.task_id)
-            .with_labels(
-                **{CURRENT_STEP: 0, PIPELINE_DATA: self.dumpb()},  # type: ignore
-            )
+            .with_labels(**labels)  # type: ignore
         )
         taskiq_task = await kicker.kiq(*args, **kwargs)
         taskiq_task.task_id = self.steps[-1].task_id

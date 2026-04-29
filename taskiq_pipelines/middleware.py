@@ -4,7 +4,7 @@ from typing import Any
 import pydantic
 from taskiq import TaskiqMessage, TaskiqMiddleware, TaskiqResult
 
-from taskiq_pipelines.constants import CURRENT_STEP, PIPELINE_DATA
+from taskiq_pipelines.constants import CURRENT_STEP, PIPELINE_DATA, PIPELINE_ID
 from taskiq_pipelines.exceptions import AbortPipeline
 from taskiq_pipelines.pipeliner import DumpedStep
 from taskiq_pipelines.steps import parse_step
@@ -14,6 +14,15 @@ logger = getLogger(__name__)
 
 class PipelineMiddleware(TaskiqMiddleware):
     """Pipeline middleware."""
+
+    def __init__(
+        self,
+        tracking_manager=None,  # PipelineTrackingManager | None
+        hook_manager=None,  # HookManager | None
+    ):
+        self.tracking_manager = tracking_manager
+        self.hook_manager = hook_manager
+        super().__init__()
 
     async def post_save(  # noqa: PLR0911
         self,
@@ -37,6 +46,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         if CURRENT_STEP not in message.labels:
             return
         current_step_num = int(message.labels[CURRENT_STEP])
+        pipeline_id = message.labels.get(PIPELINE_ID)
         if PIPELINE_DATA not in message.labels:
             logger.warning("Pipeline data not found. Execution flow is broken.")
             return
@@ -49,9 +59,41 @@ class PipelineMiddleware(TaskiqMiddleware):
         except ValueError as err:
             logger.warning("Cannot parse pipeline_data: %s", err, exc_info=True)
             return
+
+        # Hook: step_start
+        if self.hook_manager and pipeline_id:
+            from taskiq_pipelines.hooks.events import StepStartEvent
+            await self.hook_manager.dispatch(StepStartEvent(
+                pipeline_id=pipeline_id,
+                step_index=current_step_num,
+                task_name=steps_data[current_step_num].task_name,
+                task_id=steps_data[current_step_num].task_id,
+            ))
+
+        # Tracking: mark step start
+        if self.tracking_manager and pipeline_id:
+            await self.tracking_manager.mark_step_started(
+                pipeline_id, current_step_num,
+                steps_data[current_step_num].task_id,
+                steps_data[current_step_num].task_name,
+            )
+
+        # Logging
+        logger.info(
+            f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] START {steps_data[current_step_num].task_name}",
+            extra={"pipeline_id": pipeline_id, "step": current_step_num, "task": steps_data[current_step_num].task_name, "event": "step_start"}
+        )
+
         if current_step_num + 1 >= len(steps_data):
             logger.debug("Pipeline is completed.")
+            # Mark pipeline completed
+            if self.tracking_manager and pipeline_id:
+                await self.tracking_manager.mark_pipeline_completed(pipeline_id, result.return_value)
+            if self.hook_manager and pipeline_id:
+                from taskiq_pipelines.hooks.events import PipelineCompleteEvent
+                await self.hook_manager.dispatch(PipelineCompleteEvent(pipeline_id=pipeline_id, result=result.return_value))
             return
+
         next_step_data = steps_data[current_step_num + 1]
         try:
             next_step = parse_step(
@@ -72,12 +114,43 @@ class PipelineMiddleware(TaskiqMiddleware):
                 pipe_data=pipeline_data,
                 result=result,
             )
+
+            # Hook: step_complete
+            if self.hook_manager and pipeline_id:
+                from taskiq_pipelines.hooks.events import StepCompleteEvent
+                await self.hook_manager.dispatch(StepCompleteEvent(
+                    pipeline_id=pipeline_id,
+                    step_index=current_step_num,
+                    task_name=steps_data[current_step_num].task_name,
+                    task_id=steps_data[current_step_num].task_id,
+                    result=result.return_value,
+                ))
+
+            # Tracking: complete
+            if self.tracking_manager and pipeline_id:
+                await self.tracking_manager.mark_step_completed(pipeline_id, current_step_num)
+
+            logger.info(f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] DONE", extra={"pipeline_id": pipeline_id, "step": current_step_num, "event": "step_complete"})
+
         except AbortPipeline as abort_exc:
             logger.warning(
                 "Pipeline is aborted. Reason: %s",
                 abort_exc,
                 exc_info=True,
             )
+            # Tracking: fail
+            if self.tracking_manager and pipeline_id:
+                await self.tracking_manager.mark_step_failed(pipeline_id, current_step_num, str(abort_exc))
+            # Hook: error
+            if self.hook_manager and pipeline_id:
+                from taskiq_pipelines.hooks.events import StepErrorEvent
+                await self.hook_manager.dispatch(StepErrorEvent(
+                    pipeline_id=pipeline_id,
+                    step_index=current_step_num,
+                    task_name=steps_data[current_step_num].task_name,
+                    task_id=steps_data[current_step_num].task_id,
+                    error=str(abort_exc),
+                ))
             if current_step_num == len(steps_data) - 1:
                 return
             await self.fail_pipeline(steps_data[-1].task_id)
@@ -98,6 +171,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         if CURRENT_STEP not in message.labels:
             return
         current_step_num = int(message.labels[CURRENT_STEP])
+        pipeline_id = message.labels.get(PIPELINE_ID)
         if PIPELINE_DATA not in message.labels:
             logger.warning("Pipeline data not found. Execution flow is broken.")
             return
@@ -106,7 +180,29 @@ class PipelineMiddleware(TaskiqMiddleware):
             steps = pydantic.TypeAdapter(list[DumpedStep]).validate_json(pipe_data)
         except ValueError:
             return
+
+        # Tracking: fail step
+        if self.tracking_manager and pipeline_id:
+            await self.tracking_manager.mark_step_failed(pipeline_id, current_step_num, str(exception))
+
+        # Hook: step error
+        if self.hook_manager and pipeline_id:
+            from taskiq_pipelines.hooks.events import StepErrorEvent
+            await self.hook_manager.dispatch(StepErrorEvent(
+                pipeline_id=pipeline_id,
+                step_index=current_step_num,
+                task_name=steps[current_step_num].task_name,
+                task_id=steps[current_step_num].task_id,
+                error=str(exception),
+            ))
+
         if current_step_num == len(steps) - 1:
+            # Pipeline failed
+            if self.tracking_manager and pipeline_id:
+                await self.tracking_manager.mark_pipeline_failed(pipeline_id, str(exception))
+            if self.hook_manager and pipeline_id:
+                from taskiq_pipelines.hooks.events import PipelineErrorEvent
+                await self.hook_manager.dispatch(PipelineErrorEvent(pipeline_id=pipeline_id, error=str(exception)))
             return
         await self.fail_pipeline(steps[-1].task_id, result.error)
 
