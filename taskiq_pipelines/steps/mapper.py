@@ -14,7 +14,13 @@ from taskiq import (
 from taskiq.kicker import AsyncKicker
 
 from taskiq_pipelines.abc import AbstractStep
-from taskiq_pipelines.constants import CURRENT_STEP, PIPELINE_DATA
+from taskiq_pipelines.constants import (
+    CURRENT_STEP,
+    PIPELINE_DATA,
+    STEP_RETRIES,
+    STEP_TIMEOUT,
+    STEP_RETRY_DELAY,
+)
 from taskiq_pipelines.exceptions import AbortPipeline, MappingError
 
 
@@ -78,6 +84,9 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
     additional_kwargs: dict[str, Any]
     skip_errors: bool
     check_interval: float
+    retries: int | None = None
+    timeout: int | None = None
+    retry_delay: int | None = None
 
     async def act(
         self,
@@ -148,6 +157,9 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
         param_name: str | None,
         skip_errors: bool,
         check_interval: float,
+        retries: int | None = None,
+        timeout: int | None = None,
+        retry_delay: int | None = None,
         **additional_kwargs: Any,
     ) -> "MapperStep":
         """
@@ -158,16 +170,32 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
         :param skip_errors: don't fail collector
             task on errors.
         :param check_interval: how often tasks are checked.
+        :param retries: retry count.
+        :param timeout: timeout in seconds.
+        :param retry_delay: delay between retries.
         :param additional_kwargs: additional function's kwargs.
         :return: new mapper step.
         """
         kicker = task.kicker() if isinstance(task, AsyncTaskiqDecoratedTask) else task
         message = kicker._prepare_message()
+        labels = dict(message.labels)
+
+        # Add retry/timeout labels
+        if retries is not None:
+            labels[STEP_RETRIES] = str(retries)
+        if timeout is not None:
+            labels[STEP_TIMEOUT] = str(timeout)
+        if retry_delay is not None:
+            labels[STEP_RETRY_DELAY] = str(retry_delay)
+
         return MapperStep(
             task_name=message.task_name,
-            labels=message.labels,
+            labels=labels,
             param_name=param_name,
             additional_kwargs=additional_kwargs,
             skip_errors=skip_errors,
             check_interval=check_interval,
+            retries=retries,
+            timeout=timeout,
+            retry_delay=retry_delay,
         )

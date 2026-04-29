@@ -5,7 +5,14 @@ from taskiq import AsyncBroker, AsyncTaskiqDecoratedTask, TaskiqResult
 from taskiq.kicker import AsyncKicker
 
 from taskiq_pipelines.abc import AbstractStep
-from taskiq_pipelines.constants import CURRENT_STEP, EMPTY_PARAM_NAME, PIPELINE_DATA
+from taskiq_pipelines.constants import (
+    CURRENT_STEP,
+    EMPTY_PARAM_NAME,
+    PIPELINE_DATA,
+    STEP_RETRIES,
+    STEP_TIMEOUT,
+    STEP_RETRY_DELAY,
+)
 
 
 class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
@@ -23,6 +30,9 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
     # we use int instead of Literal[-1] because pydantic thinks that -1 is always str.
     param_name: int | str | None
     additional_kwargs: dict[str, Any]
+    retries: int | None = None
+    timeout: int | None = None
+    retry_delay: int | None = None
 
     async def act(
         self,
@@ -75,6 +85,9 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
         cls,
         task: AsyncKicker[Any, Any] | AsyncTaskiqDecoratedTask[Any, Any],
         param_name: str | int | None,
+        retries: int | None = None,
+        timeout: int | None = None,
+        retry_delay: int | None = None,
         **additional_kwargs: Any,
     ) -> "SequentialStep":
         """
@@ -85,14 +98,30 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
 
         :param task: task to call.
         :param param_name: parameter name, defaults to None.
+        :param retries: retry count.
+        :param timeout: timeout in seconds.
+        :param retry_delay: delay between retries.
         :param additional_kwargs: additional kwargs to task.
         :return: new sequential step.
         """
         kicker = task.kicker() if isinstance(task, AsyncTaskiqDecoratedTask) else task
         message = kicker._prepare_message()
+        labels = dict(message.labels)
+
+        # Add retry/timeout labels
+        if retries is not None:
+            labels[STEP_RETRIES] = str(retries)
+        if timeout is not None:
+            labels[STEP_TIMEOUT] = str(timeout)
+        if retry_delay is not None:
+            labels[STEP_RETRY_DELAY] = str(retry_delay)
+
         return SequentialStep(
             task_name=message.task_name,
-            labels=message.labels,
+            labels=labels,
             param_name=param_name,
             additional_kwargs=additional_kwargs,
+            retries=retries,
+            timeout=timeout,
+            retry_delay=retry_delay,
         )
