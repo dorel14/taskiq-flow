@@ -1,15 +1,12 @@
+# ruff: noqa: PLC0415
 """Factory for creating pipeline storage with auto-detection."""
-
-from typing import TYPE_CHECKING
 
 from taskiq import AsyncBroker
 
+from ..broker.detector import BrokerDetector, BrokerType
 from .memory_storage import InMemoryPipelineStorage
 from .redis_storage import RedisPipelineStorage
 from .storage import PipelineStorage
-
-if TYPE_CHECKING:
-    pass
 
 
 class TrackingStorageFactory:
@@ -22,9 +19,6 @@ class TrackingStorageFactory:
         ttl_seconds: int = 3600,
     ) -> PipelineStorage:
         """Create storage based on broker type auto-detection."""
-        # Import here to avoid circular imports
-        from ..broker.detector import BrokerDetector, BrokerType
-
         broker_type = BrokerDetector.detect(broker)
 
         if broker_type == BrokerType.REDIS:
@@ -49,7 +43,8 @@ class TrackingStorageFactory:
     def _extract_redis_url(broker: AsyncBroker) -> str | None:
         """Extract Redis URL from broker if possible."""
         try:
-            from taskiq_redis.broker import RedisBroker
+            # Import here: taskiq_redis is optional, checked at runtime
+            from taskiq_redis.broker import RedisBroker  # type: ignore
             if isinstance(broker, RedisBroker):
                 # Assuming broker has a url attribute or similar
                 # This might need adjustment based on actual taskiq-redis implementation

@@ -29,7 +29,7 @@ class BrokerDetector:
 
         # Try Redis
         try:
-            from taskiq_redis.broker import RedisBroker
+            from taskiq_redis import redis_broker as RedisBroker
             if isinstance(broker, RedisBroker):
                 return BrokerType.REDIS
         except ImportError:
