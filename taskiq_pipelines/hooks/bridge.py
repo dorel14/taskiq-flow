@@ -7,7 +7,7 @@ from .manager import HookManager
 
 if TYPE_CHECKING:
     try:
-        from chanx.layer import ChannelLayer
+        from chanx import ChannelLayer
     except ImportError:
         ChannelLayer = None
 

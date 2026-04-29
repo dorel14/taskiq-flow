@@ -1,5 +1,7 @@
 """WebSocket consumer for pipeline events."""
 
+from typing import Any
+
 try:
     from chanx import ChannelLayer
 except ImportError:

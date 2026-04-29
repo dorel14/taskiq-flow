@@ -43,10 +43,7 @@ class RedisPipelineStorage(PipelineStorage):
                 "task_name": "",
                 "task_id": "",
                 "status": StepStatus.PENDING,
-                "started_at": None,
-                "finished_at": None,
                 "retries": 0,
-                "error": None,
             }
             initial_steps.append(json.dumps(step_data))
 
