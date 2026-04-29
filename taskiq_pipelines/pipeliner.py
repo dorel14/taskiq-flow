@@ -135,7 +135,8 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         self.tracking_manager = manager
         return self
 
-    def with_hooks(self, manager: Any) -> Pipeline[_FuncParams, _ReturnType]:  # HookManager
+    def with_hooks(self, manager: Any) -> Pipeline[_FuncParams,
+                                                _ReturnType]:  # HookManager
         """Set hook manager for events."""
         self.hook_manager = manager
         return self
@@ -449,7 +450,8 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         # Dispatch pipeline start event
         if self.hook_manager:
             from taskiq_pipelines.hooks.events import PipelineStartEvent
-            await self.hook_manager.dispatch(PipelineStartEvent(pipeline_id=self.pipeline_id or ""))
+            await self.hook_manager.dispatch(PipelineStartEvent(
+                    pipeline_id=self.pipeline_id or ""))
 
         self._update_task_ids()
         step = self.steps[0]

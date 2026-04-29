@@ -146,7 +146,7 @@ class RedisPipelineStorage(PipelineStorage):
         steps = [StepStatusInfo(**json.loads(s)) for s in steps_json if s]
 
         # Parse datetime fields
-        created_at = datetime.fromisoformat(pipeline_data["created_at"]) if pipeline_data.get("created_at") else None
+        created_at = datetime.fromisoformat(pipeline_data["created_at"]) if pipeline_data.get("created_at") else datetime.utcnow()
         started_at = datetime.fromisoformat(pipeline_data["started_at"]) if pipeline_data.get("started_at") else None
         finished_at = datetime.fromisoformat(pipeline_data["finished_at"]) if pipeline_data.get("finished_at") else None
 

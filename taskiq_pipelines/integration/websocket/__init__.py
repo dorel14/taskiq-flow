@@ -1,9 +1,6 @@
-"""WebSocket integration."""
+# TODO: WebSocket integration for real-time pipeline events
+# This module will be implemented in a future version when a stable
+# WebSocket library becomes available.
 
-from .consumer import PipelineWebSocketConsumer
-from .routing import create_websocket_router
-
-__all__ = [
-    "PipelineWebSocketConsumer",
-    "create_websocket_router",
-]
+# Placeholder - no exports for now
+__all__ = []

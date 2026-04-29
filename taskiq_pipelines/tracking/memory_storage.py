@@ -12,7 +12,7 @@ class InMemoryPipelineStorage(PipelineStorage):
     """In-memory pipeline storage for development/testing."""
 
     def __init__(self) -> None:
-        self._pipelines: Dict[str, PipelineStatusInfo] = {}
+        self._pipelines: dict[str, PipelineStatusInfo] = {}
         self._lock = asyncio.Lock()
         self._cleanup_task: asyncio.Task[None] | None = None
 

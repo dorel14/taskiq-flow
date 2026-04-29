@@ -25,7 +25,7 @@ class BrokerDetector:
         """Detect the type of the given broker."""
         # Handle SharedBroker (unwrap to actual broker)
         if isinstance(broker, AsyncSharedBroker):
-            broker = broker.broker
+            broker = getattr(broker, "broker", broker)  # type: ignore
 
         # Try Redis
         try:

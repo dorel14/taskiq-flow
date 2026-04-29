@@ -1,23 +1,7 @@
-"""WebSocket routing for pipeline events."""
+# TODO: WebSocket routing for real-time pipeline events
+# This feature is planned for a future version when a stable WebSocket
+# library with proper async routing support becomes available.
 
-try:
-    from chanx import URLRouter, ChannelLayer
-except ImportError:
-    URLRouter = Any  # type: ignore
-    ChannelLayer = Any  # type: ignore
-
-from .consumer import PipelineWebSocketConsumer
-
-
-def create_websocket_router(channel_layer: ChannelLayer) -> Any:
-    """Create WebSocket URL router for pipelines."""
-    if URLRouter is None:
-        raise ImportError("chanx required for WebSocket routing")
-
-    return URLRouter([
-        {
-            "path": "ws/pipeline/{pipeline_id}/",
-            "consumer": PipelineWebSocketConsumer,
-            "kwargs": {"channel_layer": channel_layer},
-        },
-    ])
+# Placeholder for future WebSocket router implementation
+# def create_websocket_router(channel_layer):
+#     """Create WebSocket URL router for real-time pipeline events."""
