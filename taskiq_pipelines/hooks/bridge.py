@@ -1,7 +1,7 @@
 """WebSocket bridge for pipeline events."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .events import PipelineEvent
 from .manager import HookManager

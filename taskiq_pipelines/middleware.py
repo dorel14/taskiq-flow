@@ -1,5 +1,6 @@
+# ruff: noqa: E501
 from logging import getLogger
-from typing import Any
+from typing import Any, cast
 
 import pydantic
 from taskiq import TaskiqMessage, TaskiqMiddleware, TaskiqResult
@@ -51,9 +52,11 @@ class PipelineMiddleware(TaskiqMiddleware):
         if result.is_err:
             return
 
-        current_step_num, pipeline_id, steps_data = self._extract_pipeline_info(message)
-        if steps_data is None:
+        pipeline_info = self._extract_pipeline_info(message)
+        if pipeline_info[0] is None:
             return
+
+        current_step_num, pipeline_id, steps_data = pipeline_info
 
         await self._handle_step_start(current_step_num, pipeline_id, steps_data)
 
@@ -63,7 +66,7 @@ class PipelineMiddleware(TaskiqMiddleware):
 
         await self._execute_next_step(current_step_num, pipeline_id, steps_data, message, result)
 
-    def _extract_pipeline_info(self, message: "TaskiqMessage") -> tuple[int | None, str | None, list[DumpedStep] | None]:
+    def _extract_pipeline_info(self, message: "TaskiqMessage") -> tuple[int, str | None, list[DumpedStep]] | tuple[None, None, None]:
         """Extract pipeline information from message."""
         if CURRENT_STEP not in message.labels:
             return None, None, None
@@ -77,9 +80,10 @@ class PipelineMiddleware(TaskiqMiddleware):
 
         pipeline_data = message.labels[PIPELINE_DATA]
         parsed_data = self.broker.serializer.loadb(pipeline_data)
-
         try:
-            steps_data = pydantic.TypeAdapter(list[DumpedStep]).validate_python(parsed_data)
+            steps_data = pydantic.TypeAdapter(list[DumpedStep]).validate_python(
+                parsed_data,
+            )
         except ValueError as err:
             logger.warning("Cannot parse pipeline_data: %s", err, exc_info=True)
             return None, None, None
@@ -103,7 +107,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         await self.hook_manager.dispatch(StepStartEvent(
             pipeline_id=pipeline_id,
             step_index=current_step_num,
-            task_name=parsed_step.task_name,
+            task_name=cast(str, getattr(parsed_step, "task_name", "unknown")),
             task_id=current_step_data.task_id,
         ))
 
@@ -114,20 +118,21 @@ class PipelineMiddleware(TaskiqMiddleware):
         await self.tracking_manager.mark_step_started(
             pipeline_id, current_step_num,
             current_step_data.task_id,
-            parsed_step.task_name,
+            cast(str, getattr(parsed_step, "task_name", "unknown")),
         )
 
     def _log_step_start(self, current_step_num: int, pipeline_id: str | None, steps_data: list[DumpedStep]) -> None:
         """Log step start."""
         current_step_data = steps_data[current_step_num]
         parsed_step = parse_step(current_step_data.step_type, current_step_data.step_data)
+        task_name = cast(str, getattr(parsed_step, "task_name", "unknown"))
         logger.info(
-            f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] START {parsed_step.task_name}",
+            f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] START {task_name}",
             extra={
                 "pipeline_id": pipeline_id,
                 "step": current_step_num,
-                "task": parsed_step.task_name,
-                "event": "step_start"
+                "task": task_name,
+                "event": "step_start",
             },
         )
 
@@ -141,7 +146,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         if self.hook_manager and pipeline_id:
             await self.hook_manager.dispatch(PipelineCompleteEvent(
                 pipeline_id=pipeline_id,
-                result=result.return_value
+                result=result.return_value,
             ))
 
     async def _execute_next_step(
@@ -150,7 +155,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         pipeline_id: str | None,
         steps_data: list[DumpedStep],
         message: "TaskiqMessage",
-        result: "TaskiqResult[Any]"
+        result: "TaskiqResult[Any]",
     ) -> None:
         """Execute the next step in the pipeline."""
         next_step_data = steps_data[current_step_num + 1]
@@ -188,7 +193,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         current_step_num: int,
         pipeline_id: str | None,
         steps_data: list[DumpedStep],
-        result: "TaskiqResult[Any]"
+        result: "TaskiqResult[Any]",
     ) -> None:
         """Handle successful step completion."""
         if self.hook_manager and pipeline_id:
@@ -204,7 +209,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         current_step_num: int,
         pipeline_id: str,
         steps_data: list[DumpedStep],
-        result: "TaskiqResult[Any]"
+        result: "TaskiqResult[Any]",
     ) -> None:
         """Dispatch step complete hook."""
         current_step_data = steps_data[current_step_num]
@@ -212,7 +217,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         await self.hook_manager.dispatch(StepCompleteEvent(
             pipeline_id=pipeline_id,
             step_index=current_step_num,
-            task_name=parsed_step.task_name,
+            task_name=cast(str, getattr(parsed_step, "task_name", "unknown")),
             task_id=current_step_data.task_id,
             result=result.return_value,
         ))
@@ -221,14 +226,15 @@ class PipelineMiddleware(TaskiqMiddleware):
         """Log step completion."""
         current_step_data = steps_data[current_step_num]
         parsed_step = parse_step(current_step_data.step_type, current_step_data.step_data)
+        task_name = cast(str, getattr(parsed_step, "task_name", "unknown"))
         logger.info(
             f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] DONE",
             extra={
                 "pipeline_id": pipeline_id,
                 "step": current_step_num,
-                "task": parsed_step.task_name,
-                "event": "step_complete"
-            }
+                "task": task_name,
+                "event": "step_complete",
+            },
         )
 
     async def _handle_step_error(
@@ -236,8 +242,8 @@ class PipelineMiddleware(TaskiqMiddleware):
         current_step_num: int,
         pipeline_id: str | None,
         steps_data: list[DumpedStep],
-        error: Exception,
-        total_steps: int
+        error: BaseException,
+        total_steps: int,
     ) -> None:
         """Handle step error."""
         logger.warning("Pipeline is aborted. Reason: %s", error, exc_info=True)
@@ -253,7 +259,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         current_step_num: int,
         pipeline_id: str,
         steps_data: list[DumpedStep],
-        error: Exception
+        error: BaseException,
     ) -> None:
         """Dispatch step error hook."""
         current_step_data = steps_data[current_step_num]
@@ -261,7 +267,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         await self.hook_manager.dispatch(StepErrorEvent(
             pipeline_id=pipeline_id,
             step_index=current_step_num,
-            task_name=parsed_step.task_name,
+            task_name=cast(str, getattr(parsed_step, "task_name", "unknown")),
             task_id=current_step_data.task_id,
             error=str(error),
         ))
@@ -279,9 +285,11 @@ class PipelineMiddleware(TaskiqMiddleware):
         :param result: execution result.
         :param exception: found exception.
         """
-        current_step_num, pipeline_id, steps_data = self._extract_pipeline_info(message)
-        if steps_data is None:
+        pipeline_info = self._extract_pipeline_info(message)
+        if pipeline_info[0] is None:
             return
+
+        current_step_num, pipeline_id, steps_data = pipeline_info
 
         await self._handle_step_error(current_step_num, pipeline_id, steps_data, exception, len(steps_data))
 
