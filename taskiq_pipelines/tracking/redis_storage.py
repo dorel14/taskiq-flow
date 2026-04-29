@@ -29,7 +29,7 @@ class RedisPipelineStorage(PipelineStorage):
 
         pipeline_data = {
             "pipeline_id": pipeline_id,
-            "status": PipelineStatus.PENDING,
+            "status": PipelineStatus.PENDING.value,
             "total_steps": total_steps,
             "current_step": 0,
             "created_at": datetime.utcnow().isoformat(),
@@ -42,7 +42,7 @@ class RedisPipelineStorage(PipelineStorage):
                 "step_index": i,
                 "task_name": "",
                 "task_id": "",
-                "status": StepStatus.PENDING,
+                "status": StepStatus.PENDING.value,
                 "retries": 0,
             }
             initial_steps.append(json.dumps(step_data))
@@ -61,7 +61,7 @@ class RedisPipelineStorage(PipelineStorage):
         started_at = datetime.utcnow().isoformat()
 
         await self.redis.hset(pipeline_key, mapping={
-            "status": PipelineStatus.RUNNING,
+            "status": PipelineStatus.RUNNING.value,
             "started_at": started_at,
         })
 
@@ -71,7 +71,7 @@ class RedisPipelineStorage(PipelineStorage):
         finished_at = datetime.utcnow().isoformat()
 
         await self.redis.hset(pipeline_key, mapping={
-            "status": PipelineStatus.COMPLETED,
+            "status": PipelineStatus.COMPLETED.value,
             "finished_at": finished_at,
             "result": json.dumps(result),
         })
@@ -82,7 +82,7 @@ class RedisPipelineStorage(PipelineStorage):
         finished_at = datetime.utcnow().isoformat()
 
         await self.redis.hset(pipeline_key, mapping={
-            "status": PipelineStatus.FAILED,
+            "status": PipelineStatus.FAILED.value,
             "finished_at": finished_at,
             "error": error,
         })
@@ -100,7 +100,7 @@ class RedisPipelineStorage(PipelineStorage):
             "step_index": step_index,
             "task_name": task_name,
             "task_id": task_id,
-            "status": StepStatus.RUNNING,
+            "status": StepStatus.RUNNING.value,
             "started_at": datetime.utcnow().isoformat(),
             "finished_at": None,
             "retries": 0,
@@ -115,7 +115,7 @@ class RedisPipelineStorage(PipelineStorage):
         step_json = await self.redis.lindex(steps_key, step_index)
         if step_json:
             step_data = json.loads(step_json)
-            step_data["status"] = StepStatus.COMPLETED
+            step_data["status"] = StepStatus.COMPLETED.value
             step_data["finished_at"] = datetime.utcnow().isoformat()
             await self.redis.lset(steps_key, step_index, json.dumps(step_data))
 
@@ -125,7 +125,7 @@ class RedisPipelineStorage(PipelineStorage):
         step_json = await self.redis.lindex(steps_key, step_index)
         if step_json:
             step_data = json.loads(step_json)
-            step_data["status"] = StepStatus.FAILED
+            step_data["status"] = StepStatus.FAILED.value
             step_data["finished_at"] = datetime.utcnow().isoformat()
             step_data["error"] = error
             await self.redis.lset(steps_key, step_index, json.dumps(step_data))

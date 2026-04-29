@@ -1,15 +1,15 @@
 """WebSocket routing for pipeline events."""
 
 try:
-    from chanx import ChannelLayer, URLRouter
+    from chanx import URLRouter, ChannelLayer
 except ImportError:
-    URLRouter = type(None)  # type: ignore
-    ChannelLayer = type(None)  # type: ignore
+    URLRouter = Any  # type: ignore
+    ChannelLayer = Any  # type: ignore
 
 from .consumer import PipelineWebSocketConsumer
 
 
-def create_websocket_router(channel_layer: ChannelLayer):
+def create_websocket_router(channel_layer: ChannelLayer) -> Any:
     """Create WebSocket URL router for pipelines."""
     if URLRouter is None:
         raise ImportError("chanx required for WebSocket routing")

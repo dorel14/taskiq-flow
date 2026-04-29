@@ -1,15 +1,15 @@
 """WebSocket bridge for pipeline events."""
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from .events import PipelineEvent
 from .manager import HookManager
 
-if TYPE_CHECKING:
-    try:
-        from chanx import ChannelLayer
-    except ImportError:
-        ChannelLayer = None
+try:
+    from chanx import ChannelLayer
+except ImportError:
+    ChannelLayer = Any  # type: ignore
 
 
 class WebSocketHookBridge:
@@ -47,6 +47,6 @@ class WebSocketHookBridge:
             )
         except Exception as exc:
             # Log but don't fail pipeline
-            import logging
             logger = logging.getLogger(__name__)
-            logger.exception(f"Failed to broadcast event {event.__class__.__name__}: {exc}")
+            logger.exception(f"Failed to broadcast event {
+                        event.__class__.__name__}: {exc}")

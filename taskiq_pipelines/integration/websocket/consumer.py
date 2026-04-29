@@ -21,7 +21,8 @@ class PipelineWebSocketConsumer:
         # Extract pipeline_id from URL or scope
         pipeline_id = self._get_pipeline_id(scope)
         if pipeline_id:
-            await self.channel_layer.group_add(f"pipeline_{pipeline_id}", self.channel_name)
+            await self.channel_layer.group_add(f"pipeline_{pipeline_id}",
+                        self.channel_name)
 
         await send({"type": "websocket.accept"})
 

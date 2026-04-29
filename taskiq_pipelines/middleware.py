@@ -94,7 +94,8 @@ class PipelineMiddleware(TaskiqMiddleware):
 
         # Logging
         current_step_data = steps_data[current_step_num]
-        parsed_step = parse_step(current_step_data.step_type, current_step_data.step_data)
+        parsed_step = parse_step(current_step_data.step_type,
+                                current_step_data.step_data)
         logger.info(
             f"[{pipeline_id or 'unknown'}][STEP {current_step_num}] START {parsed_step.task_name}",
             extra={"pipeline_id": pipeline_id, "step": current_step_num, 
@@ -217,13 +218,15 @@ class PipelineMiddleware(TaskiqMiddleware):
 
         # Tracking: fail step
         if self.tracking_manager and pipeline_id:
-            await self.tracking_manager.mark_step_failed(pipeline_id, current_step_num, str(exception))
+            await self.tracking_manager.mark_step_failed(pipeline_id, current_step_num,
+                                                        str(exception))
 
         # Hook: step error
         if self.hook_manager and pipeline_id:
             from taskiq_pipelines.hooks.events import StepErrorEvent
             current_step_data = steps[current_step_num]
-            parsed_step = parse_step(current_step_data.step_type, current_step_data.step_data)
+            parsed_step = parse_step(current_step_data.step_type,
+                                    current_step_data.step_data)
             await self.hook_manager.dispatch(StepErrorEvent(
                 pipeline_id=pipeline_id,
                 step_index=current_step_num,
@@ -235,11 +238,14 @@ class PipelineMiddleware(TaskiqMiddleware):
         if current_step_num == len(steps) - 1:
             # Pipeline failed
             if self.tracking_manager and pipeline_id:
-                await self.tracking_manager.mark_pipeline_failed(pipeline_id, str(exception))
+                await self.tracking_manager.mark_pipeline_failed(pipeline_id,
+                                                                str(exception))
             if self.hook_manager and pipeline_id:
 
-                await self.hook_manager.dispatch(PipelineErrorEvent(pipeline_id=pipeline_id,
-                                                                    error=str(exception)))
+                await self.hook_manager.dispatch(PipelineErrorEvent(
+                    pipeline_id=pipeline_id,
+                    error=str(exception)
+                    ))
             return
         await self.fail_pipeline(steps[-1].task_id, result.error)
 
