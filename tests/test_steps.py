@@ -4,7 +4,7 @@
 
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines import AbortPipeline, Pipeline, PipelineMiddleware
+from taskiq_flow import AbortPipeline, Pipeline, PipelineMiddleware
 
 
 async def test_success() -> None:

@@ -4,7 +4,7 @@
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.steps.filter import FilterStep
+from taskiq_flow.steps.filter import FilterStep
 
 
 @pytest.fixture

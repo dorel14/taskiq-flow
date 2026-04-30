@@ -78,11 +78,11 @@ class DataflowRegistry:
         metadata = self.task_metadata.get(task, {})
         return metadata.get("inputs", [])
 
-    def get_producer(self, data_name: str) -> AsyncTaskiqDecoratedTask | None:
+    def get_producer(self, data_name: str) -> AsyncTaskiqDecoratedTask[Any, Any] | None:
         """Get the task that produces the given data."""
         return self.data_producers.get(data_name)
 
-    def get_consumers(self, data_name: str) -> list[AsyncTaskiqDecoratedTask]:
+    def get_consumers(self, data_name: str) -> list[AsyncTaskiqDecoratedTask[Any, Any]]:
         """Get tasks that consume the given data."""
         node = self.data_nodes.get(data_name)
         return node.consumers if node else []

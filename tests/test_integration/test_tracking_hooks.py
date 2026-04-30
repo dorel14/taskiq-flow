@@ -6,16 +6,16 @@ import asyncio
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.hooks.events import (
+from taskiq_flow.hooks.events import (
     PipelineCompleteEvent,
     PipelineEvent,
     PipelineStartEvent,
     StepCompleteEvent,
     StepStartEvent,
 )
-from taskiq_pipelines.hooks.manager import HookManager
-from taskiq_pipelines.tracking.manager import PipelineTrackingManager
-from taskiq_pipelines.tracking.memory_storage import InMemoryPipelineStorage
+from taskiq_flow.hooks.manager import HookManager
+from taskiq_flow.tracking.manager import PipelineTrackingManager
+from taskiq_flow.tracking.memory_storage import InMemoryPipelineStorage
 
 
 @pytest.fixture

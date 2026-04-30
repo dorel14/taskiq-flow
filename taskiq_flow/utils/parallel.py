@@ -15,7 +15,7 @@ def parallel_map(
     task: AsyncKicker[[T], R],
     iterable: Iterable[T],
     **task_kwargs: Any,
-) -> Pipeline[T, list[R]]:
+) -> Pipeline[Any, list[R]]:
     """
     Create a pipeline executing task on each item in parallel.
 
@@ -26,10 +26,10 @@ def parallel_map(
     :param task_kwargs: Additional kwargs for the task.
     :return: Pipeline with parallel execution.
     """
-    pipeline: Pipeline[T, list[R]] = Pipeline(task.broker)
+    pipeline: Pipeline[Any, list[R]] = Pipeline(task.broker)
     for _item in iterable:
         # Add each task as a sequential step
-        pipeline = pipeline.call_next(task, **task_kwargs)
+        pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
     return pipeline
 
 
@@ -40,7 +40,7 @@ def chunked_map(
     max_concurrency: int | None = None,
     auto_concurrency: bool = False,
     **task_kwargs: Any,
-) -> Pipeline[list[T], list[R]]:
+) -> Pipeline[Any, list[R]]:
     """
     Chunk items and process chunks in parallel with concurrency control.
 
@@ -66,8 +66,8 @@ def chunked_map(
 
     # For simplicity, create a pipeline that calls the task for each chunk
     # Concurrency control would need to be implemented in the execution
-    pipeline: Pipeline[list[T], list[R]] = Pipeline(task.broker)
+    pipeline: Pipeline[Any, list[R]] = Pipeline(task.broker)
     for _chunk in chunks:
-        pipeline = pipeline.call_next(task, **task_kwargs)
+        pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
 
     return pipeline

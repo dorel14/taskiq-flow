@@ -4,7 +4,7 @@
 import pytest
 from taskiq import InMemoryBroker, TaskiqResult
 
-from taskiq_pipelines.utils.context import PipelineContext
+from taskiq_flow.utils.context import PipelineContext
 
 
 @pytest.fixture

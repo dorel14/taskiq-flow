@@ -1,7 +1,7 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for branch step."""
 
-from taskiq_pipelines.steps.branch import BranchStep
+from taskiq_flow.steps.branch import BranchStep
 
 
 def test_branch_step_creation():

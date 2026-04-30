@@ -159,7 +159,7 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
             reduce_tasks.kicker()
             .with_task_id(task_id)
             .with_broker(broker)
-            .with_labels(**{CURRENT_STEP: step_number, PIPELINE_DATA: pipe_data})
+            .with_labels(**{CURRENT_STEP: str(step_number), PIPELINE_DATA: pipe_data})
             .kiq(
                 sub_task_ids,
                 initial=self.initial,

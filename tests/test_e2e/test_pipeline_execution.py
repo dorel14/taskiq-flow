@@ -4,9 +4,9 @@
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.hooks.manager import HookManager
-from taskiq_pipelines.tracking.manager import PipelineTrackingManager
-from taskiq_pipelines.tracking.memory_storage import InMemoryPipelineStorage
+from taskiq_flow.hooks.manager import HookManager
+from taskiq_flow.tracking.manager import PipelineTrackingManager
+from taskiq_flow.tracking.memory_storage import InMemoryPipelineStorage
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ async def test_e2e_pipeline_execution_simulation(e2e_setup):
     pipeline_id = "e2e_pipeline"
 
     # Simulate pipeline start
-    from taskiq_pipelines.hooks.events import PipelineStartEvent
+    from taskiq_flow.hooks.events import PipelineStartEvent
 
     await hooks.dispatch(PipelineStartEvent(pipeline_id=pipeline_id))
 
@@ -82,7 +82,7 @@ async def test_e2e_pipeline_execution_simulation(e2e_setup):
     assert status.total_steps == 2
 
     # Simulate step 1 start and complete
-    from taskiq_pipelines.hooks.events import StepCompleteEvent, StepStartEvent
+    from taskiq_flow.hooks.events import StepCompleteEvent, StepStartEvent
 
     await hooks.dispatch(
         StepStartEvent(
@@ -132,7 +132,7 @@ async def test_e2e_pipeline_execution_simulation(e2e_setup):
     assert status.steps[1].task_name == "Task B"
 
     # Simulate pipeline complete
-    from taskiq_pipelines.hooks.events import PipelineCompleteEvent
+    from taskiq_flow.hooks.events import PipelineCompleteEvent
 
     final_result = {"step1": "result_a", "step2": "result_b"}
     await hooks.dispatch(
@@ -160,12 +160,12 @@ async def test_e2e_pipeline_error_simulation(e2e_setup):
     pipeline_id = "e2e_error_pipeline"
 
     # Start pipeline
-    from taskiq_pipelines.hooks.events import PipelineStartEvent
+    from taskiq_flow.hooks.events import PipelineStartEvent
 
     await hooks.dispatch(PipelineStartEvent(pipeline_id=pipeline_id))
 
     # Start a step
-    from taskiq_pipelines.hooks.events import StepErrorEvent, StepStartEvent
+    from taskiq_flow.hooks.events import StepErrorEvent, StepStartEvent
 
     await hooks.dispatch(
         StepStartEvent(
@@ -188,7 +188,7 @@ async def test_e2e_pipeline_error_simulation(e2e_setup):
     )
 
     # Fail the pipeline
-    from taskiq_pipelines.hooks.events import PipelineErrorEvent
+    from taskiq_flow.hooks.events import PipelineErrorEvent
 
     await hooks.dispatch(
         PipelineErrorEvent(pipeline_id=pipeline_id, error="Pipeline failed"),
@@ -205,6 +205,8 @@ async def test_e2e_pipeline_error_simulation(e2e_setup):
 @pytest.mark.anyio
 async def test_e2e_cleanup(e2e_setup):
     """Test cleanup in e2e scenario."""
+    import asyncio
+
     setup = e2e_setup
     tracking = setup["tracking"]
     storage = setup["storage"]
@@ -215,8 +217,11 @@ async def test_e2e_cleanup(e2e_setup):
     await storage.start_pipeline(pipeline_id)
     await storage.complete_pipeline(pipeline_id, "done")
 
-    # Cleanup old data
-    cleaned = await tracking.cleanup(ttl_seconds=1)  # Very short TTL
+    # Wait a bit to ensure the pipeline is older than TTL
+    await asyncio.sleep(0.1)
+
+    # Cleanup old data with very short TTL
+    cleaned = await tracking.cleanup(ttl_seconds=0)  # TTL of 0 means cleanup everything finished
     assert cleaned >= 1
 
     # Pipeline should be gone

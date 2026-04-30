@@ -45,7 +45,7 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
                 raise ValueError("Task specification must include 'task_name'")
 
             # Create kicker for this task
-            kicker = AsyncKicker(
+            kicker: AsyncKicker[Any, Any] = AsyncKicker(
                 task_name=task_name,
                 broker=broker,
                 labels=labels,
@@ -83,7 +83,7 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
         results = await asyncio.gather(*task_coroutines, return_exceptions=True)
 
         # Process results - replace exceptions with None
-        processed_results = []
+        processed_results: list[Any] = []
         for r in results:
             if isinstance(r, Exception):
                 processed_results.append(None)

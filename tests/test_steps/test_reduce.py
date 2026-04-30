@@ -1,8 +1,8 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for reduce step."""
 
-from taskiq_pipelines.steps.reduce import ReduceStep
-from taskiq_pipelines.steps.sequential import SequentialStep
+from taskiq_flow.steps.reduce import ReduceStep
+from taskiq_flow.steps.sequential import SequentialStep
 
 
 def test_reduce_step_creation():

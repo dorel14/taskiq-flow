@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from taskiq_pipelines.hooks.events import (
+from taskiq_flow.hooks.events import (
     PipelineCompleteEvent,
     PipelineErrorEvent,
     PipelineEvent,
@@ -13,21 +13,21 @@ from taskiq_pipelines.hooks.events import (
 )
 
 
-def test_pipeline_event_base():
+def test_pipeline_event_base() -> None:
     """Test base PipelineEvent."""
     event = PipelineEvent(pipeline_id="test_pipe")
     assert event.pipeline_id == "test_pipe"
     assert isinstance(event.timestamp, datetime)
 
 
-def test_pipeline_start_event():
+def test_pipeline_start_event() -> None:
     """Test PipelineStartEvent."""
     event = PipelineStartEvent(pipeline_id="test_pipe")
     assert event.pipeline_id == "test_pipe"
     assert hasattr(event, "timestamp")
 
 
-def test_step_start_event():
+def test_step_start_event() -> None:
     """Test StepStartEvent."""
     event = StepStartEvent(
         pipeline_id="test_pipe",
@@ -41,7 +41,7 @@ def test_step_start_event():
     assert event.task_id == "task_123"
 
 
-def test_step_complete_event():
+def test_step_complete_event() -> None:
     """Test StepCompleteEvent."""
     result = {"data": "value"}
     event = StepCompleteEvent(
@@ -58,7 +58,7 @@ def test_step_complete_event():
     assert event.result == result
 
 
-def test_pipeline_complete_event():
+def test_pipeline_complete_event() -> None:
     """Test PipelineCompleteEvent."""
     result = "final_result"
     event = PipelineCompleteEvent(pipeline_id="test_pipe", result=result)
@@ -66,7 +66,7 @@ def test_pipeline_complete_event():
     assert event.result == result
 
 
-def test_step_error_event():
+def test_step_error_event() -> None:
     """Test StepErrorEvent."""
     event = StepErrorEvent(
         pipeline_id="test_pipe",
@@ -82,14 +82,14 @@ def test_step_error_event():
     assert event.error == "Task failed"
 
 
-def test_pipeline_error_event():
+def test_pipeline_error_event() -> None:
     """Test PipelineErrorEvent."""
     event = PipelineErrorEvent(pipeline_id="test_pipe", error="Pipeline failed")
     assert event.pipeline_id == "test_pipe"
     assert event.error == "Pipeline failed"
 
 
-def test_events_have_timestamps():
+def test_events_have_timestamps() -> None:
     """Test that all events have timestamps."""
     events = [
         PipelineStartEvent(pipeline_id="test"),
@@ -122,7 +122,7 @@ def test_events_have_timestamps():
         assert isinstance(event.timestamp, datetime)
 
 
-def test_event_model_dump():
+def test_event_model_dump() -> None:
     """Test that events can be serialized."""
     event = PipelineStartEvent(pipeline_id="test_pipe")
     data = event.model_dump()
@@ -130,7 +130,7 @@ def test_event_model_dump():
     assert "timestamp" in data
 
 
-def test_step_event_model_dump():
+def test_step_event_model_dump() -> None:
     """Test step event serialization."""
     event = StepStartEvent(
         pipeline_id="test_pipe",

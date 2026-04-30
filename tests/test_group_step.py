@@ -1,15 +1,17 @@
 """Tests for group step functionality."""
 
+from typing import Any
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from taskiq import TaskiqResult
 
-from taskiq_pipelines.steps.group import GroupStep
+from taskiq_flow.steps.group import GroupStep
 
 
 @pytest.mark.asyncio
-async def test_group_step_basic_execution():
+async def test_group_step_basic_execution() -> None:
     """Test basic group step execution with multiple tasks."""
     # Create mock broker
     mock_broker = AsyncMock()
@@ -28,14 +30,14 @@ async def test_group_step_basic_execution():
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_pipelines.steps.group as group_module
+    import taskiq_flow.steps.group as group_module
 
     original_kicker = group_module.AsyncKicker
-    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)
+    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
         # Create group step with multiple tasks
-        tasks = [
+        tasks: list[dict[str, Any]] = [
             {
                 "task_name": "task1",
                 "labels": {},
@@ -79,9 +81,9 @@ async def test_group_step_basic_execution():
         group_module.AsyncKicker = original_kicker
 
 
-def test_group_step_creation():
+def test_group_step_creation() -> None:
     """Test group step creation and configuration."""
-    tasks = [
+    tasks: list[dict[str, Any]] = [
         {
             "task_name": "task1",
             "labels": {},
@@ -101,7 +103,7 @@ def test_group_step_creation():
     assert len(step.tasks) == 2
 
 
-def test_group_step_empty_tasks():
+def test_group_step_empty_tasks() -> None:
     """Test group step with empty tasks list."""
     step = GroupStep(tasks=[])
 
@@ -109,7 +111,7 @@ def test_group_step_empty_tasks():
 
 
 @pytest.mark.asyncio
-async def test_group_step_with_param_names():
+async def test_group_step_with_param_names() -> None:
     """Test group step with parameter names."""
     # Create mock broker
     mock_broker = AsyncMock()
@@ -128,14 +130,14 @@ async def test_group_step_with_param_names():
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_pipelines.steps.group as group_module
+    import taskiq_flow.steps.group as group_module
 
     original_kicker = group_module.AsyncKicker
-    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)
+    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
         # Create group step with parameter names
-        tasks = [
+        tasks: list[dict[str, Any]] = [
             {
                 "task_name": "task1",
                 "labels": {},
@@ -173,13 +175,13 @@ async def test_group_step_with_param_names():
 
 
 @pytest.mark.asyncio
-async def test_group_step_error_handling():
+async def test_group_step_error_handling() -> None:
     """Test group step error handling when a task fails."""
     # Create mock broker that raises an exception for one task
     mock_broker = AsyncMock()
 
     # Make get_result return different results for different task IDs
-    async def get_result_side_effect(task_id):
+    async def get_result_side_effect(task_id: str) -> TaskiqResult:
         if task_id == "test_task_id_1":
             return TaskiqResult(
                 is_err=False,
@@ -199,7 +201,7 @@ async def test_group_step_error_handling():
     mock_kicker.kiq = AsyncMock()
 
     # Return different task IDs for different calls
-    async def kiq_side_effect(*args, **kwargs):
+    async def kiq_side_effect(*args: Any, **kwargs: Any) -> MagicMock:
         task_result = MagicMock()
         if "task1" in str(kwargs):
             task_result.task_id = "test_task_id_1"
@@ -210,14 +212,14 @@ async def test_group_step_error_handling():
     mock_kicker.kiq.side_effect = kiq_side_effect
 
     # Mock the AsyncKicker import
-    import taskiq_pipelines.steps.group as group_module
+    import taskiq_flow.steps.group as group_module
 
     original_kicker = group_module.AsyncKicker
-    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)
+    group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
         # Create group step with multiple tasks
-        tasks = [
+        tasks: list[dict[str, Any]] = [
             {
                 "task_name": "task1",
                 "labels": {},

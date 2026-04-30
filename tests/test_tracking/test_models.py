@@ -3,7 +3,7 @@
 
 from datetime import datetime
 
-from taskiq_pipelines.tracking.models import (
+from taskiq_flow.tracking.models import (
     PipelineStatus,
     PipelineStatusInfo,
     StepStatus,
@@ -13,18 +13,18 @@ from taskiq_pipelines.tracking.models import (
 
 def test_pipeline_status_enum():
     """Test PipelineStatus enum values."""
-    assert PipelineStatus.PENDING == "pending"
-    assert PipelineStatus.RUNNING == "running"
-    assert PipelineStatus.COMPLETED == "completed"
-    assert PipelineStatus.FAILED == "failed"
+    assert PipelineStatus.PENDING.value == "pending"
+    assert PipelineStatus.RUNNING.value == "running"
+    assert PipelineStatus.COMPLETED.value == "completed"
+    assert PipelineStatus.FAILED.value == "failed"
 
 
 def test_step_status_enum():
     """Test StepStatus enum values."""
-    assert StepStatus.PENDING == "pending"
-    assert StepStatus.RUNNING == "running"
-    assert StepStatus.COMPLETED == "completed"
-    assert StepStatus.FAILED == "failed"
+    assert StepStatus.PENDING.value == "pending"
+    assert StepStatus.RUNNING.value == "running"
+    assert StepStatus.COMPLETED.value == "completed"
+    assert StepStatus.FAILED.value == "failed"
 
 
 def test_step_status_info_creation():

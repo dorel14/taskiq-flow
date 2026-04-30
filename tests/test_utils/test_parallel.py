@@ -1,43 +1,45 @@
 """Tests for parallel utilities."""
 
+from collections.abc import Callable
+
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.pipeliner import Pipeline
-from taskiq_pipelines.utils.parallel import chunked_map, parallel_map
+from taskiq_flow.pipeliner import Pipeline
+from taskiq_flow.utils.parallel import chunked_map, parallel_map
 
 
 @pytest.fixture
-def broker():
+def broker() -> InMemoryBroker:
     """Create test broker."""
     return InMemoryBroker()
 
 
 @pytest.fixture
-def mock_task(broker):
+def mock_task(broker: InMemoryBroker) -> Callable[[int], int]:
     """Create mock task."""
 
     @broker.task
-    def test_task(x):
+    def test_task(x: int) -> int:
         return x * 2
 
     return test_task
 
 
-def test_parallel_map_creation(broker, mock_task):
+def test_parallel_map_creation(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test parallel_map creates a pipeline."""
     pipeline = parallel_map(mock_task, [1, 2, 3])
     assert pipeline is not None
     assert len(pipeline.steps) == 3  # One step per item
 
 
-def test_parallel_map_with_kwargs(broker, mock_task):
+def test_parallel_map_with_kwargs(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test parallel_map with additional kwargs."""
     pipeline = parallel_map(mock_task, [1, 2], multiplier=3)
     assert len(pipeline.steps) == 2
 
 
-def test_chunked_map_creation(broker, mock_task):
+def test_chunked_map_creation(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test chunked_map creates a pipeline."""
     items = list(range(10))
     pipeline = chunked_map(mock_task, items, chunk_size=3)
@@ -46,7 +48,7 @@ def test_chunked_map_creation(broker, mock_task):
     assert len(pipeline.steps) == 4
 
 
-def test_chunked_map_chunk_size(broker, mock_task):
+def test_chunked_map_chunk_size(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test chunked_map with different chunk sizes."""
     items = [1, 2, 3, 4, 5]
 
@@ -59,7 +61,7 @@ def test_chunked_map_chunk_size(broker, mock_task):
     assert len(pipeline.steps) == 5  # One per item
 
 
-def test_chunked_map_auto_concurrency(broker, mock_task):
+def test_chunked_map_auto_concurrency(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test chunked_map with auto concurrency."""
     items = list(range(20))
     pipeline = chunked_map(mock_task, items, auto_concurrency=True)
@@ -67,7 +69,7 @@ def test_chunked_map_auto_concurrency(broker, mock_task):
     assert len(pipeline.steps) > 1
 
 
-def test_chunked_map_max_concurrency(broker, mock_task):
+def test_chunked_map_max_concurrency(broker: InMemoryBroker, mock_task: Callable[[int], int]) -> None:
     """Test chunked_map with max concurrency (currently not implemented in pipeline creation)."""
     items = list(range(20))
     pipeline = chunked_map(mock_task, items, max_concurrency=5)

@@ -88,7 +88,7 @@ class DAG:
         for node in self.nodes:
             self.levels[node.level].append(node)
 
-    def get_ready_tasks(self, completed: set) -> list[DAGNode]:
+    def get_ready_tasks(self, completed: set[DAGNode]) -> list[DAGNode]:
         """
         Get tasks that are ready to execute.
 

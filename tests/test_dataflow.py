@@ -1,9 +1,11 @@
 """Tests for dataflow-based pipeline features."""
 
+from collections.abc import Callable
+
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines import (
+from taskiq_flow import (
     DAGBuilder,
     DataflowPipeline,
     DataflowRegistry,
@@ -12,13 +14,13 @@ from taskiq_pipelines import (
 
 
 @pytest.fixture
-def broker():
+def broker() -> InMemoryBroker:
     """Create a test broker."""
     return InMemoryBroker()
 
 
 @pytest.fixture
-def registry():
+def registry() -> DataflowRegistry:
     """Create a test registry."""
     return DataflowRegistry()
 
@@ -31,17 +33,17 @@ def registry():
 class TestDataflowRegistry:
     """Tests for DataflowRegistry."""
 
-    def test_registry_creation(self, registry):
+    def test_registry_creation(self, registry: DataflowRegistry) -> None:
         """Test registry creation."""
         assert len(registry.tasks) == 0
         assert len(registry.data_nodes) == 0
 
-    def test_register_task(self, registry, broker):
+    def test_register_task(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test registering a task."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         registry.register_task(
@@ -54,17 +56,17 @@ class TestDataflowRegistry:
         assert "output1" in registry.data_nodes
         assert registry.data_producers["output1"] == task1
 
-    def test_register_task_with_dependencies(self, registry, broker):
+    def test_register_task_with_dependencies(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test registering tasks with dependencies."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: str) -> str:
             return output1
 
         registry.register_task(task1, output="output1", inputs=["input1"])
@@ -78,12 +80,12 @@ class TestDataflowRegistry:
         consumers = registry.get_consumers("output1")
         assert task2 in consumers
 
-    def test_get_producer(self, registry, broker):
+    def test_get_producer(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test getting producer for data."""
 
         @broker.task
         @pipeline_task(output="output1")
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         registry.register_task(task1, output="output1", inputs=["input1"])
@@ -94,17 +96,17 @@ class TestDataflowRegistry:
         # Non-existent data
         assert registry.get_producer("nonexistent") is None
 
-    def test_build_dag(self, registry, broker):
+    def test_build_dag(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test building DAG from registered tasks."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: str) -> str:
             return output1
 
         registry.register_task(task1, output="output1", inputs=["input1"])
@@ -120,22 +122,22 @@ class TestDataflowRegistry:
         assert from_node.task == task1
         assert to_node.task == task2
 
-    def test_build_dag_parallel(self, registry, broker):
+    def test_build_dag_parallel(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test building DAG with parallel tasks."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(input2):
+        async def task2(input2: str) -> str:
             return input2
 
         @pipeline_task(output="output3")
         @broker.task
-        async def task3(output1, output2):
+        async def task3(output1: str, output2: str) -> str:
             return output1 + output2
 
         registry.register_task(task1, output="output1", inputs=["input1"])
@@ -155,12 +157,12 @@ class TestDataflowRegistry:
         assert len(dag.levels[0]) == 2  # task1 and task2 can run in parallel
         assert len(dag.levels[1]) == 1  # task3 depends on both
 
-    def test_external_inputs(self, registry, broker):
+    def test_external_inputs(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
         """Test detection of external inputs."""
 
         @broker.task
         @pipeline_task(output="output1")
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         registry.register_task(task1, output="output1", inputs=["input1"])
@@ -177,17 +179,17 @@ class TestDataflowRegistry:
 class TestDAG:
     """Tests for DAG."""
 
-    def test_topological_sort(self, broker):
+    def test_topological_sort(self, broker: InMemoryBroker) -> None:
         """Test topological sorting."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: str) -> str:
             return output1
 
         registry = DataflowRegistry()
@@ -201,22 +203,22 @@ class TestDAG:
         assert sorted_nodes[0].task == task1
         assert sorted_nodes[1].task == task2
 
-    def test_compute_levels(self, broker):
+    def test_compute_levels(self, broker: InMemoryBroker) -> None:
         """Test level computation for parallel execution."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(input2):
+        async def task2(input2: str) -> str:
             return input2
 
         @pipeline_task(output="output3")
         @broker.task
-        async def task3(output1, output2):
+        async def task3(output1: str, output2: str) -> str:
             return output1 + output2
 
         registry = DataflowRegistry()
@@ -233,17 +235,17 @@ class TestDAG:
         assert len(dag.levels[0]) == 2  # task1, task2 (parallel)
         assert len(dag.levels[1]) == 1  # task3
 
-    def test_circular_dependency(self, broker):
+    def test_circular_dependency(self, broker: InMemoryBroker) -> None:
         """Test detection of circular dependencies."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(output2):
+        async def task1(output2: str) -> str:
             return output2
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: str) -> str:
             return output1
 
         registry = DataflowRegistry()
@@ -262,17 +264,17 @@ class TestDAG:
 class TestDAGBuilder:
     """Tests for DAGBuilder."""
 
-    def test_from_tasks(self, broker):
+    def test_from_tasks(self, broker: InMemoryBroker) -> None:
         """Test building DAG from tasks."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: str) -> str:
             return output1
 
         dag = DAGBuilder.from_tasks([task1, task2])
@@ -280,20 +282,19 @@ class TestDAGBuilder:
         assert len(dag.nodes) == 2
         assert len(dag.edges) == 1
 
-    def test_infer_inputs(self, broker):
+    def test_infer_inputs(self, broker: InMemoryBroker) -> None:
         """Test inferring inputs from function signature."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1, input2):
+        async def task1(input1: str, input2: str) -> str:
             return input1 + input2
 
         metadata = DAGBuilder._infer_inputs(task1)
         assert "input1" in metadata
         assert "input2" in metadata
-        assert "input2" in metadata
 
-    def test_validate_dag(self, broker):
+    def test_validate_dag(self, broker: InMemoryBroker) -> None:
         """Test DAG validation."""
 
         @broker.task

@@ -1,5 +1,6 @@
 """Decorators for pipeline tasks."""
 
+import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
@@ -12,7 +13,7 @@ def pipeline_task(
     output: str,
     inputs: list[str] | None = None,
     retries: int = 0,
-) -> Callable:
+) -> Callable[..., Any]:
     """
     Decorator for pipeline tasks.
 
@@ -38,20 +39,17 @@ def pipeline_task(
             return compute_mir_features(audio_features)
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def async_wrapper(*args, **kwargs) -> Any:
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             return await func(*args, **kwargs)
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs) -> Any:
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
         # Choose appropriate wrapper based on function type
-        if _is_async_function(func):
-            wrapper = async_wrapper
-        else:
-            wrapper = sync_wrapper
+        wrapper = async_wrapper if _is_async_function(func) else sync_wrapper
 
         # Attach metadata
         _PIPELINE_TASK_METADATA[wrapper] = {
@@ -132,7 +130,7 @@ def is_pipeline_task(func: Any) -> bool:
     return metadata.get("is_pipeline_task", False)
 
 
-def _is_async_function(func: Callable) -> bool:
+def _is_async_function(func: Callable[..., Any]) -> bool:
     """
     Check if a function is async.
 
@@ -142,8 +140,6 @@ def _is_async_function(func: Callable) -> bool:
     Returns:
         True if the function is async
     """
-    import inspect
-
     return inspect.iscoroutinefunction(func)
 
 
@@ -152,31 +148,31 @@ def pipeline_task_legacy(
     output: str,
     inputs: list[str] | None = None,
     retries: int = 0,
-    **kwargs,
-) -> Callable:
+    **kwargs: Any,
+) -> Callable[..., Any]:
     """
     Legacy version of pipeline_task decorator.
 
     Directly attaches metadata to the function.
     """
 
-    def decorator(func: Callable) -> Callable:
-        func._pipeline_task = True
-        func._pipeline_output = output
-        func._pipeline_inputs = inputs
-        func._pipeline_retries = retries
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        setattr(func, "_pipeline_task", True)
+        setattr(func, "_pipeline_output", output)
+        setattr(func, "_pipeline_inputs", inputs)
+        setattr(func, "_pipeline_retries", retries)
 
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             if _is_async_function(func):
                 return await func(*args, **kwargs)
             return func(*args, **kwargs)
 
         # Attach metadata to wrapper too
-        async_wrapper._pipeline_task = True
-        async_wrapper._pipeline_output = output
-        async_wrapper._pipeline_inputs = inputs
-        async_wrapper._pipeline_retries = retries
+        setattr(async_wrapper, "_pipeline_task", True)
+        setattr(async_wrapper, "_pipeline_output", output)
+        setattr(async_wrapper, "_pipeline_inputs", inputs)
+        setattr(async_wrapper, "_pipeline_retries", retries)
 
         return async_wrapper
 

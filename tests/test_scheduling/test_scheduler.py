@@ -4,7 +4,7 @@
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.scheduling.scheduler import PipelineScheduler
+from taskiq_flow.scheduling.scheduler import PipelineScheduler
 
 
 @pytest.fixture
@@ -95,6 +95,11 @@ def test_pipeline_scheduler_import_error():
     """Test that ImportError is raised when APScheduler not available."""
     from unittest.mock import patch
 
-    with patch.dict("sys.modules", {"apscheduler.schedulers.asyncio": None}):
-        with pytest.raises(ImportError):
-            PipelineScheduler(InMemoryBroker())
+    # The import happens at module level, so we need to patch the
+    # AsyncIOScheduler in the scheduler module itself
+    with patch("taskiq_flow.scheduling.scheduler.AsyncIOScheduler", None):
+        with patch("taskiq_flow.scheduling.scheduler.CronTrigger", None):
+            with patch("taskiq_flow.scheduling.scheduler.DateTrigger", None):
+                with patch("taskiq_flow.scheduling.scheduler.IntervalTrigger", None):
+                    with pytest.raises(ImportError):
+                        PipelineScheduler(InMemoryBroker())

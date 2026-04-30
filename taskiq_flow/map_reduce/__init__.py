@@ -23,12 +23,12 @@ class MapReduce:
     @staticmethod
     async def map(
         broker: AsyncBroker,
-        task: Callable,
+        task: Callable[..., Any],
         items: list[Any],
         output: str,
         param_name: str | None = None,
         max_parallel: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[Any]:
         """
         Apply a task to each item in parallel.
@@ -101,11 +101,11 @@ class MapReduce:
     @staticmethod
     async def reduce(
         broker: AsyncBroker,
-        task: Callable,
+        task: Callable[..., Any],
         inputs: list[Any],
         output: str,
         initial: Any = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Reduce a list of values to a single value.
@@ -146,14 +146,14 @@ class MapReduce:
     @staticmethod
     async def map_reduce(
         broker: AsyncBroker,
-        map_task: Callable,
-        reduce_task: Callable,
+        map_task: Callable[..., Any],
+        reduce_task: Callable[..., Any],
         items: list[Any],
         map_output: str = "mapped",
         reduce_output: str = "reduced",
         map_param_name: str | None = None,
         max_parallel: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Execute map followed by reduce.
@@ -206,9 +206,9 @@ class MapReduce:
     @staticmethod
     async def _execute_task(
         broker: AsyncBroker,
-        task: Callable,
+        task: Callable[..., Any],
         inputs: dict[str, Any],
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Execute a single task via TaskIQ.
@@ -223,8 +223,8 @@ class MapReduce:
             Task result
         """
         # Create kicker
-        kicker = AsyncKicker(
-            task_name=task.task_name,
+        kicker: AsyncKicker[Any, Any] = AsyncKicker(
+            task_name=getattr(task, "task_name", "unknown"),
             broker=broker,
             labels={},
         )
@@ -241,7 +241,7 @@ class MapReduce:
         return result.return_value
 
     @staticmethod
-    def _infer_parameter_name(task: Callable) -> str:
+    def _infer_parameter_name(task: Callable[..., Any]) -> str:
         """
         Infer parameter name from task signature.
 
@@ -286,10 +286,10 @@ class PipelineMapReduce:
 
     async def map(
         self,
-        task: Callable,
+        task: Callable[..., Any],
         items: list[Any],
         output: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Add map operation to pipeline.
@@ -319,10 +319,10 @@ class PipelineMapReduce:
 
     async def reduce(
         self,
-        task: Callable,
+        task: Callable[..., Any],
         input_name: str,
         output: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Add reduce operation to pipeline.

@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pytest
 
-from taskiq_pipelines.scheduling.triggers import (
+from taskiq_flow.scheduling.triggers import (
     create_cron_trigger,
     create_date_trigger,
     create_interval_trigger,

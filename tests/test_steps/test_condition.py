@@ -1,32 +1,34 @@
 """Tests for step implementations."""
 
+from collections.abc import Callable
+
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.steps.condition import ConditionStep
-from taskiq_pipelines.steps.sequential import SequentialStep
+from taskiq_flow.steps.condition import ConditionStep
+from taskiq_flow.steps.sequential import SequentialStep
 
 
 @pytest.fixture
-def broker():
+def broker() -> InMemoryBroker:
     """Create a test broker."""
     return InMemoryBroker()
 
 
 @pytest.fixture
-def mock_task(broker):
+def mock_task(broker: InMemoryBroker) -> Callable[[int], int]:
     """Create a mock task."""
 
     @broker.task
-    def test_task(x):
+    def test_task(x: int) -> int:
         return x
 
     return test_task
 
 
-def test_condition_step_creation():
+def test_condition_step_creation() -> None:
     """Test ConditionStep creation."""
-    condition_func = lambda x: x > 0
+    condition_func: Callable[[int], bool] = lambda x: x > 0
     step = ConditionStep(
         condition=condition_func,
         task=SequentialStep(
@@ -41,7 +43,7 @@ def test_condition_step_creation():
     assert step.else_task is None
 
 
-def test_condition_step_with_else():
+def test_condition_step_with_else() -> None:
     """Test ConditionStep with else task."""
     step = ConditionStep(
         condition="value > 5",
@@ -67,7 +69,7 @@ def test_condition_step_with_else():
 # These tests focus on the condition evaluation logic instead
 
 
-def test_condition_step_eval_condition():
+def test_condition_step_eval_condition() -> None:
     """Test _eval_condition method."""
     step = ConditionStep(
         condition="value > 5",
@@ -84,7 +86,7 @@ def test_condition_step_eval_condition():
     assert step._eval_condition("len(value) == 2", [1, 2]) is True
 
 
-def test_condition_step_eval_condition_error():
+def test_condition_step_eval_condition_error() -> None:
     """Test _eval_condition with invalid expression."""
     step = ConditionStep(
         condition="invalid syntax +++",

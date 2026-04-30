@@ -3,17 +3,17 @@
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.broker.adapter import BrokerAdapter
-from taskiq_pipelines.broker.detector import BrokerDetector, BrokerType
+from taskiq_flow.broker.adapter import BrokerAdapter
+from taskiq_flow.broker.detector import BrokerDetector, BrokerType
 
 
 def test_broker_type_enum():
     """Test BrokerType enum values."""
-    assert BrokerType.REDIS == "redis"
-    assert BrokerType.RABBITMQ == "rabbitmq"
-    assert BrokerType.KAFKA == "kafka"
-    assert BrokerType.INMEMORY == "inmemory"
-    assert BrokerType.UNKNOWN == "unknown"
+    assert BrokerType.REDIS.value == "redis"
+    assert BrokerType.RABBITMQ.value == "rabbitmq"
+    assert BrokerType.KAFKA.value == "kafka"
+    assert BrokerType.INMEMORY.value == "inmemory"
+    assert BrokerType.UNKNOWN.value == "unknown"
 
 
 def test_detect_inmemory_broker():

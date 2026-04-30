@@ -1,31 +1,33 @@
 """Tests for reduce step functionality."""
 
+from collections.abc import Callable
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from taskiq import TaskiqResult
 
-from taskiq_pipelines.steps.reduce import ReduceStep
+from taskiq_flow.steps.reduce import ReduceStep
 
 
-def test_reduce_step_creation():
+def test_reduce_step_creation() -> None:
     """Test reduce step creation and configuration."""
     # Create reduce step with sum function
-    step = ReduceStep(task=None, initial=0, reduce_func="sum")  # No preprocessing task
+    step = ReduceStep(task=None, initial=0, reduce_func="sum")  # type: ignore[arg-type]
 
     assert step.initial == 0
     assert step.reduce_func == "sum"
     assert step.task is None
 
     # Test with different reduce functions
-    step_max = ReduceStep(task=None, initial=None, reduce_func="max")
+    step_max = ReduceStep(task=None, initial=None, reduce_func="max")  # type: ignore[arg-type]
     assert step_max.reduce_func == "max"
 
-    step_concat = ReduceStep(task=None, initial="", reduce_func="concat")
+    step_concat = ReduceStep(task=None, initial="", reduce_func="concat")  # type: ignore[arg-type]
     assert step_concat.reduce_func == "concat"
 
 
-def test_reduce_step_from_task():
+def test_reduce_step_from_task() -> None:
     """Test creating reduce step from task."""
     mock_task = MagicMock()
     mock_task.kicker.return_value = MagicMock()
@@ -37,9 +39,9 @@ def test_reduce_step_from_task():
     assert step.task == mock_task
 
 
-def test_reduce_step_invalid_input():
+def test_reduce_step_invalid_input() -> None:
     """Test reduce step with invalid input."""
-    step = ReduceStep(task=None, initial=0, reduce_func="sum")
+    step = ReduceStep(task=None, initial=0, reduce_func="sum")  # type: ignore[arg-type]
 
     result = TaskiqResult(
         is_err=False,

@@ -44,7 +44,7 @@ class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
             for step_data in branch_steps:
                 if isinstance(step_data, dict) and "task_name" in step_data:
                     # Create a task kicker for this step
-                    kicker = AsyncKicker(
+                    kicker: AsyncKicker[Any, Any] = AsyncKicker(
                         task_name=step_data["task_name"],
                         broker=broker,
                         labels=step_data.get("labels", {}),

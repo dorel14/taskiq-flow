@@ -1,6 +1,6 @@
 """Enhanced Pipeline class with dataflow support."""
 
-from typing import Any
+from typing import Any, overload
 
 from taskiq import AsyncBroker
 from taskiq.decor import AsyncTaskiqDecoratedTask
@@ -13,7 +13,7 @@ from taskiq_flow.map_reduce import MapReduce
 from taskiq_flow.pipeliner import Pipeline as OriginalPipeline
 
 
-class DataflowPipeline(OriginalPipeline):
+class DataflowPipeline(OriginalPipeline[Any, Any]):
     """
     Enhanced Pipeline with dataflow-based orchestration.
 
@@ -25,7 +25,7 @@ class DataflowPipeline(OriginalPipeline):
     Pipeline class while adding new dataflow capabilities.
     """
 
-    def __init__(self, broker: AsyncBroker, *args, **kwargs):
+    def __init__(self, broker: AsyncBroker, *args: Any, **kwargs: Any) -> None:
         """
         Initialize the dataflow pipeline.
 
@@ -39,7 +39,7 @@ class DataflowPipeline(OriginalPipeline):
         # Dataflow-specific attributes
         self._registry: DataflowRegistry | None = None
         self._dag: DAG | None = None
-        self._dataflow_tasks: list[AsyncTaskiqDecoratedTask] = []
+        self._dataflow_tasks: list[AsyncTaskiqDecoratedTask[Any, Any]] = []
         self._data_cache: dict[str, Any] = {}
         self._is_dataflow_built: bool = False
 
@@ -47,7 +47,7 @@ class DataflowPipeline(OriginalPipeline):
     def from_tasks(
         cls,
         broker: AsyncBroker,
-        tasks: list[AsyncTaskiqDecoratedTask],
+        tasks: list[AsyncTaskiqDecoratedTask[Any, Any]],
     ) -> "DataflowPipeline":
         """
         Create a pipeline from decorated tasks.
@@ -98,7 +98,7 @@ class DataflowPipeline(OriginalPipeline):
 
     def add_dataflow_task(
         self,
-        task: AsyncTaskiqDecoratedTask,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
     ) -> "DataflowPipeline":
         """
         Add a task to the dataflow pipeline.
@@ -115,7 +115,7 @@ class DataflowPipeline(OriginalPipeline):
 
     async def kiq_dataflow(
         self,
-        **inputs,
+        **inputs: Any,
     ) -> Any:
         """
         Execute pipeline using dataflow orchestration.
@@ -157,12 +157,12 @@ class DataflowPipeline(OriginalPipeline):
 
         return outputs
 
-    def map(
+    def map(  # type: ignore[override]
         self,
-        task: AsyncTaskiqDecoratedTask,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
         items: list[Any],
         output: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "DataflowPipeline":
         """
         Add map operation to pipeline.
@@ -203,10 +203,10 @@ class DataflowPipeline(OriginalPipeline):
 
     def reduce(
         self,
-        task: AsyncTaskiqDecoratedTask,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
         input_name: str,
         output: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "DataflowPipeline":
         """
         Add reduce operation to pipeline.
@@ -247,7 +247,7 @@ class DataflowPipeline(OriginalPipeline):
 
     async def kiq_map_reduce(
         self,
-        **inputs,
+        **inputs: Any,
     ) -> Any:
         """
         Execute pipeline with map-reduce operations.
@@ -265,32 +265,34 @@ class DataflowPipeline(OriginalPipeline):
                 track_list=tracks
             )
         """
-        results = {}
+        results: dict[str, Any] = {}
 
         # Execute map operations
         if hasattr(self, "_map_operations"):
             for op in self._map_operations:
+                op_dict: dict[str, Any] = op  # type: ignore[assignment]
                 result = await MapReduce.map(
                     self.broker,
-                    op["task"],
-                    op["items"],
-                    op["output"],
-                    **op["kwargs"],
+                    op_dict["task"],
+                    op_dict["items"],
+                    op_dict["output"],
+                    **op_dict["kwargs"],
                 )
-                results[op["output"]] = result
+                results[op_dict["output"]] = result
 
         # Execute reduce operations
         if hasattr(self, "_reduce_operations"):
             for op in self._reduce_operations:
-                input_data = results.get(op["input_name"], [])
+                op_dict_reduce: dict[str, Any] = op  # type: ignore[assignment]
+                input_data = results.get(op_dict_reduce["input_name"], [])
                 result = await MapReduce.reduce(
                     self.broker,
-                    op["task"],
+                    op_dict_reduce["task"],
                     input_data,
-                    op["output"],
-                    **op["kwargs"],
+                    op_dict_reduce["output"],
+                    **op_dict_reduce["kwargs"],
                 )
-                results[op["output"]] = result
+                results[op_dict_reduce["output"]] = result
 
         return results
 

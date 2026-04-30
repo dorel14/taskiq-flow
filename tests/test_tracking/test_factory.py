@@ -3,10 +3,10 @@
 
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.broker.detector import BrokerType
-from taskiq_pipelines.tracking.factory import TrackingStorageFactory
-from taskiq_pipelines.tracking.memory_storage import InMemoryPipelineStorage
-from taskiq_pipelines.tracking.redis_storage import RedisPipelineStorage
+from taskiq_flow.broker.detector import BrokerType
+from taskiq_flow.tracking.factory import TrackingStorageFactory
+from taskiq_flow.tracking.memory_storage import InMemoryPipelineStorage
+from taskiq_flow.tracking.redis_storage import RedisPipelineStorage
 
 
 def test_create_with_inmemory_broker():
@@ -29,10 +29,10 @@ def test_create_with_redis_broker_mock():
     broker = MockRedisBroker()
 
     with patch(
-        "taskiq_pipelines.tracking.factory.BrokerDetector.detect",
+        "taskiq_flow.tracking.factory.BrokerDetector.detect",
         return_value=BrokerType.REDIS,
     ):
-        storage = TrackingStorageFactory.create(broker, redis_url="redis://test:6379")
+        storage = TrackingStorageFactory.create(broker, redis_url="redis://test:6379")  # type: ignore[arg-type]
 
     assert isinstance(storage, RedisPipelineStorage)
 
@@ -50,11 +50,11 @@ def test_create_with_redis_broker_auto_extract():
 
     with (
         patch(
-            "taskiq_pipelines.tracking.factory.BrokerDetector.detect",
+            "taskiq_flow.tracking.factory.BrokerDetector.detect",
             return_value=BrokerType.REDIS,
         ),
         patch(
-            "taskiq_pipelines.tracking.factory.TrackingStorageFactory._extract_redis_url",
+            "taskiq_flow.tracking.factory.TrackingStorageFactory._extract_redis_url",
             return_value="redis://auto:6379",
         ),
     ):
@@ -70,7 +70,7 @@ def test_create_with_unknown_broker():
         pass
 
     broker = UnknownBroker()
-    storage = TrackingStorageFactory.create(broker)
+    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
 
     assert isinstance(storage, InMemoryPipelineStorage)
 
@@ -83,7 +83,7 @@ def test_create_with_rabbitmq_broker_no_redis():
         pass
 
     broker = MockRabbitMQBroker()
-    storage = TrackingStorageFactory.create(broker)
+    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
 
     assert isinstance(storage, InMemoryPipelineStorage)
 
@@ -98,10 +98,10 @@ def test_create_with_rabbitmq_broker_with_redis():
     broker = MockRabbitMQBroker()
 
     with patch(
-        "taskiq_pipelines.tracking.factory.BrokerDetector.detect",
+        "taskiq_flow.tracking.factory.BrokerDetector.detect",
         return_value=BrokerType.RABBITMQ,
     ):
-        storage = TrackingStorageFactory.create(broker, redis_url="redis://shared:6379")
+        storage = TrackingStorageFactory.create(broker, redis_url="redis://shared:6379")  # type: ignore[arg-type]
 
     assert isinstance(storage, RedisPipelineStorage)
 
@@ -179,10 +179,10 @@ def test_create_with_ttl():
     class MockRedisBroker:
         pass
 
-    broker = MockRedisBroker()
+    broker = MockRedisBroker()  # type: ignore[assignment]
 
     with patch(
-        "taskiq_pipelines.tracking.factory.BrokerDetector.detect",
+        "taskiq_flow.tracking.factory.BrokerDetector.detect",
         return_value=BrokerType.REDIS,
     ):
         storage = TrackingStorageFactory.create(

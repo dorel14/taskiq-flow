@@ -3,13 +3,13 @@
 
 import pytest
 
-from taskiq_pipelines.tracking.storage import PipelineStorage
+from taskiq_flow.tracking.storage import PipelineStorage
 
 
 def test_pipeline_storage_is_abstract():
     """Test that PipelineStorage is abstract and cannot be instantiated."""
     with pytest.raises(TypeError):
-        PipelineStorage()
+        PipelineStorage()  # type: ignore[abstract]
 
 
 def test_pipeline_storage_has_abstract_methods():

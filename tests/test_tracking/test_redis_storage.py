@@ -2,13 +2,13 @@
 
 import pytest
 
-from taskiq_pipelines.tracking.redis_storage import RedisPipelineStorage
+from taskiq_flow.tracking.redis_storage import RedisPipelineStorage
 
 redis = pytest.importorskip("redis")
 
 
 @pytest.fixture
-async def redis_storage():
+async def redis_storage() -> RedisPipelineStorage:
     """Create Redis storage instance."""
     # Skip if Redis is not available
     pytest.importorskip("redis")
@@ -22,7 +22,7 @@ async def redis_storage():
 
 
 @pytest.mark.asyncio
-async def test_redis_create_pipeline(redis_storage):
+async def test_redis_create_pipeline(redis_storage: RedisPipelineStorage) -> None:
     """Test creating a pipeline in Redis."""
     await redis_storage.create_pipeline("test_pipe", 2)
 
@@ -33,7 +33,7 @@ async def test_redis_create_pipeline(redis_storage):
 
 
 @pytest.mark.asyncio
-async def test_redis_pipeline_lifecycle(redis_storage):
+async def test_redis_pipeline_lifecycle(redis_storage: RedisPipelineStorage) -> None:
     """Test full pipeline lifecycle in Redis."""
     pipe_id = "redis_test_pipe"
 
@@ -59,7 +59,7 @@ async def test_redis_pipeline_lifecycle(redis_storage):
 
 
 @pytest.mark.asyncio
-async def test_redis_list_pipelines(redis_storage):
+async def test_redis_list_pipelines(redis_storage: RedisPipelineStorage) -> None:
     """Test listing pipelines in Redis."""
     # Create multiple pipelines
     for i in range(3):
@@ -71,7 +71,7 @@ async def test_redis_list_pipelines(redis_storage):
 
 
 @pytest.mark.asyncio
-async def test_redis_cleanup(redis_storage):
+async def test_redis_cleanup(redis_storage: RedisPipelineStorage) -> None:
     """Test cleanup in Redis."""
     await redis_storage.create_pipeline("cleanup_test", 1)
     await redis_storage.complete_pipeline("cleanup_test", "done")

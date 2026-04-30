@@ -4,9 +4,9 @@
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.tracking.manager import PipelineTrackingManager
-from taskiq_pipelines.tracking.memory_storage import InMemoryPipelineStorage
-from taskiq_pipelines.tracking.models import PipelineStatus
+from taskiq_flow.tracking.manager import PipelineTrackingManager
+from taskiq_flow.tracking.memory_storage import InMemoryPipelineStorage
+from taskiq_flow.tracking.models import PipelineStatus
 
 
 @pytest.fixture

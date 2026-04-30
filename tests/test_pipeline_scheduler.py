@@ -5,17 +5,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_pipelines.scheduling.scheduler import PipelineScheduler
+from taskiq_flow.scheduling.scheduler import PipelineScheduler
 
 
 @pytest.mark.asyncio
-async def test_scheduler_creation():
+async def test_scheduler_creation() -> None:
     """Test scheduler creation and configuration."""
     broker = InMemoryBroker()
 
     # Mock APScheduler to avoid import issues in tests
     with patch(
-        "taskiq_pipelines.scheduling.scheduler.AsyncIOScheduler",
+        "taskiq_flow.scheduling.scheduler.AsyncIOScheduler",
     ) as mock_scheduler:
         mock_instance = MagicMock()
         mock_scheduler.return_value = mock_instance
@@ -30,12 +30,12 @@ async def test_scheduler_creation():
         mock_instance.add_jobstore.assert_called_once()
 
 
-def test_scheduler_schedule_methods():
+def test_scheduler_schedule_methods() -> None:
     """Test that schedule methods exist and have correct signatures."""
     broker = InMemoryBroker()
 
     with patch(
-        "taskiq_pipelines.scheduling.scheduler.AsyncIOScheduler",
+        "taskiq_flow.scheduling.scheduler.AsyncIOScheduler",
     ) as mock_scheduler:
         mock_instance = MagicMock()
         mock_scheduler.return_value = mock_instance
@@ -52,12 +52,12 @@ def test_scheduler_schedule_methods():
 
 
 @pytest.mark.asyncio
-async def test_scheduler_async_methods():
+async def test_scheduler_async_methods() -> None:
     """Test async methods work correctly."""
     broker = InMemoryBroker()
 
     with patch(
-        "taskiq_pipelines.scheduling.scheduler.AsyncIOScheduler",
+        "taskiq_flow.scheduling.scheduler.AsyncIOScheduler",
     ) as mock_scheduler:
         mock_instance = AsyncMock()  # Use AsyncMock for async methods
         mock_scheduler.return_value = mock_instance

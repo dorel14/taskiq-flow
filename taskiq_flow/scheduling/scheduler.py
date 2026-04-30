@@ -200,12 +200,24 @@ class PipelineScheduler:
 
     async def remove_job(self, job_id: str) -> bool:
         """Remove a job by ID."""
-        return self.scheduler.remove_job(job_id)
+        try:
+            self.scheduler.remove_job(job_id)
+            return True
+        except Exception:
+            return False
 
     async def pause_job(self, job_id: str) -> bool:
         """Pause a job."""
-        return self.scheduler.pause_job(job_id)
+        try:
+            self.scheduler.pause_job(job_id)
+            return True
+        except Exception:
+            return False
 
     async def resume_job(self, job_id: str) -> bool:
         """Resume a job."""
-        return self.scheduler.resume_job(job_id)
+        try:
+            self.scheduler.resume_job(job_id)
+            return True
+        except Exception:
+            return False

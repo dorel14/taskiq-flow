@@ -1,15 +1,17 @@
 """Tests for branch step functionality."""
 
+from typing import Any
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from taskiq import TaskiqResult
 
-from taskiq_pipelines.steps.branch import BranchStep
+from taskiq_flow.steps.branch import BranchStep
 
 
 @pytest.mark.asyncio
-async def test_branch_step_basic_execution():
+async def test_branch_step_basic_execution() -> None:
     """Test basic branch step execution."""
     # Create mock broker
     mock_broker = AsyncMock()
@@ -28,14 +30,14 @@ async def test_branch_step_basic_execution():
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_pipelines.steps.branch as branch_module
+    import taskiq_flow.steps.branch as branch_module
 
     original_kicker = branch_module.AsyncKicker
-    branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)
+    branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
         # Create branch step with mock data
-        branches = [
+        branches: list[list[dict[str, Any]]] = [
             [
                 {
                     "task_name": "task1",
@@ -75,7 +77,7 @@ async def test_branch_step_basic_execution():
         branch_module.AsyncKicker = original_kicker
 
 
-def test_branch_step_empty_branches():
+def test_branch_step_empty_branches() -> None:
     """Test branch step with empty branches."""
     step = BranchStep(branches=[])
 
@@ -84,7 +86,7 @@ def test_branch_step_empty_branches():
 
 
 @pytest.mark.asyncio
-async def test_branch_step_error_handling():
+async def test_branch_step_error_handling() -> None:
     """Test branch step error handling."""
     # Create mock broker that raises an exception
     mock_broker = AsyncMock()
@@ -98,14 +100,14 @@ async def test_branch_step_error_handling():
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_pipelines.steps.branch as branch_module
+    import taskiq_flow.steps.branch as branch_module
 
     original_kicker = branch_module.AsyncKicker
-    branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)
+    branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
         # Create branch step with one branch
-        branches = [
+        branches: list[list[dict[str, Any]]] = [
             [
                 {
                     "task_name": "failing_task",

@@ -1,9 +1,9 @@
 """Tests for condition step security."""
 
-from taskiq_pipelines.steps.condition import ConditionStep
+from taskiq_flow.steps.condition import ConditionStep
 
 
-def test_safe_condition_evaluation():
+def test_safe_condition_evaluation() -> None:
     """Test that safe conditions work correctly."""
     step = ConditionStep(condition="", task=None)  # Dummy values for testing
 
@@ -18,7 +18,7 @@ def test_safe_condition_evaluation():
     assert step._eval_condition("str(value) == 'test'", "test") is True
 
 
-def test_unsafe_condition_evaluation():
+def test_unsafe_condition_evaluation() -> None:
     """Test that unsafe expressions are rejected."""
     step = ConditionStep(condition="", task=None)  # Dummy values for testing
 
@@ -35,7 +35,7 @@ def test_unsafe_condition_evaluation():
     assert step._eval_condition("x + y", {"x": 1, "y": 2}) is False
 
 
-def test_condition_edge_cases():
+def test_condition_edge_cases() -> None:
     """Test edge cases in condition evaluation."""
     step = ConditionStep(condition="", task=None)  # Dummy values for testing
 
@@ -48,7 +48,7 @@ def test_condition_edge_cases():
     assert step._eval_condition("value is not None", 5) is True
 
 
-def test_condition_with_complex_values():
+def test_condition_with_complex_values() -> None:
     """Test conditions with complex data structures."""
     step = ConditionStep(condition="", task=None)  # Dummy values for testing
 

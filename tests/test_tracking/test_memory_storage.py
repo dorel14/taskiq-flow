@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from taskiq_pipelines.tracking.memory_storage import InMemoryPipelineStorage
-from taskiq_pipelines.tracking.models import PipelineStatus, StepStatus
+from taskiq_flow.tracking.memory_storage import InMemoryPipelineStorage
+from taskiq_flow.tracking.models import PipelineStatus, StepStatus
 
 
 @pytest.fixture

@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
@@ -22,10 +23,10 @@ class RedisPipelineStorage(PipelineStorage):
 
     async def _retry_operation(
         self,
-        operation,
+        operation: Callable[..., Any],
         max_retries: int = 3,
         base_delay: float = 0.1,
-    ):
+    ) -> Any:
         """Execute operation with exponential backoff retry."""
         for attempt in range(max_retries):
             try:
@@ -36,11 +37,11 @@ class RedisPipelineStorage(PipelineStorage):
 
                 delay = base_delay * (2**attempt)
                 logger.warning(
-                    f"Redis operation failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {delay}s...",
+                    f"Redis operation failed (attempt {attempt + 1}/"
+                    f"{max_retries}): {e}. Retrying in {delay}s...",
                 )
                 await asyncio.sleep(delay)
-
-    """Redis-based pipeline storage."""
+        return None
 
     def __init__(
         self,
@@ -101,10 +102,9 @@ class RedisPipelineStorage(PipelineStorage):
         """Mark pipeline as started."""
         try:
             pipeline_key = f"pipe:{pipeline_id}"
-            started_at = datetime.utcnow().isoformat()
-
             started_at = datetime.now(timezone.utc).isoformat()
-            await self.redis.hset(
+
+            await self.redis.hset(  # type: ignore[call-overload]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.RUNNING.value,
@@ -122,7 +122,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(
+            await self.redis.hset(  # type: ignore[call-overload]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.COMPLETED.value,
@@ -141,7 +141,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(
+            await self.redis.hset(  # type: ignore[call-overload]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.FAILED.value,
@@ -175,7 +175,9 @@ class RedisPipelineStorage(PipelineStorage):
                 "error": None,
             }
 
-            await self.redis.lset(steps_key, step_index, json.dumps(step_data))
+            await self.redis.lset(  # type: ignore[call-overload]
+                steps_key, step_index, json.dumps(step_data)
+            )
             logger.debug(f"Started step {step_index} for pipeline {pipeline_id}")
         except Exception as e:
             logger.error(
@@ -186,28 +188,36 @@ class RedisPipelineStorage(PipelineStorage):
     async def complete_step(self, pipeline_id: str, step_index: int) -> None:
         """Mark a step as completed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(steps_key, step_index)
+        step_json = await self.redis.lindex(  # type: ignore[call-overload]
+            steps_key, step_index
+        )
         if step_json:
             step_data = json.loads(step_json)
             step_data["status"] = StepStatus.COMPLETED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
-            await self.redis.lset(steps_key, step_index, json.dumps(step_data))
+            await self.redis.lset(  # type: ignore[call-overload]
+                steps_key, step_index, json.dumps(step_data)
+            )
 
     async def fail_step(self, pipeline_id: str, step_index: int, error: str) -> None:
         """Mark a step as failed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(steps_key, step_index)
+        step_json = await self.redis.lindex(  # type: ignore[call-overload]
+            steps_key, step_index
+        )
         if step_json:
             step_data = json.loads(step_json)
             step_data["status"] = StepStatus.FAILED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
             step_data["error"] = error
-            await self.redis.lset(steps_key, step_index, json.dumps(step_data))
+            await self.redis.lset(  # type: ignore[call-overload]
+                steps_key, step_index, json.dumps(step_data)
+            )
 
     async def get_pipeline_status(self, pipeline_id: str) -> PipelineStatusInfo | None:
         """Get status of a pipeline."""
 
-        async def _get_status():
+        async def _get_status() -> Any:
             return await self._get_pipeline_status_impl(pipeline_id)
 
         try:
@@ -226,7 +236,9 @@ class RedisPipelineStorage(PipelineStorage):
         pipeline_key = f"pipe:{pipeline_id}"
         steps_key = f"pipe:{pipeline_id}:steps"
 
-        pipeline_data = await self.redis.hgetall(pipeline_key)
+        pipeline_data = await self.redis.hgetall(  # type: ignore[call-overload]
+            pipeline_key
+        )
         if not pipeline_data:
             logger.debug(f"Pipeline {pipeline_id} not found")
             return None
@@ -234,8 +246,10 @@ class RedisPipelineStorage(PipelineStorage):
         # Decode bytes to strings
         pipeline_data = {k.decode(): v.decode() for k, v in pipeline_data.items()}
 
-        steps_json = await self.redis.lrange(steps_key, 0, -1)
-        steps = []
+        steps_json = await self.redis.lrange(  # type: ignore[call-overload]
+            steps_key, 0, -1
+        )
+        steps: list[StepStatusInfo] = []
         for s in steps_json:
             if s:
                 try:
@@ -275,7 +289,7 @@ class RedisPipelineStorage(PipelineStorage):
             finished_at = None
 
         # Parse result with error handling
-        result = None
+        result: Any = None
         if pipeline_data.get("result"):
             try:
                 result = json.loads(pipeline_data["result"])

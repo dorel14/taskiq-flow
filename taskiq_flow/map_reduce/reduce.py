@@ -10,7 +10,7 @@ from taskiq_flow.map_reduce import MapReduce
 
 async def reduce(
     broker: AsyncBroker,
-    task: Callable,
+    task: Callable[..., Any],
     inputs: list[Any],
     output: str,
     initial: Any = None,

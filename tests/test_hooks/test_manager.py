@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from taskiq_pipelines.hooks.events import PipelineStartEvent
-from taskiq_pipelines.hooks.manager import HookManager
+from taskiq_flow.hooks.events import PipelineStartEvent
+from taskiq_flow.hooks.manager import HookManager
 
 
 @pytest.fixture

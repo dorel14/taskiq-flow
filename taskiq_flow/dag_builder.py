@@ -46,7 +46,7 @@ class DAGBuilder:
 
     @staticmethod
     def from_callable_tasks(
-        tasks: list[Callable],
+        tasks: list[Callable[..., Any]],
         registry: DataflowRegistry | None = None,
     ) -> DAG:
         """
@@ -108,7 +108,7 @@ class DAGBuilder:
 
     @staticmethod
     def _register_callable_task(
-        task: Callable,
+        task: Callable[..., Any],
         registry: DataflowRegistry,
     ) -> None:
         """
@@ -152,7 +152,7 @@ class DAGBuilder:
         return task.task_name
 
     @staticmethod
-    def _infer_inputs(task: AsyncTaskiqDecoratedTask) -> list[str]:
+    def _infer_inputs(task: AsyncTaskiqDecoratedTask[Any, Any]) -> list[str]:
         """
         Infer input names from task signature.
 
@@ -176,18 +176,18 @@ class DAGBuilder:
             # Skip 'self' and 'cls' parameters
             input_names = []
             for param in params:
-                if param.name not in ("self", "cls"):
-                    # Check if it has a default value
-                    # Parameters without defaults are required inputs
-                    if param.default is inspect.Parameter.empty:
-                        input_names.append(param.name)
+                if (
+                    param.name not in ("self", "cls")
+                    and param.default is inspect.Parameter.empty
+                ):
+                    input_names.append(param.name)
 
             return input_names
         except (AttributeError, TypeError, ValueError):
             return []
 
     @staticmethod
-    def _infer_inputs_from_callable(task: Callable) -> list[str]:
+    def _infer_inputs_from_callable(task: Callable[..., Any]) -> list[str]:
         """
         Infer input names from a callable.
 
@@ -201,11 +201,11 @@ class DAGBuilder:
             # Skip 'self' and 'cls' parameters
             input_names = []
             for param in params:
-                if param.name not in ("self", "cls"):
-                    # Check if it has a default value
-                    # Parameters without defaults are required inputs
-                    if param.default is inspect.Parameter.empty:
-                        input_names.append(param.name)
+                if (
+                    param.name not in ("self", "cls")
+                    and param.default is inspect.Parameter.empty
+                ):
+                    input_names.append(param.name)
 
             return input_names
         except (AttributeError, TypeError):
@@ -229,7 +229,7 @@ class DAGBuilder:
         try:
             dag.topological_sort()
         except ValueError as e:
-            raise ValueError(f"Invalid DAG: {e}")
+            raise ValueError(f"Invalid DAG: {e}") from e
 
         # Check for disconnected nodes
         if len(dag.nodes) > 1 and not dag.edges:
@@ -246,7 +246,7 @@ class PipelineDAGBuilder(DAGBuilder):
     registered tasks.
     """
 
-    def __init__(self, pipeline: Any):
+    def __init__(self, pipeline: Any) -> None:
         """
         Initialize the builder.
 
