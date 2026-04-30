@@ -1,7 +1,6 @@
 """Tests for Redis pipeline storage."""
 
 import pytest
-from datetime import datetime
 
 from taskiq_pipelines.tracking.redis_storage import RedisPipelineStorage
 

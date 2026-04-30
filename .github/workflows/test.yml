@@ -1,4 +1,4 @@
-name: Testing taskiq-pipelines
+name: Testing taskiq-flow
 
 on: pull_request
 

@@ -1,28 +1,38 @@
-"""Quickstart example for taskiq-pipelines."""
+"""Quickstart example for taskiq-flow."""
 
-from taskiq_redis import RedisBroker
+from taskiq import AsyncBroker, InMemoryBroker
+from taskiq_redis import RedisStreamBroker
 
-from taskiq_pipelines import Pipeline
+from taskiq_flow import Pipeline
+
+# Create broker
+try:
+    broker: AsyncBroker = RedisStreamBroker("redis://localhost:6379")
+except Exception as e:
+    print(f"Error creating RedisStreamBroker: {e}")  # noqa: T201
+    broker = InMemoryBroker()
 
 
 # Define some tasks
-@taskiq.task
+@broker.task
 async def add_one(x: int) -> int:
+    """Add one to the input."""
     return x + 1
 
-@taskiq.task
+
+@broker.task
 async def multiply_by_two(x: int) -> int:
+    """Multiply the input by two."""
     return x * 2
 
-@taskiq.task
+
+@broker.task
 async def print_result(x: int) -> None:
-    print(f"Final result: {x}")
+    """Print the final result."""
 
 
-async def main():
-    # Create broker
-    broker = RedisBroker("redis://localhost:6379")
-
+async def main() -> None:
+    """Run the quickstart example."""
     # Create pipeline
     pipeline = (
         Pipeline(broker)
@@ -33,13 +43,8 @@ async def main():
 
     # Execute pipeline
     result = await pipeline.kiq(5)
-    print(f"Pipeline task ID: {result.task_id}")
+    task_id = result.task_id
 
     # Wait for completion
     await result.wait_result()
-    print("Pipeline completed!")
-
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    _ = task_id

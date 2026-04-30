@@ -1,13 +1,13 @@
 [project]
-name = "taskiq-pipelines"
-description = "Taskiq pipelines for task chaining."
+name = "taskiq-flow"
+description = "Taskiq flow for task chaining."
 readme = "README.md"
 requires-python = ">=3.10,<4"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
-maintainers = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
-keywords = ["async", "distributed", "pipelines", "taskiq", "tasks"]
+authors = [{ name = "David Orel", email = "d.orel@free.fr" }]
+maintainers = [{ name = "David Orel", email = "d.orel@free.fr" }]
+keywords = ["async", "distributed", "pipelines", "dataflow", "taskiq", "tasks"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -25,27 +25,26 @@ classifiers = [
 ]
 version = "0.2.0"
 dependencies = [
-  "apscheduler>=3.11.2",
+  "apscheduler[sqlalchemy]>=3.11.2",
   "chanx>=0.13.3",
-  "isort>=8.0.1",
-  "mypy>=1.20.2",
+
+  "picows>=1.19.0",
   "pydantic>=2,<3",
   "redis>=5.3.1",
-  "ruff>=0.15.0",
   "taskiq>=0.11.12,<1",
   "taskiq-aio-kafka>=0.3.0",
+  "taskiq-aio-pika>=0.6.0",
   "taskiq-redis>=1.0.9",
 ]
 
 [project.optional-dependencies]
-websocket = ["chanx>=0.1.0"]
 scheduler = ["apscheduler>=3.10,<4"]
 redis = ["redis>=5.0,<6"]
-all = ["chanx", "apscheduler", "redis"]
+all = ["apscheduler", "redis"]
 
 [project.urls]
-Homepage = "https://github.com/taskiq-python/taskiq-pipelines"
-Repository = "https://github.com/taskiq-python/taskiq-pipelines"
+Homepage = "https://github.com/taskiq-python/taskiq-flow"
+Repository = "https://github.com/taskiq-python/taskiq-flow"
 
 
 
@@ -59,6 +58,9 @@ dev = [
   "pytest-cov>=7.1.0",
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
+  "isort>=8.0.1",
+  "jedi>=0.19.2",
+  "mypy>=1.20.2",
 ]
 
 [build-system]

@@ -1,0 +1,22 @@
+"""Pipeline context utilities."""
+
+from typing import Any
+
+from taskiq import AsyncBroker
+
+
+class PipelineContext:
+    """Context for accessing results from previous pipeline steps."""
+
+    def __init__(self, broker: AsyncBroker) -> None:
+        self.broker = broker
+
+    async def get_result(self, task_id: str) -> Any:
+        """Get result of a previous task by task_id."""
+        try:
+            result = await self.broker.result_backend.get_result(task_id)
+        except KeyError:
+            raise RuntimeError(f"Task {task_id} not found or not ready")
+        if result.is_err:
+            raise RuntimeError(f"Task {task_id} failed: {result.error}")
+        return result.return_value

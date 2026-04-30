@@ -1,6 +1,5 @@
 """Tests for parallel utilities."""
 
-
 import pytest
 from taskiq import InMemoryBroker
 
@@ -17,6 +16,7 @@ def broker():
 @pytest.fixture
 def mock_task(broker):
     """Create mock task."""
+
     @broker.task
     def test_task(x):
         return x * 2

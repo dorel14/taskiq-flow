@@ -23,6 +23,7 @@ def test_hook_manager_creation():
 
 def test_register_callback(hook_manager):
     """Test registering a callback."""
+
     def callback(event):
         pass
 
@@ -33,6 +34,7 @@ def test_register_callback(hook_manager):
 
 def test_register_async_callback(hook_manager):
     """Test registering an async callback."""
+
     async def async_callback(event):
         pass
 
@@ -42,6 +44,7 @@ def test_register_async_callback(hook_manager):
 
 def test_unregister_callback(hook_manager):
     """Test unregistering a callback."""
+
     def callback(event):
         pass
 
@@ -54,6 +57,7 @@ def test_unregister_callback(hook_manager):
 
 def test_unregister_nonexistent_callback(hook_manager):
     """Test unregistering a callback that doesn't exist."""
+
     def callback(event):
         pass
 
@@ -107,6 +111,7 @@ async def test_dispatch_no_callbacks(hook_manager):
 @pytest.mark.asyncio
 async def test_dispatch_failing_callback(hook_manager):
     """Test dispatching when callback fails."""
+
     def failing_callback(event):
         raise ValueError("Callback failed")
 
@@ -122,6 +127,7 @@ async def test_dispatch_failing_callback(hook_manager):
 async def test_dispatch_mixed_sync_async_callbacks(hook_manager):
     """Test dispatching to mix of sync and async callbacks."""
     sync_callback = AsyncMock()  # Mock to make it awaitable
+
     async def async_callback(event):
         pass
 

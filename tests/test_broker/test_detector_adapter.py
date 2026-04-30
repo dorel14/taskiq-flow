@@ -29,6 +29,7 @@ def test_detect_inmemory_broker():
 
 def test_detect_unknown_broker():
     """Test detection of unknown broker type."""
+
     class UnknownBroker:
         pass
 

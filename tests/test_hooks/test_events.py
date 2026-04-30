@@ -93,10 +93,27 @@ def test_events_have_timestamps():
     """Test that all events have timestamps."""
     events = [
         PipelineStartEvent(pipeline_id="test"),
-        StepStartEvent(pipeline_id="test", step_index=0, task_name="task", task_id="id"),
-        StepCompleteEvent(pipeline_id="test", step_index=0, task_name="task", task_id="id", result=None),
+        StepStartEvent(
+            pipeline_id="test",
+            step_index=0,
+            task_name="task",
+            task_id="id",
+        ),
+        StepCompleteEvent(
+            pipeline_id="test",
+            step_index=0,
+            task_name="task",
+            task_id="id",
+            result=None,
+        ),
         PipelineCompleteEvent(pipeline_id="test", result=None),
-        StepErrorEvent(pipeline_id="test", step_index=0, task_name="task", task_id="id", error="err"),
+        StepErrorEvent(
+            pipeline_id="test",
+            step_index=0,
+            task_name="task",
+            task_id="id",
+            error="err",
+        ),
         PipelineErrorEvent(pipeline_id="test", error="err"),
     ]
 

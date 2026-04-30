@@ -1,0 +1,68 @@
+"""Broker type detection."""
+
+from enum import StrEnum
+
+from taskiq import AsyncBroker
+from taskiq.brokers.inmemory_broker import InMemoryBroker
+from taskiq.brokers.shared_broker import AsyncSharedBroker
+
+try:
+    from taskiq_redis import RedisStreamBroker as RedisBroker  # type: ignore
+
+    HAS_REDIS = True
+except ImportError:
+    HAS_REDIS = False
+
+try:
+    from taskiq_aio_pika import AioPikaBroker as RabbitBroker
+
+    HAS_RABBITMQ = True
+except ImportError:
+    HAS_RABBITMQ = False
+
+try:
+    from taskiq_aio_kafka import AioKafkaBroker as KafkaBroker
+
+    HAS_KAFKA = True
+except ImportError:
+    HAS_KAFKA = False
+
+
+class BrokerType(StrEnum):
+    """Supported broker types."""
+
+    REDIS = "redis"
+    RABBITMQ = "rabbitmq"
+    KAFKA = "kafka"
+    INMEMORY = "inmemory"
+    UNKNOWN = "unknown"
+
+
+class BrokerDetector:
+    """Detect broker type from AsyncBroker instance."""
+
+    @staticmethod
+    def detect(broker: AsyncBroker) -> BrokerType:
+        """Detect the type of the given broker."""
+        # Handle SharedBroker (unwrap to actual broker)
+        if isinstance(broker, AsyncSharedBroker):
+            broker = getattr(broker, "broker", broker)  # type: ignore
+
+        # Try Redis
+        if HAS_REDIS and isinstance(broker, RedisBroker):
+            return BrokerType.REDIS
+
+        # Try RabbitMQ
+        if HAS_RABBITMQ and isinstance(broker, RabbitBroker):
+            return BrokerType.RABBITMQ
+
+        # Try Kafka
+        if HAS_KAFKA and isinstance(broker, KafkaBroker):
+            return BrokerType.KAFKA
+
+        # InMemory
+        if isinstance(broker, InMemoryBroker):
+            return BrokerType.INMEMORY
+
+        # Unknown
+        return BrokerType.UNKNOWN

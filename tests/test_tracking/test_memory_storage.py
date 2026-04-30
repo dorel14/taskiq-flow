@@ -1,7 +1,7 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for pipeline storage implementations."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -156,7 +156,7 @@ async def test_cleanup_old(storage) -> None:
 
     # Manually set finished_at to old time
     status = await storage.get_pipeline_status("test_pipe")
-    old_time = datetime.utcnow() - timedelta(hours=2)
+    old_time = datetime.now(timezone.utc) - timedelta(hours=2)
     status.finished_at = old_time
 
     # Cleanup with 1 second TTL (finished_at is 2 hours old, so it should be removed)

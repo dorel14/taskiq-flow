@@ -1,2 +1,0 @@
-"""WebSocket bridge for hooks."""
-
