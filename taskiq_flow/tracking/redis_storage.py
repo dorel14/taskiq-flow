@@ -176,7 +176,7 @@ class RedisPipelineStorage(PipelineStorage):
             }
 
             await self.redis.lset(  # type: ignore[call-overload]
-                steps_key, step_index, json.dumps(step_data)
+                steps_key, step_index, json.dumps(step_data),
             )
             logger.debug(f"Started step {step_index} for pipeline {pipeline_id}")
         except Exception as e:
@@ -189,21 +189,21 @@ class RedisPipelineStorage(PipelineStorage):
         """Mark a step as completed."""
         steps_key = f"pipe:{pipeline_id}:steps"
         step_json = await self.redis.lindex(  # type: ignore[call-overload]
-            steps_key, step_index
+            steps_key, step_index,
         )
         if step_json:
             step_data = json.loads(step_json)
             step_data["status"] = StepStatus.COMPLETED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
             await self.redis.lset(  # type: ignore[call-overload]
-                steps_key, step_index, json.dumps(step_data)
+                steps_key, step_index, json.dumps(step_data),
             )
 
     async def fail_step(self, pipeline_id: str, step_index: int, error: str) -> None:
         """Mark a step as failed."""
         steps_key = f"pipe:{pipeline_id}:steps"
         step_json = await self.redis.lindex(  # type: ignore[call-overload]
-            steps_key, step_index
+            steps_key, step_index,
         )
         if step_json:
             step_data = json.loads(step_json)
@@ -211,7 +211,7 @@ class RedisPipelineStorage(PipelineStorage):
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
             step_data["error"] = error
             await self.redis.lset(  # type: ignore[call-overload]
-                steps_key, step_index, json.dumps(step_data)
+                steps_key, step_index, json.dumps(step_data),
             )
 
     async def get_pipeline_status(self, pipeline_id: str) -> PipelineStatusInfo | None:
@@ -237,7 +237,7 @@ class RedisPipelineStorage(PipelineStorage):
         steps_key = f"pipe:{pipeline_id}:steps"
 
         pipeline_data = await self.redis.hgetall(  # type: ignore[call-overload]
-            pipeline_key
+            pipeline_key,
         )
         if not pipeline_data:
             logger.debug(f"Pipeline {pipeline_id} not found")
@@ -247,7 +247,7 @@ class RedisPipelineStorage(PipelineStorage):
         pipeline_data = {k.decode(): v.decode() for k, v in pipeline_data.items()}
 
         steps_json = await self.redis.lrange(  # type: ignore[call-overload]
-            steps_key, 0, -1
+            steps_key, 0, -1,
         )
         steps: list[StepStatusInfo] = []
         for s in steps_json:

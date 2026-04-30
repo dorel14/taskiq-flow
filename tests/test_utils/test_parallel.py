@@ -28,7 +28,7 @@ def mock_task(broker: InMemoryBroker) -> AsyncKicker[[int], int]:
 
 
 def test_parallel_map_creation(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[int], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[int], int],
 ) -> None:
     """Test parallel_map creates a pipeline."""
     pipeline: Pipeline[Any, list[int]] = parallel_map(mock_task, [1, 2, 3])  # type: ignore[arg-type]
@@ -37,7 +37,7 @@ def test_parallel_map_creation(
 
 
 def test_parallel_map_with_kwargs(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[int], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[int], int],
 ) -> None:
     """Test parallel_map with additional kwargs."""
     pipeline: Pipeline[Any, list[int]] = parallel_map(mock_task, [1, 2], multiplier=3)  # type: ignore[arg-type]
@@ -45,7 +45,7 @@ def test_parallel_map_with_kwargs(
 
 
 def test_chunked_map_creation(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
     """Test chunked_map creates a pipeline."""
     items = list(range(10))
@@ -56,7 +56,7 @@ def test_chunked_map_creation(
 
 
 def test_chunked_map_chunk_size(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
     """Test chunked_map with different chunk sizes."""
     items = [1, 2, 3, 4, 5]
@@ -71,7 +71,7 @@ def test_chunked_map_chunk_size(
 
 
 def test_chunked_map_auto_concurrency(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
     """Test chunked_map with auto concurrency."""
     items = list(range(20))
@@ -81,7 +81,7 @@ def test_chunked_map_auto_concurrency(
 
 
 def test_chunked_map_max_concurrency(
-    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int]
+    broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
     """Test chunked_map with max concurrency (currently not implemented in pipeline creation)."""
     items = list(range(20))

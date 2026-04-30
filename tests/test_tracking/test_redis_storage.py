@@ -18,8 +18,7 @@ async def redis_storage() -> RedisPipelineStorage:
         await storage.redis.ping()
         return storage
     except Exception:
-        pytest.skip("Redis not available for testing")
-        return None  # Add explicit return for type checker
+        pytest.skip("Redis not available for testing") # Add explicit return for type checker
 
 
 @pytest.mark.asyncio

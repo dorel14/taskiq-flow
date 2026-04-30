@@ -1,7 +1,7 @@
 """Trigger helpers for scheduling."""
 
 from datetime import datetime
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 try:
     from apscheduler.triggers.cron import CronTrigger
@@ -16,7 +16,7 @@ except ImportError:
     APSCHEDULER_AVAILABLE = False
 
 # Type alias for trigger types
-TriggerType: TypeAlias = Union[CronTrigger, DateTrigger, IntervalTrigger, None]
+TriggerType: TypeAlias = CronTrigger | DateTrigger | IntervalTrigger | None
 
 
 def create_cron_trigger(

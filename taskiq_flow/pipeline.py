@@ -1,6 +1,6 @@
 """Enhanced Pipeline class with dataflow support."""
 
-from typing import Any, overload
+from typing import Any
 
 from taskiq import AsyncBroker
 from taskiq.decor import AsyncTaskiqDecoratedTask
