@@ -1,12 +1,13 @@
 """Tests for reduce step functionality."""
 
+import asyncio
 from collections.abc import Callable
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from taskiq import TaskiqResult
 
-from taskiq_flow.steps.reduce import ReduceStep
+from taskiq_flow.steps.reduce import AbortPipeline, ReduceStep
 
 
 def test_reduce_step_creation() -> None:
@@ -51,9 +52,7 @@ def test_reduce_step_invalid_input() -> None:
     )
 
     # Should raise AbortPipeline for non-iterable input
-    with pytest.raises(Exception):  # AbortPipeline exception
-        import asyncio
-
+    with pytest.raises(AbortPipeline):
         asyncio.run(
             step.act(AsyncMock(), 1, "parent_task", "task_id", "pipe_data", result),
         )

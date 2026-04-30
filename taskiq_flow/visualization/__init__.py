@@ -118,11 +118,11 @@ class DAGVisualizer:
         """
         try:
             import networkx as nx
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "NetworkX is required for to_networkx(). "
                 "Install with: pip install networkx",
-            )
+            ) from err
 
         graph = nx.DiGraph()
 

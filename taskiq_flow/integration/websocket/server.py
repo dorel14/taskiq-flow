@@ -41,9 +41,7 @@ class PipelineWebSocketListener(WSListener):
                     task = asyncio.create_task(
                         self.server.add_client(pipeline_id, transport),
                     )
-                    task.add_done_callback(
-                        lambda t: None if t.exception() is None else None,
-                    )
+                    task.add_done_callback(lambda t: None)
                     logger.info("Client subscribed to pipeline %s", pipeline_id)
             except (json.JSONDecodeError, KeyError):
                 logger.warning("Invalid subscription message")
@@ -52,9 +50,7 @@ class PipelineWebSocketListener(WSListener):
                 task = asyncio.create_task(
                     self.server.remove_client(self.pipeline_id, transport),
                 )
-                task.add_done_callback(
-                    lambda t: None if t.exception() is None else None,
-                )
+                task.add_done_callback(lambda t: None)
                 logger.info("Client unsubscribed from pipeline %s", self.pipeline_id)
             transport.send_close(frame.get_close_code(), frame.get_close_message())
             transport.disconnect()

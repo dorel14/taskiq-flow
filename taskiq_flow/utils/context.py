@@ -15,8 +15,8 @@ class PipelineContext:
         """Get result of a previous task by task_id."""
         try:
             result = await self.broker.result_backend.get_result(task_id)
-        except KeyError:
-            raise RuntimeError(f"Task {task_id} not found or not ready")
+        except KeyError as err:
+            raise RuntimeError(f"Task {task_id} not found or not ready") from err
         if result.is_err:
             raise RuntimeError(f"Task {task_id} failed: {result.error}")
         return result.return_value
