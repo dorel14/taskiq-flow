@@ -181,7 +181,7 @@ async def test_group_step_error_handling() -> None:
     mock_broker = AsyncMock()
 
     # Make get_result return different results for different task IDs
-    async def get_result_side_effect(task_id: str) -> TaskiqResult:
+    async def get_result_side_effect(task_id: str) -> TaskiqResult[Any]:
         if task_id == "test_task_id_1":
             return TaskiqResult(
                 is_err=False,

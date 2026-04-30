@@ -316,12 +316,12 @@ class TestDAGBuilder:
 class TestDataflowPipeline:
     """Tests for DataflowPipeline."""
 
-    def test_create_pipeline(self, broker):
+    def test_create_pipeline(self, broker: InMemoryBroker) -> None:
         """Test creating a dataflow pipeline."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: str) -> str:
             return input1
 
         pipeline = DataflowPipeline.from_tasks(broker, [task1])
@@ -406,6 +406,7 @@ class TestIntegration:
 
         pipeline = DataflowPipeline.from_tasks(broker, [double, square])
 
+        assert pipeline._dag is not None
         # Verify DAG structure
         assert len(pipeline._dag.nodes) == 2
         assert len(pipeline._dag.edges) == 1
@@ -434,6 +435,7 @@ class TestIntegration:
 
         pipeline = DataflowPipeline.from_tasks(broker, [task_a, task_b, task_c])
 
+        assert pipeline._dag is not None
         # Verify DAG structure
         pipeline._dag.compute_levels()
 
