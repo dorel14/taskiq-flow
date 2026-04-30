@@ -78,7 +78,9 @@ def test_filter_step_from_kicker(broker):
     """Test FilterStep.from_task with AsyncKicker."""
     from taskiq.kicker import AsyncKicker
 
-    kicker = AsyncKicker(task_name="test", broker=broker, labels={"label": "val"})
+    kicker: AsyncKicker[[None], None] = AsyncKicker(
+        task_name="test", broker=broker, labels={"label": "val"}
+    )
     step = FilterStep.from_task(
         kicker,
         param_name=None,

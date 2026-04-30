@@ -1,7 +1,6 @@
 """Tests for group step functionality."""
 
 from typing import Any
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -30,7 +29,7 @@ async def test_group_step_basic_execution() -> None:
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_flow.steps.group as group_module
+    import taskiq_flow.steps.group as group_module  # noqa: PLC0415
 
     original_kicker = group_module.AsyncKicker
     group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
@@ -78,7 +77,7 @@ async def test_group_step_basic_execution() -> None:
 
     finally:
         # Restore original import
-        group_module.AsyncKicker = original_kicker
+        group_module.AsyncKicker = original_kicker  # type: ignore[misc]
 
 
 def test_group_step_creation() -> None:
@@ -130,13 +129,13 @@ async def test_group_step_with_param_names() -> None:
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_flow.steps.group as group_module
+    import taskiq_flow.steps.group as group_module  # noqa: PLC0415
 
     original_kicker = group_module.AsyncKicker
     group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
 
     try:
-        # Create group step with parameter names
+        # Create group step with multiple tasks
         tasks: list[dict[str, Any]] = [
             {
                 "task_name": "task1",
@@ -171,7 +170,7 @@ async def test_group_step_with_param_names() -> None:
 
     finally:
         # Restore original import
-        group_module.AsyncKicker = original_kicker
+        group_module.AsyncKicker = original_kicker  # type: ignore[misc]
 
 
 @pytest.mark.asyncio
@@ -212,7 +211,7 @@ async def test_group_step_error_handling() -> None:
     mock_kicker.kiq.side_effect = kiq_side_effect
 
     # Mock the AsyncKicker import
-    import taskiq_flow.steps.group as group_module
+    import taskiq_flow.steps.group as group_module  # noqa: PLC0415
 
     original_kicker = group_module.AsyncKicker
     group_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
@@ -250,10 +249,10 @@ async def test_group_step_error_handling() -> None:
         # Verify that the result was updated with list containing None for failed task
         assert isinstance(result.return_value, list)
         assert len(result.return_value) == 2
-        # The first task should have succeeded, but due to the mock setup,
-        # both tasks might fail because of the side effect
-        # The important thing is that we have 2 results and no exception was raised
+    # The first task should have succeeded, but due to the mock setup,
+    # both tasks might fail because of the side effect
+    # The important thing is that we have 2 results and no exception was raised
 
     finally:
         # Restore original import
-        group_module.AsyncKicker = original_kicker
+        group_module.AsyncKicker = original_kicker  # type: ignore[misc]

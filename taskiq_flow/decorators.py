@@ -157,10 +157,10 @@ def pipeline_task_legacy(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        setattr(func, "_pipeline_task", True)
-        setattr(func, "_pipeline_output", output)
-        setattr(func, "_pipeline_inputs", inputs)
-        setattr(func, "_pipeline_retries", retries)
+        setattr(func, "_pipeline_task", True)  # noqa: B010
+        setattr(func, "_pipeline_output", output)  # noqa: B010
+        setattr(func, "_pipeline_inputs", inputs)  # noqa: B010
+        setattr(func, "_pipeline_retries", retries)  # noqa: B010
 
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -169,10 +169,10 @@ def pipeline_task_legacy(
             return func(*args, **kwargs)
 
         # Attach metadata to wrapper too
-        setattr(async_wrapper, "_pipeline_task", True)
-        setattr(async_wrapper, "_pipeline_output", output)
-        setattr(async_wrapper, "_pipeline_inputs", inputs)
-        setattr(async_wrapper, "_pipeline_retries", retries)
+        setattr(async_wrapper, "_pipeline_task", True)  # noqa: B010
+        setattr(async_wrapper, "_pipeline_output", output)  # noqa: B010
+        setattr(async_wrapper, "_pipeline_inputs", inputs)  # noqa: B010
+        setattr(async_wrapper, "_pipeline_retries", retries)  # noqa: B010
 
         return async_wrapper
 

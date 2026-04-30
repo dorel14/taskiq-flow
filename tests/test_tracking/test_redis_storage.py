@@ -54,6 +54,7 @@ async def test_redis_pipeline_lifecycle(redis_storage: RedisPipelineStorage) -> 
 
     # Verify
     status = await redis_storage.get_pipeline_status(pipe_id)
+    assert status is not None
     assert status.status.name == "COMPLETED"
     assert status.result == "success"
 

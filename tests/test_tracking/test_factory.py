@@ -17,7 +17,7 @@ def test_create_with_inmemory_broker():
     assert isinstance(storage, InMemoryPipelineStorage)
 
 
-def test_create_with_redis_broker_mock():
+def test_create_with_redis_broker_mock() -> None:
     """Test creating storage with RedisBroker (mocked)."""
     from unittest.mock import patch
 
@@ -58,7 +58,7 @@ def test_create_with_redis_broker_auto_extract():
             return_value="redis://auto:6379",
         ),
     ):
-        storage = TrackingStorageFactory.create(broker)
+        storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
 
     assert isinstance(storage, RedisPipelineStorage)
 

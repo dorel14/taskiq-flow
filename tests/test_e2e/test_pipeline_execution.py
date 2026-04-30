@@ -221,7 +221,9 @@ async def test_e2e_cleanup(e2e_setup):
     await asyncio.sleep(0.1)
 
     # Cleanup old data with very short TTL
-    cleaned = await tracking.cleanup(ttl_seconds=0)  # TTL of 0 means cleanup everything finished
+    cleaned = await tracking.cleanup(
+        ttl_seconds=0
+    )  # TTL of 0 means cleanup everything finished
     assert cleaned >= 1
 
     # Pipeline should be gone

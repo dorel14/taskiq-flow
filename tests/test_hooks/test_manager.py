@@ -9,22 +9,22 @@ from taskiq_flow.hooks.manager import HookManager
 
 
 @pytest.fixture
-def hook_manager():
+def hook_manager() -> HookManager:
     """Create a hook manager instance."""
     return HookManager()
 
 
-def test_hook_manager_creation():
+def test_hook_manager_creation() -> None:
     """Test HookManager creation."""
     manager = HookManager()
     assert manager._callbacks == {}
     assert manager._lock is not None
 
 
-def test_register_callback(hook_manager):
+def test_register_callback(hook_manager: HookManager) -> None:
     """Test registering a callback."""
 
-    def callback(event):
+    def callback(event: object) -> None:
         pass
 
     hook_manager.register("PipelineStartEvent", callback)
@@ -32,20 +32,20 @@ def test_register_callback(hook_manager):
     assert callback in hook_manager._callbacks["PipelineStartEvent"]
 
 
-def test_register_async_callback(hook_manager):
+def test_register_async_callback(hook_manager: HookManager) -> None:
     """Test registering an async callback."""
 
-    async def async_callback(event):
+    async def async_callback(event: object) -> None:
         pass
 
     hook_manager.register("PipelineStartEvent", async_callback)
     assert async_callback in hook_manager._callbacks["PipelineStartEvent"]
 
 
-def test_unregister_callback(hook_manager):
+def test_unregister_callback(hook_manager: HookManager) -> None:
     """Test unregistering a callback."""
 
-    def callback(event):
+    def callback(event: object) -> None:
         pass
 
     hook_manager.register("PipelineStartEvent", callback)
@@ -55,13 +55,13 @@ def test_unregister_callback(hook_manager):
     assert callback not in hook_manager._callbacks["PipelineStartEvent"]
 
 
-def test_unregister_nonexistent_callback(hook_manager):
+def test_unregister_nonexistent_callback(hook_manager: HookManager) -> None:
     """Test unregistering a callback that doesn't exist."""
 
-    def callback(event):
+    def callback(event: object) -> None:
         pass
 
-    def other_callback(event):
+    def other_callback(event: object) -> None:
         pass
 
     hook_manager.register("PipelineStartEvent", callback)
@@ -72,7 +72,7 @@ def test_unregister_nonexistent_callback(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_event(hook_manager):
+async def test_dispatch_event(hook_manager: HookManager) -> None:
     """Test dispatching an event."""
     callback_mock = AsyncMock()
     hook_manager.register("PipelineStartEvent", callback_mock)
@@ -84,7 +84,7 @@ async def test_dispatch_event(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_multiple_callbacks(hook_manager):
+async def test_dispatch_multiple_callbacks(hook_manager: HookManager) -> None:
     """Test dispatching to multiple callbacks."""
     callback1 = AsyncMock()
     callback2 = AsyncMock()
@@ -100,7 +100,7 @@ async def test_dispatch_multiple_callbacks(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_no_callbacks(hook_manager):
+async def test_dispatch_no_callbacks(hook_manager: HookManager) -> None:
     """Test dispatching when no callbacks registered."""
     event = PipelineStartEvent(pipeline_id="test_pipe")
 
@@ -109,10 +109,10 @@ async def test_dispatch_no_callbacks(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_failing_callback(hook_manager):
+async def test_dispatch_failing_callback(hook_manager: HookManager) -> None:
     """Test dispatching when callback fails."""
 
-    def failing_callback(event):
+    def failing_callback(event: object) -> None:
         raise ValueError("Callback failed")
 
     hook_manager.register("PipelineStartEvent", failing_callback)
@@ -124,11 +124,11 @@ async def test_dispatch_failing_callback(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_mixed_sync_async_callbacks(hook_manager):
+async def test_dispatch_mixed_sync_async_callbacks(hook_manager: HookManager) -> None:
     """Test dispatching to mix of sync and async callbacks."""
     sync_callback = AsyncMock()  # Mock to make it awaitable
 
-    async def async_callback(event):
+    async def async_callback(event: object) -> None:
         pass
 
     hook_manager.register("PipelineStartEvent", sync_callback)
@@ -141,7 +141,7 @@ async def test_dispatch_mixed_sync_async_callbacks(hook_manager):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_wrong_event_type(hook_manager):
+async def test_dispatch_wrong_event_type(hook_manager: HookManager) -> None:
     """Test dispatching event with no matching callbacks."""
     callback_mock = AsyncMock()
     hook_manager.register("StepStartEvent", callback_mock)

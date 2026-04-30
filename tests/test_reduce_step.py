@@ -1,7 +1,6 @@
 """Tests for reduce step functionality."""
 
 from collections.abc import Callable
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

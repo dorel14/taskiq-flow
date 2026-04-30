@@ -9,7 +9,9 @@ import pytest
 # See: taskiq-flow/issues/X
 
 
-@pytest.mark.skip(reason="WebSocket bridge module was removed, will be re-added with stable library")
+@pytest.mark.skip(
+    reason="WebSocket bridge module was removed, will be re-added with stable library"
+)
 def test_bridge_placeholder_import():
     """Test that the bridge module can be imported."""
     # Bridge module is now bridge_picows, not bridge
@@ -18,7 +20,9 @@ def test_bridge_placeholder_import():
     assert WebSocketHookBridge is not None
 
 
-@pytest.mark.skip(reason="WebSocket bridge module was removed, will be re-added with stable library")
+@pytest.mark.skip(
+    reason="WebSocket bridge module was removed, will be re-added with stable library"
+)
 def test_bridge_placeholder_comment():
     """Test that the bridge file contains expected placeholder content."""
     import inspect

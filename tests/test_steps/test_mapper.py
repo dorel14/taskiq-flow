@@ -78,7 +78,9 @@ def test_mapper_step_from_kicker(broker):
     """Test MapperStep.from_task with AsyncKicker."""
     from taskiq.kicker import AsyncKicker
 
-    kicker = AsyncKicker(task_name="test", broker=broker, labels={"label": "val"})
+    kicker: AsyncKicker[[None], None] = AsyncKicker(
+        task_name="test", broker=broker, labels={"label": "val"}
+    )
     step = MapperStep.from_task(
         kicker,
         param_name=None,

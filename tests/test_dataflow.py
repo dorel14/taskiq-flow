@@ -1,6 +1,7 @@
 """Tests for dataflow-based pipeline features."""
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from taskiq import InMemoryBroker
@@ -38,7 +39,9 @@ class TestDataflowRegistry:
         assert len(registry.tasks) == 0
         assert len(registry.data_nodes) == 0
 
-    def test_register_task(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_register_task(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test registering a task."""
 
         @pipeline_task(output="output1")
@@ -56,7 +59,9 @@ class TestDataflowRegistry:
         assert "output1" in registry.data_nodes
         assert registry.data_producers["output1"] == task1
 
-    def test_register_task_with_dependencies(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_register_task_with_dependencies(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test registering tasks with dependencies."""
 
         @pipeline_task(output="output1")
@@ -80,7 +85,9 @@ class TestDataflowRegistry:
         consumers = registry.get_consumers("output1")
         assert task2 in consumers
 
-    def test_get_producer(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_get_producer(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test getting producer for data."""
 
         @broker.task
@@ -96,7 +103,9 @@ class TestDataflowRegistry:
         # Non-existent data
         assert registry.get_producer("nonexistent") is None
 
-    def test_build_dag(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_build_dag(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test building DAG from registered tasks."""
 
         @pipeline_task(output="output1")
@@ -122,7 +131,9 @@ class TestDataflowRegistry:
         assert from_node.task == task1
         assert to_node.task == task2
 
-    def test_build_dag_parallel(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_build_dag_parallel(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test building DAG with parallel tasks."""
 
         @pipeline_task(output="output1")
@@ -157,7 +168,9 @@ class TestDataflowRegistry:
         assert len(dag.levels[0]) == 2  # task1 and task2 can run in parallel
         assert len(dag.levels[1]) == 1  # task3 depends on both
 
-    def test_external_inputs(self, registry: DataflowRegistry, broker: InMemoryBroker) -> None:
+    def test_external_inputs(
+        self, registry: DataflowRegistry, broker: InMemoryBroker
+    ) -> None:
         """Test detection of external inputs."""
 
         @broker.task
@@ -299,7 +312,7 @@ class TestDAGBuilder:
 
         @broker.task
         @pipeline_task(output="output1")
-        async def task1(input1):
+        async def task1(input1: int) -> int:
             return input1
 
         dag = DAGBuilder.from_tasks([task1])
@@ -329,17 +342,17 @@ class TestDataflowPipeline:
         assert pipeline._dag is not None
         assert len(pipeline._dag.nodes) == 1
 
-    def test_visualize(self, broker):
+    def test_visualize(self, broker: InMemoryBroker) -> None:
         """Test pipeline visualization."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: int) -> int:
             return input1
 
         @pipeline_task(output="output2")
         @broker.task
-        async def task2(output1):
+        async def task2(output1: int) -> int:
             return output1
 
         pipeline = DataflowPipeline.from_tasks(broker, [task1, task2])
@@ -351,12 +364,12 @@ class TestDataflowPipeline:
         assert len(viz["nodes"]) == 2
         assert len(viz["edges"]) == 1
 
-    def test_visualize_dot(self, broker):
+    def test_visualize_dot(self, broker: InMemoryBroker) -> None:
         """Test DOT format visualization."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: int) -> int:
             return input1
 
         pipeline = DataflowPipeline.from_tasks(broker, [task1])
@@ -366,12 +379,12 @@ class TestDataflowPipeline:
         assert "digraph" in dot
         assert "task1" in dot
 
-    def test_print_dag(self, broker, capsys):
+    def test_print_dag(self, broker: InMemoryBroker, capsys: Any) -> None:
         """Test printing DAG."""
 
         @pipeline_task(output="output1")
         @broker.task
-        async def task1(input1):
+        async def task1(input1: int) -> int:
             return input1
 
         pipeline = DataflowPipeline.from_tasks(broker, [task1])
@@ -391,17 +404,17 @@ class TestDataflowPipeline:
 class TestIntegration:
     """Integration tests for dataflow pipeline."""
 
-    def test_full_pipeline(self, broker):
+    def test_full_pipeline(self, broker: InMemoryBroker) -> None:
         """Test full pipeline with dependencies."""
 
         @pipeline_task(output="doubled")
         @broker.task
-        async def double(x):
+        async def double(x: int) -> int:
             return x * 2
 
         @pipeline_task(output="squared")
         @broker.task
-        async def square(doubled):
+        async def square(doubled: int) -> int:
             return doubled**2
 
         pipeline = DataflowPipeline.from_tasks(broker, [double, square])
@@ -415,22 +428,22 @@ class TestIntegration:
         pipeline._dag.compute_levels()
         assert len(pipeline._dag.levels) == 2
 
-    def test_parallel_pipeline(self, broker):
+    def test_parallel_pipeline(self, broker: InMemoryBroker) -> None:
         """Test pipeline with parallel tasks."""
 
         @pipeline_task(output="a")
         @broker.task
-        async def task_a(x):
+        async def task_a(x: int) -> int:
             return x + 1
 
         @pipeline_task(output="b")
         @broker.task
-        async def task_b(x):
+        async def task_b(x: int) -> int:
             return x + 2
 
         @pipeline_task(output="c")
         @broker.task
-        async def task_c(a, b):
+        async def task_c(a: int, b: int) -> int:
             return a + b
 
         pipeline = DataflowPipeline.from_tasks(broker, [task_a, task_b, task_c])

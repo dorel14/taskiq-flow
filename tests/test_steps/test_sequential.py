@@ -70,7 +70,9 @@ def test_sequential_step_from_kicker(broker):
     """Test SequentialStep.from_task with AsyncKicker."""
     from taskiq.kicker import AsyncKicker
 
-    kicker = AsyncKicker(task_name="test", broker=broker, labels={"label": "val"})
+    kicker: AsyncKicker[[None], None] = AsyncKicker(
+        task_name="test", broker=broker, labels={"label": "val"}
+    )
     step = SequentialStep.from_task(kicker, param_name=None)
     assert step.task_name == "test"
     assert step.labels == {"label": "val"}

@@ -7,7 +7,7 @@ from taskiq_flow.broker.adapter import BrokerAdapter
 from taskiq_flow.broker.detector import BrokerDetector, BrokerType
 
 
-def test_broker_type_enum():
+def test_broker_type_enum() -> None:
     """Test BrokerType enum values."""
     assert BrokerType.REDIS.value == "redis"
     assert BrokerType.RABBITMQ.value == "rabbitmq"
@@ -16,7 +16,7 @@ def test_broker_type_enum():
     assert BrokerType.UNKNOWN.value == "unknown"
 
 
-def test_detect_inmemory_broker():
+def test_detect_inmemory_broker() -> None:
     """Test detection of InMemoryBroker."""
     broker = InMemoryBroker()
     detected = BrokerDetector.detect(broker)
@@ -27,18 +27,18 @@ def test_detect_inmemory_broker():
 # The basic detection for known broker types works
 
 
-def test_detect_unknown_broker():
+def test_detect_unknown_broker() -> None:
     """Test detection of unknown broker type."""
 
     class UnknownBroker:
         pass
 
     broker = UnknownBroker()
-    detected = BrokerDetector.detect(broker)
+    detected = BrokerDetector.detect(broker)  # type: ignore[arg-type]
     assert detected == BrokerType.UNKNOWN
 
 
-def test_broker_adapter_creation():
+def test_broker_adapter_creation() -> None:
     """Test BrokerAdapter creation."""
     broker = InMemoryBroker()
     adapter = BrokerAdapter(broker)
@@ -46,7 +46,7 @@ def test_broker_adapter_creation():
 
 
 @pytest.mark.asyncio
-async def test_broker_adapter_result_operations():
+async def test_broker_adapter_result_operations() -> None:
     """Test BrokerAdapter result backend operations."""
     broker = InMemoryBroker()
 
@@ -69,7 +69,7 @@ async def test_broker_adapter_result_operations():
 
 
 @pytest.mark.asyncio
-async def test_broker_adapter_not_ready():
+async def test_broker_adapter_not_ready() -> None:
     """Test BrokerAdapter when result is not ready."""
     broker = InMemoryBroker()
     adapter = BrokerAdapter(broker)
@@ -79,7 +79,7 @@ async def test_broker_adapter_not_ready():
     assert is_ready is False
 
 
-def test_broker_adapter_get_task_id():
+def test_broker_adapter_get_task_id() -> None:
     """Test BrokerAdapter.get_task_id method."""
     broker = InMemoryBroker()
     adapter = BrokerAdapter(broker)

@@ -83,7 +83,7 @@ warn_return_any = false
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
-module = "tests.*"
+module = ["tests.*"]
 ignore_errors = true
 
 [tool.ruff]
