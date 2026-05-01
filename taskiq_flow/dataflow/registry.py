@@ -66,13 +66,15 @@ class DataflowRegistry:
                 self.data_nodes[input_name].add_consumer(task)
 
     def get_task_metadata(
-        self, task: AsyncTaskiqDecoratedTask[Any, Any],
+        self,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
     ) -> dict[str, Any]:
         """Get metadata for a task."""
         return self.task_metadata.get(task, {})
 
     def get_data_dependencies(
-        self, task: AsyncTaskiqDecoratedTask[Any, Any],
+        self,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
     ) -> list[str]:
         """Get the data dependencies for a task."""
         metadata = self.task_metadata.get(task, {})

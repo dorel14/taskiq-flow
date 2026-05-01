@@ -39,7 +39,9 @@ class TestDataflowRegistry:
         assert len(registry.data_nodes) == 0
 
     def test_register_task(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test registering a task."""
 
@@ -59,7 +61,9 @@ class TestDataflowRegistry:
         assert registry.data_producers["output1"] == task1
 
     def test_register_task_with_dependencies(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test registering tasks with dependencies."""
 
@@ -85,7 +89,9 @@ class TestDataflowRegistry:
         assert task2 in consumers
 
     def test_get_producer(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test getting producer for data."""
 
@@ -103,7 +109,9 @@ class TestDataflowRegistry:
         assert registry.get_producer("nonexistent") is None
 
     def test_build_dag(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test building DAG from registered tasks."""
 
@@ -131,7 +139,9 @@ class TestDataflowRegistry:
         assert to_node.task == task2
 
     def test_build_dag_parallel(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test building DAG with parallel tasks."""
 
@@ -168,7 +178,9 @@ class TestDataflowRegistry:
         assert len(dag.levels[1]) == 1  # task3 depends on both
 
     def test_external_inputs(
-        self, registry: DataflowRegistry, broker: InMemoryBroker,
+        self,
+        registry: DataflowRegistry,
+        broker: InMemoryBroker,
     ) -> None:
         """Test detection of external inputs."""
 

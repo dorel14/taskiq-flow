@@ -1,6 +1,5 @@
 """Tests for Redis pipeline storage."""
 
-
 import pytest
 
 from taskiq_flow.tracking.redis_storage import RedisPipelineStorage
