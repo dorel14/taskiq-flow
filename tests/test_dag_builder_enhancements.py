@@ -30,8 +30,7 @@ class TestDAGBuilderEnhancements:
 
         # Build DAG with external input
         dag = DAGBuilder.from_tasks(
-            tasks=[process_data],
-            external_inputs=["external_input"]
+            tasks=[process_data], external_inputs=["external_input"]
         )
 
         assert isinstance(dag, DAG)
@@ -55,7 +54,7 @@ class TestDAGBuilderEnhancements:
         with pytest.raises(ValueError, match="conflicts with task output"):
             DAGBuilder.from_tasks(
                 tasks=[produce_data, process_data],
-                external_inputs=["data"]  # Conflict!
+                external_inputs=["data"],  # Conflict!
             )
 
     def test_dag_validation_empty_dag(self) -> None:
@@ -86,7 +85,9 @@ class TestDAGBuilderEnhancements:
         with pytest.raises(ValueError, match="Circular dependency detected"):
             registry.build_dag()
 
-    def test_dag_validation_detailed_error_messages(self, broker: InMemoryBroker) -> None:
+    def test_dag_validation_detailed_error_messages(
+        self, broker: InMemoryBroker
+    ) -> None:
         """Test that validation provides detailed error messages."""
 
         # Create a valid DAG first
@@ -108,7 +109,9 @@ class TestDAGBuilderEnhancements:
         error_msg = str(exc_info.value)
         assert "no nodes" in error_msg
 
-    def test_dag_validation_disconnected_components(self, broker: InMemoryBroker) -> None:
+    def test_dag_validation_disconnected_components(
+        self, broker: InMemoryBroker
+    ) -> None:
         """Test validation of disconnected components in DAG."""
 
         @broker.task
@@ -170,10 +173,7 @@ class TestDAGBuilderEnhancements:
         @broker.task
         @pipeline_task(output="result")
         async def func_with_defaults(
-            required_arg: str,
-            optional_arg: str = "default",
-            *args: Any,
-            **kwargs: Any
+            required_arg: str, optional_arg: str = "default", *args: Any, **kwargs: Any
         ) -> str:
             return f"{required_arg}_{optional_arg}"
 

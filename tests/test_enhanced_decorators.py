@@ -118,15 +118,9 @@ class TestPipelineTaskMultiOutput:
         """Test multi-output pipeline task."""
 
         @broker.task
-        @pipeline_task_multi_output(
-            outputs={"data": dict, "stats": dict},
-            retries=1
-        )
+        @pipeline_task_multi_output(outputs={"data": dict, "stats": dict}, retries=1)
         async def process_multi(value: int) -> dict:
-            return {
-                "data": {"value": value},
-                "stats": {"count": 1}
-            }
+            return {"data": {"value": value}, "stats": {"count": 1}}
 
         assert is_pipeline_task(process_multi)
         metadata = get_pipeline_metadata(process_multi)
@@ -143,14 +137,9 @@ class TestPipelineTaskMultiOutput:
         """Test that multi-output tasks register all outputs."""
 
         @broker.task
-        @pipeline_task_multi_output(
-            outputs={"features": list, "metadata": dict}
-        )
+        @pipeline_task_multi_output(outputs={"features": list, "metadata": dict})
         async def extract_features(path: str) -> dict:
-            return {
-                "features": [1, 2, 3],
-                "metadata": {"duration": 180}
-            }
+            return {"features": [1, 2, 3], "metadata": {"duration": 180}}
 
         # Check that both outputs are registered
         assert get_task_by_output("features") is not None
@@ -219,18 +208,21 @@ class TestErrorHandling:
         """Test that negative retries raise an error."""
         with pytest.raises(ValueError, match="Retries must be non-negative"):
             from taskiq_flow.decorators import PipelineTaskMetadata
+
             PipelineTaskMetadata(output="test", retries=-1)
 
     def test_invalid_output_empty(self) -> None:
         """Test that empty output name raises an error."""
         with pytest.raises(ValueError, match="must specify an output name"):
             from taskiq_flow.decorators import PipelineTaskMetadata
+
             PipelineTaskMetadata(output="", retries=0)
 
     def test_invalid_inputs_type(self) -> None:
         """Test that invalid inputs type raises an error."""
         with pytest.raises(ValueError, match="Inputs must be a list"):
             from taskiq_flow.decorators import PipelineTaskMetadata
+
             PipelineTaskMetadata(output="test", inputs="invalid")  # type: ignore
 
 

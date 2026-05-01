@@ -133,14 +133,18 @@ def pipeline_task(
 
         # Choose appropriate wrapper based on function type
         if _is_async_function(func):
+
             @wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 return await func(*args, **kwargs)
+
             wrapper = async_wrapper
         else:
+
             @wraps(func)
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 return func(*args, **kwargs)
+
             wrapper = sync_wrapper
 
         # Register the task (only the wrapper to avoid conflicts)
@@ -358,14 +362,18 @@ def pipeline_task_multi_output(
 
         # Choose appropriate wrapper based on function type
         if _is_async_function(func):
+
             @wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 return await func(*args, **kwargs)
+
             wrapper = async_wrapper
         else:
+
             @wraps(func)
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 return func(*args, **kwargs)
+
             wrapper = sync_wrapper
 
         # Register the task (only the wrapper to avoid conflicts)

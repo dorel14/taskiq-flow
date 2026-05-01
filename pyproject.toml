@@ -59,7 +59,6 @@ dev = [
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
   "isort>=8.0.1",
-  "jedi>=0.19.2",
   "mypy>=1.20.2",
 ]
 

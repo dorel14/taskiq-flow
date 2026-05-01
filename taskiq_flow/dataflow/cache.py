@@ -8,8 +8,8 @@ class DataCache:
     Cache for storing and retrieving task results.
 
     Provides automatic dependency injection by mapping output names
-to their values, allowing tasks to receive their dependencies
-as function arguments automatically.
+    to their values, allowing tasks to receive their dependencies
+    as function arguments automatically.
     """
 
     def __init__(self) -> None:

@@ -2,6 +2,7 @@
 
 import pytest
 from taskiq import InMemoryBroker
+
 from taskiq_flow import DataflowPipeline, pipeline_task
 from taskiq_flow.map_reduce import ChunkConfig
 
@@ -46,7 +47,9 @@ class TestMapReducePipeline:
         assert result == 30
 
     @pytest.mark.asyncio
-    async def test_pipeline_map_reduce_with_chunking(self, broker: InMemoryBroker) -> None:
+    async def test_pipeline_map_reduce_with_chunking(
+        self, broker: InMemoryBroker
+    ) -> None:
         """Test map-reduce with chunked reduction."""
 
         @pipeline_task(output="square")

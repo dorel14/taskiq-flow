@@ -155,7 +155,6 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             pipeline_id=self.pipeline_id,
         )
 
-
     def map(  # type: ignore[override]
         self,
         task: AsyncTaskiqDecoratedTask[Any, Any],
@@ -290,8 +289,11 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         param_name=op_dict.get("param_name"),
                         max_parallel=max_parallel,
                         chunk_config=chunk_config,
-                        **{k: v for k, v in kwargs.items() 
-                           if k not in ("chunk_config", "max_parallel")},
+                        **{
+                            k: v
+                            for k, v in kwargs.items()
+                            if k not in ("chunk_config", "max_parallel")
+                        },
                     )
                     results[op_dict["output"]] = map_result.results
                     # Store metadata for potential use
@@ -332,8 +334,11 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         output=op_dict_reduce["output"],
                         chunk_size=chunk_size,
                         initial=initial if initial is not None else 0,
-                        **{k: v for k, v in kwargs.items() 
-                           if k not in ("chunk_size", "initial")},
+                        **{
+                            k: v
+                            for k, v in kwargs.items()
+                            if k not in ("chunk_size", "initial")
+                        },
                     )
                 else:
                     # Standard reduction
@@ -343,8 +348,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         input_data,
                         output=op_dict_reduce["output"],
                         initial=initial if initial is not None else 0,
-                        **{k: v for k, v in kwargs.items() 
-                           if k != "initial"},
+                        **{k: v for k, v in kwargs.items() if k != "initial"},
                     )
                 results[op_dict_reduce["output"]] = result
 

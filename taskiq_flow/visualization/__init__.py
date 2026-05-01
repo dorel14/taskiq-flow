@@ -166,6 +166,8 @@ class DAGVisualizer:
                     print(f"  {node.task.task_name} (input)")
 
         print("\n" + "=" * 50)
+
+
 def visualize_pipeline(pipeline: Any) -> dict[str, Any]:
     """
     Visualize a pipeline's DAG.

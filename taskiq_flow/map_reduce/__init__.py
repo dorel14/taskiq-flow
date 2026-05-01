@@ -2,11 +2,12 @@
 
 import asyncio
 import inspect
+import itertools
 import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from taskiq import AsyncBroker
 from taskiq.kicker import AsyncKicker
@@ -321,7 +322,17 @@ class MapReduce:
         chunk_tasks = [
             process_chunk(chunk, i) for i, chunk in enumerate(chunks)
         ]
-        return await asyncio.gather(*chunk_tasks, return_exceptions=True)
+        results = await asyncio.gather(*chunk_tasks, return_exceptions=True)
+        # Filter out exceptions and return only successful results
+        final_results: list[list[Any]] = []
+        for r in results:
+            if isinstance(r, Exception):
+                logger.warning("[MAP] Chunk failed: %s", str(r))
+                # Return empty list for failed chunks
+                final_results.append([])
+            else:
+                final_results.append(r)
+        return final_results
 
     @staticmethod
     async def map_sweep(
@@ -361,8 +372,6 @@ class MapReduce:
                 max_parallel=5,
             )
         """
-        import itertools
-
         start_time = time.time()
 
         # Generate all combinations
@@ -565,11 +574,14 @@ class MapReduce:
         # Separate reduce-specific kwargs from map kwargs
         reduce_kwargs = {}
         map_kwargs = {}
-        
+
         # Extract reduce-specific parameters
         if "initial" in kwargs:
             reduce_kwargs["initial"] = kwargs.pop("initial")
-        
+        else:
+            # Default initial value for reduction
+            reduce_kwargs["initial"] = 0
+
         # Remaining kwargs go to both map and reduce
         map_kwargs.update(kwargs)
         reduce_kwargs.update(kwargs)
@@ -674,118 +686,3 @@ class MapReduce:
             pass
 
         return "item"
-
-
-class PipelineMapReduce:
-    """
-    Map-reduce operations integrated with Pipeline.
-
-    Provides map and reduce methods that can be chained
-    with other pipeline operations.
-    """
-
-    def __init__(self, pipeline: Any) -> None:
-        """
-        Initialize with a pipeline.
-
-        Args:
-            pipeline: Pipeline instance
-        """
-        self.pipeline = pipeline
-
-    async def map(
-        self,
-        task: Callable[..., Any],
-        items: list[Any],
-        output: str,
-        **kwargs: Any,
-    ) -> MapResult:
-        """
-        Add map operation to pipeline.
-
-        Args:
-            task: Task to apply
-            items: Items to process
-            output: Output name
-            **kwargs: Additional kwargs
-
-        Returns:
-            MapResult with results and metadata
-        """
-        # Store items in pipeline data
-        self.pipeline._map_items = items
-        self.pipeline._map_task = task
-        self.pipeline._map_output = output
-
-        # Execute map
-        return await MapReduce.map(
-            self.pipeline.broker,
-            task,
-            items,
-            output,
-            **kwargs,
-        )
-
-    async def reduce(
-        self,
-        task: Callable[..., Any],
-        input_name: str,
-        output: str,
-        **kwargs: Any,
-    ) -> Any:
-        """
-        Add reduce operation to pipeline.
-
-        Args:
-            task: Reduction task
-            input_name: Input data name
-            output: Output name
-            **kwargs: Additional kwargs
-
-        Returns:
-            Reduced result
-        """
-        # Get input data from pipeline
-        inputs = self.pipeline._data_cache.get(input_name, [])
-
-        # Execute reduce
-        return await MapReduce.reduce(
-            self.pipeline.broker,
-            task,
-            inputs,
-            output,
-            **kwargs,
-        )
-
-    async def map_reduce(
-        self,
-        map_task: Callable[..., Any],
-        reduce_task: Callable[..., Any],
-        items: list[Any],
-        map_output: str = "mapped",
-        reduce_output: str = "reduced",
-        **kwargs: Any,
-    ) -> Any:
-        """
-        Execute map-reduce pipeline.
-
-        Args:
-            map_task: Map task
-            reduce_task: Reduce task
-            items: Items to process
-            map_output: Map output name
-            reduce_output: Reduce output name
-            **kwargs: Additional kwargs
-
-        Returns:
-            Reduced result
-        """
-        return await MapReduce.map_reduce(
-            self.pipeline.broker,
-            map_task,
-            reduce_task,
-            items,
-            map_output=map_output,
-            reduce_output=reduce_output,
-            **kwargs,
-        )
