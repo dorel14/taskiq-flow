@@ -21,6 +21,9 @@ jobs:
         run: uv sync --frozen --all-extras
       - name: Run lint check
         run: uv run pre-commit run -a
+    permissions:
+      contents: read
+      pull-requests: write
   pytest:
     strategy:
       matrix:
@@ -28,6 +31,9 @@ jobs:
         pydantic_ver: [ "<2", ">=2.5,<3" ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
     runs-on: "${{ matrix.os }}"
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
