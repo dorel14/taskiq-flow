@@ -1,13 +1,13 @@
 [project]
-name = "taskiq-pipelines"
-description = "Taskiq pipelines for task chaining."
+name = "taskiq-flow"
+description = "Taskiq flow for task chaining."
 readme = "README.md"
 requires-python = ">=3.10,<4"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
-maintainers = [{ name = "Pavel Kirilin", email = "s3riussan@gmail.com" }]
-keywords = ["async", "distributed", "pipelines", "taskiq", "tasks"]
+authors = [{ name = "David Orel", email = "d.orel@free.fr" }]
+maintainers = [{ name = "David Orel", email = "d.orel@free.fr" }]
+keywords = ["async", "distributed", "pipelines", "dataflow", "taskiq", "tasks"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -23,15 +23,30 @@ classifiers = [
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
+version = "0.2.0"
 dependencies = [
+  "apscheduler[sqlalchemy]>=3.11.2",
+  "chanx>=0.13.3",
+  "mypy>=1.20.2",
+  "picows>=1.19.0",
   "pydantic>=2,<3",
+  "redis>=5.3.1",
   "taskiq>=0.11.12,<1",
+  "taskiq-aio-kafka>=0.3.0",
+  "taskiq-aio-pika>=0.6.0",
+  "taskiq-redis>=1.0.9",
 ]
-dynamic = ["version"]
+
+[project.optional-dependencies]
+scheduler = ["apscheduler>=3.10,<4"]
+redis = ["redis>=5.0,<6"]
+all = ["apscheduler", "redis"]
 
 [project.urls]
-Homepage = "https://github.com/taskiq-python/taskiq-pipelines"
-Repository = "https://github.com/taskiq-python/taskiq-pipelines"
+Homepage = "https://github.com/taskiq-python/taskiq-flow"
+Repository = "https://github.com/taskiq-python/taskiq-flow"
+
+
 
 [dependency-groups]
 dev = [
@@ -43,14 +58,14 @@ dev = [
   "pytest-cov>=7.1.0",
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
+  "isort>=8.0.1",
+  "jedi>=0.19.2",
+  "mypy>=1.20.2",
 ]
 
 [build-system]
 requires = ["hatchling", "versioningit"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-source = "versioningit"
 
 [tool.isort]
 profile = "black"
@@ -66,6 +81,10 @@ implicit_reexport = true
 allow_untyped_decorators = true
 warn_return_any = false
 warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_errors = true
 
 [tool.ruff]
 # List of enabled rulsets.
@@ -121,6 +140,12 @@ line-length = 88
   "SLF001",  # Private member accessed
   "S311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
   "D101",  # Missing docstring in public class
+  "COM812",  # Trailing comma conflicts with formatter
+  "ANN001",  # Missing type annotation for function argument
+  "ANN002",  # Missing type annotation for function
+  "ANN003",  # Missing type annotation for return value
+  "ANN201",  # Missing return type annotation for public function
+  "ANN202",  # Missing return type annotation for private function
 ]
 
 [tool.ruff.lint.pydocstyle]

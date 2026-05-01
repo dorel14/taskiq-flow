@@ -26,6 +26,14 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.idea/
+.vscode/
+.kilo/
+.kilo/plans/
+.kilo
+.kilo.log
+.kilo.log.old
+/.kilo/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -158,5 +166,3 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-.idea/
-.vscode/
