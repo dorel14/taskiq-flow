@@ -10,7 +10,7 @@ from taskiq_flow.steps.reduce import AbortPipeline, ReduceStep
 
 
 @pytest.fixture
-def broker():
+def broker() -> InMemoryBroker:
     """Create a test broker."""
     return InMemoryBroker()
 
@@ -44,7 +44,7 @@ def test_reduce_step_from_task() -> None:
     assert step.task == mock_task
 
 
-def test_reduce_step_invalid_input(broker) -> None:
+def test_reduce_step_invalid_input(broker: InMemoryBroker) -> None:
     """Test reduce step with invalid input."""
     step = ReduceStep(task=None, initial=0, reduce_func="sum")  # type: ignore[arg-type]
 
