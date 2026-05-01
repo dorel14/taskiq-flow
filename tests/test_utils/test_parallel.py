@@ -96,7 +96,9 @@ def test_chunked_map_max_concurrency(
     (currently not implemented in pipeline creation).
     """
     items = list(range(20))
-    pipeline: Pipeline[Any, list[int]] = chunked_map(mock_task, items, max_concurrency=5)  # type: ignore[arg-type]
+    pipeline: Pipeline[Any, list[int]] = chunked_map(
+        mock_task, items, max_concurrency=5
+    )  # type: ignore[arg-type]
     # Currently, max_concurrency doesn't affect pipeline creation
     # This is a placeholder for future implementation
     assert isinstance(pipeline, Pipeline)
