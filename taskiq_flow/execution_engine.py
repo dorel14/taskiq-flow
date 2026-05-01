@@ -8,6 +8,7 @@ from typing import Any
 
 from taskiq import AsyncBroker
 
+from taskiq_flow.dataflow.cache import DataCache
 from taskiq_flow.dataflow.dag import DAG, DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.exceptions import AbortPipeline
@@ -75,7 +76,7 @@ class ExecutionEngine:
         self.task_states: dict[Any, TaskExecution] = {
             node.task: TaskExecution(node=node) for node in dag.nodes
         }
-        self.data_cache: dict[str, Any] = {}
+        self.data_cache = DataCache()
         self.completed_tasks: set[Any] = set()
         self.failed_tasks: set[Any] = set()
         self.running_tasks: set[Any] = set()
@@ -281,7 +282,7 @@ class ExecutionEngine:
                 )
 
                 # Cache result
-                self.data_cache[output_name] = result
+                self.data_cache.set(output_name, result)
 
                 return result
 
@@ -325,8 +326,8 @@ class ExecutionEngine:
             producer = dep.task
             metadata = self._get_task_metadata(producer)
             output_name = metadata.get("output", producer.task_name)
-            if output_name in self.data_cache:
-                inputs[output_name] = self.data_cache[output_name]
+            if self.data_cache.has(output_name):
+                inputs[output_name] = self.data_cache.get(output_name)
         return inputs
 
     async def _execute_task_step(

@@ -23,7 +23,7 @@ def test_create_with_redis_broker_mock() -> None:
 
     # Mock a RedisBroker
     class MockRedisBroker:
-        def __init__(self, url="redis://localhost:6379"):
+        def __init__(self, url="redis://localhost:6379") -> None:
             self.url = url
 
     broker = MockRedisBroker()
@@ -43,7 +43,7 @@ def test_create_with_redis_broker_auto_extract():
 
     # Mock RedisBroker with url attribute
     class MockRedisBroker:
-        def __init__(self, url="redis://localhost:6379"):
+        def __init__(self, url="redis://localhost:6379") -> None:
             self.url = url
 
     broker = MockRedisBroker("redis://auto:6379")

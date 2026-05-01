@@ -44,9 +44,14 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from taskiq_flow.decorators import (
+        get_all_pipeline_outputs,
         get_pipeline_metadata,
+        get_task_by_output,
+        get_task_outputs,
         is_pipeline_task,
         pipeline_task,
+        pipeline_task_multi_output,
+        validate_pipeline_outputs,
     )
 
 with contextlib.suppress(ImportError):
@@ -62,27 +67,32 @@ with contextlib.suppress(ImportError):
     )
 
 __all__ = [
+    "DAG",
     # Original exports
     "AbortPipeline",
+    "DAGBuilder",
+    "DAGNode",
+    "DAGVisualizer",
+    "DataNode",
+    # New dataflow exports
+    "DataflowPipeline",
+    "DataflowRegistry",
+    "ExecutionEngine",
     "HookManager",
+    "MapReduce",
     "Pipeline",
     "PipelineError",
     "PipelineMiddleware",
     "PipelineScheduler",
     "PipelineTrackingManager",
     "TrackingStorageFactory",
-    # New dataflow exports
-    "DataflowPipeline",
-    "DataNode",
-    "DataflowRegistry",
-    "DAG",
-    "DAGNode",
-    "DAGBuilder",
-    "pipeline_task",
+    "get_all_pipeline_outputs",
     "get_pipeline_metadata",
+    "get_task_by_output",
+    "get_task_outputs",
     "is_pipeline_task",
-    "ExecutionEngine",
-    "MapReduce",
-    "DAGVisualizer",
+    "pipeline_task",
+    "pipeline_task_multi_output",
+    "validate_pipeline_outputs",
     "visualize_pipeline",
 ]

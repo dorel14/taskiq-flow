@@ -93,5 +93,5 @@ def test_mapper_step_from_kicker(broker):
     assert step.labels == {"label": "val"}
 
 
-# Note: Testing the act method requires complex mocking of broker and async task execution
+# Note: Testing act method requires complex mocking of broker and async execution
 # These tests focus on step creation and configuration

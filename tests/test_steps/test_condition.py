@@ -28,7 +28,8 @@ def mock_task(broker: InMemoryBroker) -> Callable[[int], int]:
 
 def test_condition_step_creation() -> None:
     """Test ConditionStep creation."""
-    condition_func: Callable[[int], bool] = lambda x: x > 0
+    def condition_func(x: int) -> bool:
+        return x > 0
     step = ConditionStep(
         condition=condition_func,
         task=SequentialStep(

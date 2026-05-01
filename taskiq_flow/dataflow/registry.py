@@ -150,3 +150,19 @@ class DataflowRegistry:
     def get_outputs(self) -> list[str]:
         """Get list of outputs (data produced by tasks)."""
         return list(self.data_producers.keys())
+
+    def register_external_input(self, input_name: str) -> None:
+        """
+        Register an external input to the registry.
+
+        External inputs are data values provided at pipeline execution time
+        that are not produced by any task in the pipeline.
+
+        Args:
+            input_name: Name of the external input
+        """
+        if input_name not in self.data_nodes:
+            self.data_nodes[input_name] = DataNode(
+                name=input_name,
+                is_external=True,
+            )

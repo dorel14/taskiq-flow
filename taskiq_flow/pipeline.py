@@ -150,12 +150,11 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         )
 
         # Execute
-        outputs = await engine.execute(
+        return await engine.execute(
             inputs=inputs,
             pipeline_id=self.pipeline_id,
         )
 
-        return outputs
 
     def map(  # type: ignore[override]
         self,

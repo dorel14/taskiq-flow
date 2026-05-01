@@ -1,9 +1,10 @@
 """DAG visualization for pipeline monitoring."""
 
-import json
-from typing import Any, Dict, List
+from typing import Any
 
-from taskiq_flow.dataflow.dag import DAG, DAGNode
+from taskiq_flow.dataflow.dag import DAG
+
+__all__ = ["DAG"]
 
 
 class DAGVisualizer:
@@ -165,8 +166,6 @@ class DAGVisualizer:
                     print(f"  {node.task.task_name} (input)")
 
         print("\n" + "=" * 50)
-
-
 def visualize_pipeline(pipeline: Any) -> dict[str, Any]:
     """
     Visualize a pipeline's DAG.

@@ -3,13 +3,10 @@
 import asyncio
 import inspect
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from taskiq import AsyncBroker
 from taskiq.kicker import AsyncKicker
-
-from taskiq_flow.dataflow.dag import DAG, DAGNode
-from taskiq_flow.execution_engine import ExecutionEngine
 
 
 class MapReduce:
@@ -275,7 +272,7 @@ class PipelineMapReduce:
     with other pipeline operations.
     """
 
-    def __init__(self, pipeline: Any):
+    def __init__(self, pipeline: Any) -> None:
         """
         Initialize with a pipeline.
 
