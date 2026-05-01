@@ -172,7 +172,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             task: Task to apply
             items: Items to process
             output: Output name
-            **kwargs: Additional kwargs
+            **kwargs: Additional kwargs (including chunk_config, max_parallel, etc.)
 
         Returns:
             Self for chaining
@@ -181,7 +181,9 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             pipeline.map(
                 process_track,
                 track_list,
-                output="track_features"
+                output="track_features",
+                chunk_config=ChunkConfig(chunk_size=50),
+                max_parallel=10,
             )
         """
         # Store map operation for execution
@@ -200,7 +202,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         return self
 
-    def reduce(
+    def reduce(  # type: ignore[override]
         self,
         task: AsyncTaskiqDecoratedTask[Any, Any],
         input_name: str,
@@ -216,7 +218,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             task: Reduction task
             input_name: Input data name
             output: Output name
-            **kwargs: Additional kwargs
+            **kwargs: Additional kwargs (including chunk_size, initial, etc.)
 
         Returns:
             Self for chaining
@@ -225,7 +227,9 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             pipeline.reduce(
                 aggregate_features,
                 "track_features",
-                output="aggregated"
+                output="aggregated",
+                chunk_size=100,
+                initial=0,
             )
         """
         # Store reduce operation for execution
@@ -252,6 +256,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         Execute pipeline with map-reduce operations.
 
         Executes map operations in parallel, then reduces results.
+        Supports advanced features like chunking and progress tracking.
 
         Args:
             **inputs: External inputs to the pipeline
@@ -270,30 +275,191 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         if hasattr(self, "_map_operations"):
             for op in self._map_operations:
                 op_dict: dict[str, Any] = op  # type: ignore[assignment]
-                result = await MapReduce.map(
-                    self.broker,
-                    op_dict["task"],
-                    op_dict["items"],
-                    op_dict["output"],
-                    **op_dict["kwargs"],
-                )
-                results[op_dict["output"]] = result
+                # Use advanced map with chunking if configured
+                kwargs = op_dict.get("kwargs", {})
+                chunk_config = kwargs.get("chunk_config")
+                max_parallel = kwargs.get("max_parallel")
+
+                if chunk_config:
+                    # Use advanced map with chunking
+                    map_result = await MapReduce.map(
+                        self.broker,
+                        op_dict["task"],
+                        op_dict["items"],
+                        output=op_dict["output"],
+                        param_name=op_dict.get("param_name"),
+                        max_parallel=max_parallel,
+                        chunk_config=chunk_config,
+                        **{k: v for k, v in kwargs.items() 
+                           if k not in ("chunk_config", "max_parallel")},
+                    )
+                    results[op_dict["output"]] = map_result.results
+                    # Store metadata for potential use
+                    results[f"{op_dict['output']}_metadata"] = {
+                        "items_processed": map_result.items_processed,
+                        "duration": map_result.duration,
+                        "success_rate": map_result.success_rate,
+                        "errors": len(map_result.errors),
+                    }
+                else:
+                    # Standard map
+                    result = await MapReduce.map(
+                        self.broker,
+                        op_dict["task"],
+                        op_dict["items"],
+                        output=op_dict["output"],
+                        param_name=op_dict.get("param_name"),
+                        max_parallel=max_parallel,
+                        **kwargs,
+                    )
+                    results[op_dict["output"]] = result
 
         # Execute reduce operations
         if hasattr(self, "_reduce_operations"):
             for op in self._reduce_operations:
                 op_dict_reduce: dict[str, Any] = op  # type: ignore[assignment]
                 input_data = results.get(op_dict_reduce["input_name"], [])
-                result = await MapReduce.reduce(
-                    self.broker,
-                    op_dict_reduce["task"],
-                    input_data,
-                    op_dict_reduce["output"],
-                    **op_dict_reduce["kwargs"],
-                )
+                kwargs = op_dict_reduce.get("kwargs", {})
+                chunk_size = kwargs.get("chunk_size")
+                initial = kwargs.get("initial")
+
+                if chunk_size:
+                    # Use chunked reduction
+                    result = await MapReduce.reduce(
+                        self.broker,
+                        op_dict_reduce["task"],
+                        input_data,
+                        output=op_dict_reduce["output"],
+                        chunk_size=chunk_size,
+                        initial=initial if initial is not None else 0,
+                        **{k: v for k, v in kwargs.items() 
+                           if k not in ("chunk_size", "initial")},
+                    )
+                else:
+                    # Standard reduction
+                    result = await MapReduce.reduce(
+                        self.broker,
+                        op_dict_reduce["task"],
+                        input_data,
+                        output=op_dict_reduce["output"],
+                        initial=initial if initial is not None else 0,
+                        **{k: v for k, v in kwargs.items() 
+                           if k != "initial"},
+                    )
                 results[op_dict_reduce["output"]] = result
 
         return results
+
+    async def kiq_map_reduce_advanced(
+        self,
+        map_task: AsyncTaskiqDecoratedTask[Any, Any],
+        reduce_task: AsyncTaskiqDecoratedTask[Any, Any],
+        items: list[Any],
+        map_output: str = "mapped",
+        reduce_output: str = "reduced",
+        map_param_name: str | None = None,
+        max_parallel: int | None = None,
+        reduce_chunk_size: int | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Execute advanced map-reduce with full feature support.
+
+        Combines map and reduce operations with support for:
+        - Parallel map execution
+        - Intelligent chunking
+        - Chunked reduction
+        - Progress tracking
+
+        Args:
+            map_task: Task to apply to each item
+            reduce_task: Task to aggregate results
+            items: List of items to process
+            map_output: Name for map output
+            reduce_output: Name for reduce output
+            map_param_name: Parameter name for map items
+            max_parallel: Maximum parallel map tasks
+            reduce_chunk_size: Chunk size for reduction
+            **kwargs: Additional kwargs (passed to both map and reduce tasks)
+
+        Returns:
+            Reduced result
+
+        Example:
+            result = await pipeline.kiq_map_reduce_advanced(
+                extract_features,
+                aggregate_features,
+                track_list,
+                max_parallel=10,
+                reduce_chunk_size=100,
+            )
+        """
+        return await MapReduce.map_reduce(
+            self.broker,
+            map_task,
+            reduce_task,
+            items,
+            map_output=map_output,
+            reduce_output=reduce_output,
+            map_param_name=map_param_name,
+            max_parallel=max_parallel,
+            reduce_chunk_size=reduce_chunk_size,
+            **kwargs,
+        )
+
+    async def kiq_map_sweep(
+        self,
+        task: AsyncTaskiqDecoratedTask[Any, Any],
+        param_values: dict[str, list[Any]],
+        output: str,
+        max_parallel: int | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """
+        Execute multi-dimensional parameter sweep.
+
+        Creates a Cartesian product of all parameter values and
+        executes the task for each combination.
+
+        Args:
+            task: Task to apply
+            param_values: Dictionary mapping parameter names to lists of values
+            output: Name for the output list
+            max_parallel: Maximum parallel tasks
+            **kwargs: Additional kwargs
+
+        Returns:
+            Dictionary with results and metadata
+
+        Example:
+            result = await pipeline.kiq_map_sweep(
+                train_model,
+                param_values={
+                    "learning_rate": [0.01, 0.001, 0.0001],
+                    "batch_size": [32, 64, 128],
+                },
+                output="experiments",
+                max_parallel=5,
+            )
+        """
+        map_result = await MapReduce.map_sweep(
+            self.broker,
+            task,
+            param_values,
+            output=output,
+            max_parallel=max_parallel,
+            **kwargs,
+        )
+
+        return {
+            output: map_result.results,
+            "metadata": {
+                "items_processed": map_result.items_processed,
+                "duration": map_result.duration,
+                "success_rate": map_result.success_rate,
+                "errors": len(map_result.errors),
+            },
+        }
 
     def visualize(self) -> dict[str, Any]:
         """
