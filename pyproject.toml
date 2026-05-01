@@ -141,6 +141,11 @@ line-length = 88
   "S311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
   "D101",  # Missing docstring in public class
   "COM812",  # Trailing comma conflicts with formatter
+  "ANN001",  # Missing type annotation for function argument
+  "ANN002",  # Missing type annotation for function
+  "ANN003",  # Missing type annotation for return value
+  "ANN201",  # Missing return type annotation for public function
+  "ANN202",  # Missing return type annotation for private function
 ]
 
 [tool.ruff.lint.pydocstyle]

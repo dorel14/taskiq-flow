@@ -151,7 +151,7 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
             # No preprocessing task, create dummy tasks that just return the items
             for item in items_list:
                 # Create a simple task that returns the item as-is
-                task = await identity_task.kicker(broker=broker).kiq(item)
+                task = await identity_task.kicker().with_broker(broker).kiq(item)
                 sub_task_ids.append(task.task_id)
 
         # Wait for all tasks to complete and reduce results
@@ -180,7 +180,8 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
 
         :param task: task to execute for each item.
         :param initial: initial value for reduction.
-        :param reduce_func: reduction function to apply ("sum", "max", "min", "concat", "count", "last").
+        :param reduce_func: reduction function to apply
+            ("sum", "max", "min", "concat", "count", "last").
         :param additional_kwargs: additional function's kwargs.
         :return: new reduce step.
         """

@@ -1,12 +1,18 @@
 """Tests for reduce step functionality."""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-from taskiq import TaskiqResult
+from taskiq import InMemoryBroker, TaskiqResult
 
 from taskiq_flow.steps.reduce import AbortPipeline, ReduceStep
+
+
+@pytest.fixture
+def broker():
+    """Create a test broker."""
+    return InMemoryBroker()
 
 
 def test_reduce_step_creation() -> None:
@@ -38,13 +44,13 @@ def test_reduce_step_from_task() -> None:
     assert step.task == mock_task
 
 
-def test_reduce_step_invalid_input() -> None:
+def test_reduce_step_invalid_input(broker) -> None:
     """Test reduce step with invalid input."""
     step = ReduceStep(task=None, initial=0, reduce_func="sum")  # type: ignore[arg-type]
 
     result = TaskiqResult(
         is_err=False,
-        return_value="not_iterable",  # Not iterable
+        return_value=123,  # Not iterable (integer)
         error=None,
         execution_time=0.0,
         log="Original",
@@ -53,5 +59,5 @@ def test_reduce_step_invalid_input() -> None:
     # Should raise AbortPipeline for non-iterable input
     with pytest.raises(AbortPipeline):
         asyncio.run(
-            step.act(AsyncMock(), 1, "parent_task", "task_id", "pipe_data", result),
+            step.act(broker, 1, "parent_task", "task_id", "pipe_data", result),
         )

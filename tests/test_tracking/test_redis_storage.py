@@ -1,6 +1,5 @@
 """Tests for Redis pipeline storage."""
 
-import re
 
 import pytest
 

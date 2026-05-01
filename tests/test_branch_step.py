@@ -29,7 +29,7 @@ async def test_branch_step_basic_execution() -> None:
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_flow.steps.branch as branch_module
+    import taskiq_flow.steps.branch as branch_module  # noqa: PLC0415
 
     original_kicker = branch_module.AsyncKicker
     branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]
@@ -99,7 +99,7 @@ async def test_branch_step_error_handling() -> None:
     mock_kicker.kiq.return_value.task_id = "test_task_id"
 
     # Mock the AsyncKicker import
-    import taskiq_flow.steps.branch as branch_module
+    import taskiq_flow.steps.branch as branch_module  # noqa: PLC0415
 
     original_kicker = branch_module.AsyncKicker
     branch_module.AsyncKicker = MagicMock(return_value=mock_kicker)  # type: ignore[misc]

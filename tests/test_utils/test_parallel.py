@@ -75,7 +75,8 @@ def test_chunked_map_auto_concurrency(
 ) -> None:
     """Test chunked_map with auto concurrency."""
     items = list(range(20))
-    pipeline: Pipeline[Any, list[int]] = chunked_map(mock_task, items, auto_concurrency=True)  # type: ignore[arg-type]
+    pipeline: Pipeline[Any, list[int]] = chunked_map(mock_task,
+                                                    items, auto_concurrency=True)  # type: ignore[arg-type]
     # Should create multiple chunks
     assert len(pipeline.steps) > 1
 
@@ -83,9 +84,12 @@ def test_chunked_map_auto_concurrency(
 def test_chunked_map_max_concurrency(
     broker: InMemoryBroker, mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
-    """Test chunked_map with max concurrency (currently not implemented in pipeline creation)."""
+    """
+    Test chunked_map with max concurrency
+    (currently not implemented in pipeline creation).
+    """
     items = list(range(20))
-    pipeline: Pipeline[Any, list[int]] = chunked_map(mock_task, items, max_concurrency=5)  # type: ignore[arg-type]
+    pipeline: Pipeline[Any, list[int]] = chunked_map(mock_task, items, max_concurrency=5) # type: ignore[arg-type]
     # Currently, max_concurrency doesn't affect pipeline creation
     # This is a placeholder for future implementation
     assert isinstance(pipeline, Pipeline)
