@@ -6,9 +6,9 @@ from typing import Any
 
 from taskiq import AsyncTaskiqDecoratedTask
 
-from taskiq_flow.dataflow.dag import DAG
+from taskiq_flow.dataflow.dag import DAG, DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
-from taskiq_flow.decorators import get_pipeline_metadata
+from taskiq_flow.decorators import _task_registry, get_pipeline_metadata
 
 
 class DAGBuilder:
@@ -23,6 +23,7 @@ class DAGBuilder:
     def from_tasks(
         tasks: list[Any],
         registry: DataflowRegistry | None = None,
+        external_inputs: list[str] | None = None,
     ) -> DAG:
         """
         Build a DAG from a list of tasks.
@@ -30,9 +31,14 @@ class DAGBuilder:
         Args:
             tasks: List of decorated tasks
             registry: Optional pre-populated registry
+            external_inputs: Optional list of external input names that will be
+                           provided at pipeline execution time
 
         Returns:
             A DAG representing task dependencies
+
+        Raises:
+            ValueError: If external inputs conflict with task outputs
         """
         if registry is None:
             registry = DataflowRegistry()
@@ -41,8 +47,25 @@ class DAGBuilder:
         for task in tasks:
             DAGBuilder._register_task(task, registry)
 
+        # Register external inputs
+        if external_inputs:
+            for input_name in external_inputs:
+                # Check for conflicts with task outputs
+                if registry.get_producer(input_name) is not None:
+                    raise ValueError(
+                        f"External input '{input_name}' conflicts with task output. "
+                        f"External inputs must not match any task output names.",
+                    )
+                # Register as external input
+                registry.register_external_input(input_name)
+
         # Build and return DAG
-        return registry.build_dag()
+        dag = registry.build_dag()
+
+        # Validate the complete DAG
+        DAGBuilder.validate_dag(dag)
+
+        return dag
 
     @staticmethod
     def from_callable_tasks(
@@ -79,32 +102,46 @@ class DAGBuilder:
 
         Extracts metadata from the task and registers it.
         """
-        metadata = get_pipeline_metadata(task)
+        # Get metadata from the new registry system
+        metadata_obj = _task_registry.get_metadata(task)
 
-        if not metadata:
-            # Task is not decorated with @pipeline_task
-            # Skip or raise error
-            return
+        if metadata_obj is None:
+            # Fallback to legacy metadata system
+            metadata = get_pipeline_metadata(task)
+            if not metadata:
+                # Task is not decorated with @pipeline_task
+                return
 
-        output = metadata.get("output")
-        inputs = metadata.get("inputs")
-        retries = metadata.get("retries", 0)
+            # Convert legacy dict format to new format
+            output = metadata.get("output")
+            inputs = metadata.get("inputs")
+            retries = metadata.get("retries", 0)
+            task_name = getattr(task, "task_name", str(task))
 
-        if not output:
-            # Try to infer from task name or signature
-            output = DAGBuilder._infer_output_name(task)
+            if not output:
+                # Try to infer from task name or signature
+                output = DAGBuilder._infer_output_name(task)
 
-        if inputs is None:
-            # Infer from function signature
-            inputs = DAGBuilder._infer_inputs(task)
+            if inputs is None:
+                # Infer from function signature
+                inputs = DAGBuilder._infer_inputs(task)
 
-        registry.register_task(
-            task,
-            output=output,
-            inputs=inputs,
-            retries=retries,
-            task_name=task.task_name,
-        )
+            registry.register_task(
+                task,
+                output=output,
+                inputs=inputs,
+                retries=retries,
+                task_name=task_name,
+            )
+        else:
+            # Use new metadata system
+            registry.register_task(
+                task,
+                output=metadata_obj.output,
+                inputs=metadata_obj.inputs,
+                retries=metadata_obj.retries,
+                task_name=metadata_obj.task_name,
+            )
 
     @staticmethod
     def _register_callable_task(
@@ -116,34 +153,48 @@ class DAGBuilder:
 
         Extracts metadata from the decorated function.
         """
-        metadata = get_pipeline_metadata(task)
+        # Get metadata from the new registry system
+        metadata_obj = _task_registry.get_metadata(task)
 
-        if not metadata:
-            # Not a pipeline task
-            return
+        if metadata_obj is None:
+            # Fallback to legacy metadata system
+            metadata = get_pipeline_metadata(task)
 
-        output = metadata.get("output")
-        inputs = metadata.get("inputs")
-        retries = metadata.get("retries", 0)
+            if not metadata:
+                # Not a pipeline task
+                return
 
-        if not output:
-            raise ValueError(f"Task {task.__name__} must specify output name")
+            output = metadata.get("output")
+            inputs = metadata.get("inputs")
+            retries = metadata.get("retries", 0)
 
-        if inputs is None:
-            # Infer from function signature
-            inputs = DAGBuilder._infer_inputs_from_callable(task)
+            if not output:
+                raise ValueError(f"Task {task.__name__} must specify output name")
 
-        # Note: We can't register the callable directly since it's not
-        # an AsyncTaskiqDecoratedTask yet. This will be handled when
-        # the task is actually decorated by TaskIQ.
-        # For now, we store the metadata for later use.
-        registry.register_task(
-            task,  # This will be replaced with the actual task later
-            output=output,
-            inputs=inputs,
-            retries=retries,
-            task_name=task.__name__,
-        )
+            if inputs is None:
+                # Infer from function signature
+                inputs = DAGBuilder._infer_inputs_from_callable(task)
+
+            # Note: We can't register the callable directly since it's not
+            # an AsyncTaskiqDecoratedTask yet. This will be handled when
+            # the task is actually decorated by TaskIQ.
+            # For now, we store the metadata for later use.
+            registry.register_task(
+                task,  # This will be replaced with the actual task later
+                output=output,
+                inputs=inputs,
+                retries=retries,
+                task_name=task.__name__,
+            )
+        else:
+            # Use new metadata system
+            registry.register_task(
+                task,
+                output=metadata_obj.output,
+                inputs=metadata_obj.inputs,
+                retries=metadata_obj.retries,
+                task_name=metadata_obj.task_name,
+            )
 
     @staticmethod
     def _infer_output_name(task: Any) -> str:
@@ -198,12 +249,14 @@ class DAGBuilder:
             sig = inspect.signature(task)
             params = list(sig.parameters.values())
 
-            # Skip 'self' and 'cls' parameters
+            # Skip 'self' and 'cls' parameters, plus parameters with defaults
+            # Also skip *args and **kwargs
             input_names = []
             for param in params:
                 if (
                     param.name not in ("self", "cls")
                     and param.default is inspect.Parameter.empty
+                    and param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
                 ):
                     input_names.append(param.name)
 
@@ -216,26 +269,150 @@ class DAGBuilder:
         """
         Validate a DAG for common issues.
 
+        Performs comprehensive validation including:
+        - Empty DAG detection
+        - Circular dependency detection
+        - Disconnected components analysis
+        - Topological sort validation
+
         Args:
             dag: The DAG to validate
 
         Raises:
-            ValueError: If the DAG has issues
+            ValueError: If the DAG has validation issues with detailed messages
         """
-        if not dag.nodes:
-            raise ValueError("DAG has no nodes")
+        DAGBuilder._validate_not_empty(dag)
+        DAGBuilder._validate_no_cycles(dag)
+        DAGBuilder._validate_levels_computable(dag)
+        DAGBuilder._validate_connected(dag)
+        DAGBuilder._validate_valid_levels(dag)
 
-        # Check for circular dependencies
+    @staticmethod
+    def _validate_not_empty(dag: DAG) -> None:
+        """Validate that the DAG contains at least one node."""
+        if not dag.nodes:
+            raise ValueError(
+                "DAG validation failed: DAG contains no nodes. "
+                "Ensure that decorated tasks are provided to the DAG builder.",
+            )
+
+    @staticmethod
+    def _validate_no_cycles(dag: DAG) -> None:
+        """Validate that the DAG has no circular dependencies."""
         try:
             dag.topological_sort()
         except ValueError as e:
-            raise ValueError(f"Invalid DAG: {e}") from e
+            error_msg = str(e)
+            if "Circular dependency" in error_msg:
+                raise ValueError(
+                    "DAG validation failed: Circular dependency detected in task "
+                    f"graph. Tasks form a dependency cycle that cannot be resolved. "
+                    f"Original error: {error_msg}",
+                ) from e
+            raise ValueError(
+                f"DAG validation failed: Invalid DAG structure. {error_msg}",
+            ) from e
 
-        # Check for disconnected nodes
-        if len(dag.nodes) > 1 and not dag.edges:
-            # Multiple nodes but no edges - might be intentional
-            # (parallel execution from start)
-            pass
+    @staticmethod
+    def _validate_levels_computable(dag: DAG) -> None:
+        """Validate that topological levels can be computed."""
+        try:
+            dag.compute_levels()
+        except Exception as e:
+            raise ValueError(
+                f"DAG validation failed: Cannot compute execution levels. "
+                f"This may indicate corrupted dependency information. "
+                f"Original error: {e}",
+            ) from e
+
+    @staticmethod
+    def _validate_connected(dag: DAG) -> None:
+        """Validate that all nodes are connected (no disconnected components)."""
+        if len(dag.nodes) <= 1:
+            return
+
+        visited = set()
+        DAGBuilder._dfs_explore(dag.nodes[0], visited)
+
+        if len(visited) < len(dag.nodes):
+            raise ValueError(
+                f"DAG validation failed: DAG contains disconnected components. "
+                f"Found {len(dag.nodes)} total nodes but only {len(visited)} "
+                f"are reachable from the starting node. Ensure all tasks are "
+                f"properly connected through data dependencies.",
+            )
+
+    @staticmethod
+    def _dfs_explore(node: DAGNode, visited: set[int]) -> None:
+        """Depth-first search to explore connected nodes."""
+        visited.add(id(node))
+        for neighbor in node.dependents + node.dependencies:
+            if id(neighbor) not in visited:
+                DAGBuilder._dfs_explore(neighbor, visited)
+
+    @staticmethod
+    def _validate_valid_levels(dag: DAG) -> None:
+        """Validate that all nodes have valid (non-negative) levels."""
+        invalid_levels = [node for node in dag.nodes if node.level < 0]
+        if invalid_levels:
+            raise ValueError(
+                f"DAG validation failed: Found nodes with invalid levels: "
+                f"{[node.task_name for node in invalid_levels]}. "
+                f"This indicates corrupted dependency level computation.",
+            )
+
+    @staticmethod
+    def analyze_missing_dependencies(
+        tasks: list[Any],
+        registry: DataflowRegistry,
+    ) -> dict[str, list[str]]:
+        """
+        Analyze which dependencies are missing for each task.
+
+        Args:
+            tasks: List of tasks to analyze
+            registry: Registry containing task metadata
+
+        Returns:
+            Dictionary mapping task names to lists of missing input names
+        """
+        missing_deps: dict[str, list[str]] = {}
+
+        for task in tasks:
+            # Try new metadata system first
+            metadata_obj = _task_registry.get_metadata(task)
+
+            if metadata_obj is not None:
+                # Use new metadata system
+                inputs = metadata_obj.inputs
+                task_name = metadata_obj.task_name
+            else:
+                # Fallback to legacy metadata system
+                metadata = get_pipeline_metadata(task)
+                if not metadata:
+                    continue
+
+                inputs = metadata.get("inputs", [])
+                if hasattr(task, "task_name"):
+                    task_name = task.task_name
+                else:
+                    task_name = getattr(task, "__name__", str(task))
+                    # Remove module prefix if present
+                    if ":" in task_name:
+                        task_name = task_name.split(":")[-1]
+
+            missing_inputs = []
+            for input_name in inputs:
+                if registry.get_producer(input_name) is None:
+                    # Check if it's registered as external input
+                    data_node = registry.data_nodes.get(input_name)
+                    if not (data_node and data_node.is_external):
+                        missing_inputs.append(input_name)
+
+            if missing_inputs:
+                missing_deps[task_name] = missing_inputs
+
+        return missing_deps
 
 
 class PipelineDAGBuilder(DAGBuilder):
