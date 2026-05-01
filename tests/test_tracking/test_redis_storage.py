@@ -1,5 +1,7 @@
 """Tests for Redis pipeline storage."""
 
+import re
+
 import pytest
 
 from taskiq_flow.tracking.redis_storage import RedisPipelineStorage
@@ -10,15 +12,14 @@ redis = pytest.importorskip("redis")
 @pytest.fixture
 async def redis_storage() -> RedisPipelineStorage:
     """Create Redis storage instance."""
-    # Skip if Redis is not available
     pytest.importorskip("redis")
+    storage = RedisPipelineStorage("redis://localhost:6379", ttl_seconds=3600)
     try:
-        storage = RedisPipelineStorage("redis://localhost:6379", ttl_seconds=3600)
         # Test connection
         await storage.redis.ping()
-        return storage
-    except Exception:
-        pytest.skip("Redis not available for testing") # Add explicit return for type checker
+    except Exception as e:
+        pytest.skip(f"Redis not available for testing: {e}")
+    return storage
 
 
 @pytest.mark.asyncio

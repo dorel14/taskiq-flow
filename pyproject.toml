@@ -140,6 +140,7 @@ line-length = 88
   "SLF001",  # Private member accessed
   "S311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
   "D101",  # Missing docstring in public class
+  "COM812",  # Trailing comma conflicts with formatter
 ]
 
 [tool.ruff.lint.pydocstyle]

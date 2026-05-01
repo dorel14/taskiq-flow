@@ -151,7 +151,7 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
             # No preprocessing task, create dummy tasks that just return the items
             for item in items_list:
                 # Create a simple task that returns the item as-is
-                task = await identity_task.kicker().kiq(item)
+                task = await identity_task.kicker(broker=broker).kiq(item)
                 sub_task_ids.append(task.task_id)
 
         # Wait for all tasks to complete and reduce results
