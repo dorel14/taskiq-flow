@@ -1,5 +1,7 @@
 """Tests for enhanced pipeline task decorators."""
 
+from typing import Any
+
 import pytest
 from taskiq import InMemoryBroker
 
@@ -71,7 +73,7 @@ class TestPipelineTaskDecorator:
 
         @broker.task
         @pipeline_task(output="product")
-        async def multiply(x: int, y: int, config: dict | None = None) -> int:
+        async def multiply(x: int, y: int, config: dict[str, Any] | None = None) -> int:
             # config has default, so shouldn't be inferred as input
             return x * y
 
@@ -119,7 +121,7 @@ class TestPipelineTaskMultiOutput:
 
         @broker.task
         @pipeline_task_multi_output(outputs={"data": dict, "stats": dict}, retries=1)
-        async def process_multi(value: int) -> dict:
+        async def process_multi(value: int) -> dict[str, Any]:
             return {"data": {"value": value}, "stats": {"count": 1}}
 
         assert is_pipeline_task(process_multi)
@@ -138,7 +140,7 @@ class TestPipelineTaskMultiOutput:
 
         @broker.task
         @pipeline_task_multi_output(outputs={"features": list, "metadata": dict})
-        async def extract_features(path: str) -> dict:
+        async def extract_features(path: str) -> dict[str, Any]:
             return {"features": [1, 2, 3], "metadata": {"duration": 180}}
 
         # Check that both outputs are registered

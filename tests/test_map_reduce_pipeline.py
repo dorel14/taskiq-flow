@@ -130,7 +130,9 @@ class TestMapReducePipeline:
         assert hasattr(pipeline, "_map_operations")
         assert len(pipeline._map_operations) == 1
         assert "chunk_config" in pipeline._map_operations[0]["kwargs"]
-        assert pipeline._map_operations[0]["kwargs"]["chunk_config"].chunk_size == 25
+        chunk_config = pipeline._map_operations[0]["kwargs"]["chunk_config"]
+        assert isinstance(chunk_config, ChunkConfig)
+        assert chunk_config.chunk_size == 25
 
     @pytest.mark.asyncio
     async def test_pipeline_map_reduce_metadata(self, broker: InMemoryBroker) -> None:

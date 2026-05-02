@@ -5,7 +5,7 @@ from typing import Any
 
 from taskiq import AsyncBroker
 
-from taskiq_flow.map_reduce import MapReduce
+from taskiq_flow.map_reduce import MapReduce, MapResult
 
 
 async def map(
@@ -44,7 +44,7 @@ async def map(
             max_parallel=10,
         )
     """
-    return await MapReduce.map(
+    result: MapResult[Any] = await MapReduce.map(
         broker,
         task,
         items,
@@ -53,6 +53,7 @@ async def map(
         max_parallel,
         **kwargs,
     )
+    return result.results
 
 
 __all__ = ["map"]

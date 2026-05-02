@@ -62,7 +62,7 @@ class PipelineTaskRegistry:
     def validate_outputs(self) -> None:
         """Validate all registered outputs for conflicts."""
         # Check for duplicate output names across different tasks
-        output_to_task = {}
+        output_to_task: dict[Any, Any] = {}
         for task, metadata in self._tasks.items():
             if metadata.output in output_to_task:
                 existing_task = output_to_task[metadata.output]
@@ -80,7 +80,7 @@ class PipelineTaskRegistry:
 
 
 # Global registry instance
-_task_registry = PipelineTaskRegistry()
+_task_registry: PipelineTaskRegistry = PipelineTaskRegistry()
 
 
 def pipeline_task(

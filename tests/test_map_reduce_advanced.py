@@ -320,7 +320,7 @@ class TestMapReduceAdvanced:
         assert sum(len(c) for c in chunks) == 15  # Only first 15 items
 
     @pytest.mark.asyncio
-    async def test_pipeline_map_reduce_integration(
+    async def test_pipeline_map_reduce_advanced_integration(
         self, broker: InMemoryBroker
     ) -> None:
         """Test map-reduce integration with DataflowPipeline."""

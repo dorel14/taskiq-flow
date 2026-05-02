@@ -331,7 +331,7 @@ class DAGBuilder:
         if len(dag.nodes) <= 1:
             return
 
-        visited = set()
+        visited: set[int] = set()
         DAGBuilder._dfs_explore(dag.nodes[0], visited)
 
         if len(visited) < len(dag.nodes):
@@ -402,12 +402,13 @@ class DAGBuilder:
                         task_name = task_name.split(":")[-1]
 
             missing_inputs = []
-            for input_name in inputs:
-                if registry.get_producer(input_name) is None:
-                    # Check if it's registered as external input
-                    data_node = registry.data_nodes.get(input_name)
-                    if not (data_node and data_node.is_external):
-                        missing_inputs.append(input_name)
+            if inputs is not None:
+                for input_name in inputs:
+                    if registry.get_producer(input_name) is None:
+                        # Check if it's registered as external input
+                        data_node = registry.data_nodes.get(input_name)
+                        if not (data_node and data_node.is_external):
+                            missing_inputs.append(input_name)
 
             if missing_inputs:
                 missing_deps[task_name] = missing_inputs

@@ -42,6 +42,8 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         self._dataflow_tasks: list[AsyncTaskiqDecoratedTask[Any, Any]] = []
         self._data_cache: dict[str, Any] = {}
         self._is_dataflow_built: bool = False
+        self._map_operations: list[dict[str, Any]] = []
+        self._reduce_operations: list[dict[str, Any]] = []
 
     @classmethod
     def from_tasks(

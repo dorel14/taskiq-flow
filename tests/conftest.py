@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 import pytest
 from taskiq import InMemoryBroker
 
@@ -29,7 +31,7 @@ def broker() -> InMemoryBroker:
 
 
 @pytest.fixture
-def simple_task(broker: InMemoryBroker) -> callable:
+def simple_task(broker: InMemoryBroker) -> Callable[[int], Any]:
     """
     Create a simple test task.
 
@@ -46,7 +48,7 @@ def simple_task(broker: InMemoryBroker) -> callable:
 
 
 @pytest.fixture
-def dataflow_task(broker: InMemoryBroker) -> callable:
+def dataflow_task(broker: InMemoryBroker) -> Callable[[dict[str, Any]], Any]:
     """
     Create a dataflow-enabled test task.
 
@@ -57,7 +59,7 @@ def dataflow_task(broker: InMemoryBroker) -> callable:
 
     @broker.task
     @pipeline_task(output="result")
-    async def process_data(data: dict) -> dict:
+    async def process_data(data: dict[str, Any]) -> dict[str, Any]:
         """Process data and return result."""
         return {"processed": data.get("input", 0) + 1}
 

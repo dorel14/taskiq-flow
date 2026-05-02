@@ -101,7 +101,7 @@ class MapReduce:
         chunk_config: ChunkConfig | None = None,
         progress_callback: Callable[[int, int], None] | None = None,
         **kwargs: Any,
-    ) -> MapResult:
+    ) -> MapResult[Any]:
         """
         Apply a task to each item in parallel with advanced features.
 
@@ -330,7 +330,7 @@ class MapReduce:
                 logger.warning("[MAP] Chunk failed: %s", str(r))
                 # Return empty list for failed chunks
                 final_results.append([])
-            else:
+            elif isinstance(r, list):
                 final_results.append(r)
         return final_results
 
@@ -342,7 +342,7 @@ class MapReduce:
         output: str,
         max_parallel: int | None = None,
         **kwargs: Any,
-    ) -> MapResult:
+    ) -> MapResult[Any]:
         """
         Multi-dimensional map (sweep) over multiple parameters.
 
