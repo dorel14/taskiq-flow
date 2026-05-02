@@ -1,7 +1,7 @@
 """Trigger helpers for scheduling."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from apscheduler.triggers.cron import CronTrigger
@@ -22,7 +22,7 @@ except ImportError:
 
 # Type alias for trigger types
 if TYPE_CHECKING:
-    TriggerType = Union[CronTrigger, DateTrigger, IntervalTrigger]
+    TriggerType = CronTrigger | DateTrigger | IntervalTrigger
 else:
     TriggerType = Any
 

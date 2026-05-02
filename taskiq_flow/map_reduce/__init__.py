@@ -397,7 +397,7 @@ class MapReduce:
             """Process a single parameter combination."""
             try:
                 # Build input dict
-                inputs = dict(zip(param_names, combination))
+                inputs = dict(zip(param_names, combination, strict=False))
                 inputs.update(kwargs)
 
                 if semaphore:
