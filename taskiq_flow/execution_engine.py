@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -85,6 +86,46 @@ class ExecutionEngine:
         self.pipeline_id: str | None = None
         self.step_counter: int = 0
 
+    def _log(
+        self,
+        level: int,
+        message: str,
+        task_node: DAGNode | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Log a message with pipeline and task context.
+
+        Args:
+            level: Logging level
+            message: Log message
+            task_node: Task node for context
+            **kwargs: Additional context to include in log
+        """
+        extra = {
+            "pipeline_id": self.pipeline_id,
+            **kwargs,
+        }
+        if task_node:
+            extra["task_name"] = task_node.task.task_name
+            extra["step_index"] = self._get_step_index(task_node)
+        logger.log(level, message, extra=extra)
+
+    def _get_step_index(self, task_node: DAGNode) -> int:
+        """Get step index for a task node.
+
+        Args:
+            task_node: Task node
+
+        Returns:
+            Step index
+        """
+        # Find index in topological order
+        try:
+            sorted_nodes = self.dag.topological_sort()
+            return sorted_nodes.index(task_node)
+        except (ValueError, RuntimeError):
+            return -1
+
     async def execute(
         self,
         inputs: dict[str, Any],
@@ -109,10 +150,10 @@ class ExecutionEngine:
         # Store external inputs
         self.data_cache.update(inputs)
 
-        logger.info(
-            "[PIPELINE] Start pipeline_id=%s, tasks=%d",
-            pipeline_id or "unknown",
-            len(self.dag.nodes),
+        self._log(
+            logging.INFO,
+            "Start pipeline execution",
+            task_count=len(self.dag.nodes),
         )
 
         try:
@@ -145,24 +186,18 @@ class ExecutionEngine:
             # Collect all outputs
             outputs = self._collect_outputs()
 
-            logger.info(
-                "[PIPELINE] Complete pipeline_id=%s duration=N/A",
-                pipeline_id or "unknown",
-            )
+            self._log(logging.INFO, "Pipeline execution completed successfully")
 
             return outputs
 
         except AbortPipeline:
-            logger.info(
-                "[PIPELINE] Aborted pipeline_id=%s",
-                pipeline_id or "unknown",
-            )
+            self._log(logging.INFO, "Pipeline execution aborted")
             raise
         except Exception as e:
-            logger.error(
-                "[PIPELINE] Error pipeline_id=%s error=%s",
-                pipeline_id or "unknown",
-                str(e),
+            self._log(
+                logging.ERROR,
+                "Pipeline execution error",
+                error=str(e),
             )
             raise
 
@@ -256,14 +291,18 @@ class ExecutionEngine:
         # Prepare inputs
         inputs = self._prepare_inputs(task_node)
 
-        logger.info(
-            "[STEP] %s started inputs=%s",
-            task.task_name,
-            list(inputs.keys()),
+        self._log(
+            logging.INFO,
+            "Task execution started",
+            task_node=task_node,
+            inputs=list(inputs.keys()),
+            retries=retries,
         )
 
         # Execute with retries
         last_error = None
+        start_time = time.time()
+        
         for attempt in range(retries + 1):
             try:
                 execution.attempts = attempt + 1
@@ -275,10 +314,15 @@ class ExecutionEngine:
                     task_node,
                 )
 
-                logger.info(
-                    "[STEP] %s completed output=%s duration=N/A",
-                    task.task_name,
-                    output_name,
+                duration = time.time() - start_time
+                
+                self._log(
+                    logging.INFO,
+                    "Task execution completed successfully",
+                    task_node=task_node,
+                    output_name=output_name,
+                    duration=duration,
+                    attempt=attempt + 1,
                 )
 
                 # Cache result
@@ -290,11 +334,16 @@ class ExecutionEngine:
                 raise
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    "[STEP] %s attempt %d failed error=%s",
-                    task.task_name,
-                    attempt + 1,
-                    str(e),
+                duration = time.time() - start_time
+                
+                self._log(
+                    logging.WARNING,
+                    "Task execution attempt failed",
+                    task_node=task_node,
+                    attempt=attempt + 1,
+                    max_attempts=retries + 1,
+                    error=str(e),
+                    duration=duration,
                 )
 
                 if attempt < retries:
@@ -362,15 +411,33 @@ class ExecutionEngine:
             execution.error = result
             self.failed_tasks.add(task_node.task)
 
+            self._log(
+                logging.ERROR,
+                "Task execution failed",
+                task_node=task_node,
+                error=str(result),
+            )
+
             if self.fail_fast:
                 # Cancel all pending tasks
                 for node in self.dag.nodes:
                     if node.task not in self.completed_tasks:
                         self.task_states[node.task].state = TaskState.SKIPPED
+                        self._log(
+                            logging.WARNING,
+                            "Task skipped due to fail_fast",
+                            task_node=node,
+                        )
         else:
             execution.state = TaskState.COMPLETED
             execution.result = result
             self.completed_tasks.add(task_node.task)
+
+            self._log(
+                logging.INFO,
+                "Task result processed successfully",
+                task_node=task_node,
+            )
 
     def _create_deadlock_error(self) -> Exception:
         """Create a deadlock error."""
@@ -379,10 +446,18 @@ class ExecutionEngine:
             for node, state in self.task_states.items()
             if state.state == TaskState.PENDING
         ]
-        return ValueError(
+        error_msg = (
             f"Deadlock detected. Pending tasks: {pending}. "
-            "Missing data dependencies or circular dependency.",
+            "Missing data dependencies or circular dependency."
         )
+        
+        self._log(
+            logging.ERROR,
+            "Deadlock detected in pipeline execution",
+            pending_tasks=pending,
+        )
+        
+        return ValueError(error_msg)
 
     def _create_execution_error(self) -> Exception:
         """Create an execution error."""
@@ -391,7 +466,15 @@ class ExecutionEngine:
             for node, state in self.task_states.items()
             if state.state == TaskState.FAILED
         ]
-        return Exception(f"Pipeline execution failed. Errors: {'; '.join(errors)}")
+        error_msg = f"Pipeline execution failed. Errors: {'; '.join(errors)}"
+        
+        self._log(
+            logging.ERROR,
+            "Pipeline execution failed",
+            errors=errors,
+        )
+        
+        return Exception(error_msg)
 
     def _collect_outputs(self) -> dict[str, Any]:
         """
@@ -407,6 +490,13 @@ class ExecutionEngine:
                 metadata = self._get_task_metadata(node.task)
                 output_name = metadata.get("output", node.task.task_name)
                 outputs[output_name] = state.result
+
+        self._log(
+            logging.INFO,
+            "Pipeline outputs collected",
+            output_count=len(outputs),
+            outputs=list(outputs.keys()),
+        )
 
         return outputs
 

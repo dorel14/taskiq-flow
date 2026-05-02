@@ -1,5 +1,6 @@
 """Enhanced Pipeline class with dataflow support."""
 
+import logging
 from typing import Any
 
 from taskiq import AsyncBroker
@@ -11,6 +12,8 @@ from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.execution_engine import ExecutionEngine
 from taskiq_flow.map_reduce import MapReduce
 from taskiq_flow.pipeliner import Pipeline as OriginalPipeline
+
+logger = logging.getLogger(__name__)
 
 
 class DataflowPipeline(OriginalPipeline[Any, Any]):
@@ -201,6 +204,17 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             },
         )
 
+        logger.info(
+            "Map operation added to pipeline",
+            extra={
+                "task_name": task.task_name,
+                "output": output,
+                "items_count": len(items) if hasattr(items, "__len__") else None,
+                "chunk_config": kwargs.get("chunk_config"),
+                "max_parallel": kwargs.get("max_parallel"),
+            },
+        )
+
         return self
 
     def reduce(  # type: ignore[override]
@@ -247,6 +261,15 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             },
         )
 
+        logger.info(
+            "Reduce operation added to pipeline",
+            extra={
+                "task_name": task.task_name,
+                "input_name": input_name,
+                "output": output,
+            },
+        )
+
         return self
 
     async def kiq_map_reduce(
@@ -270,6 +293,15 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 track_list=tracks
             )
         """
+        logger.info(
+            "Starting map-reduce pipeline execution",
+            extra={
+                "map_operations": len(getattr(self, "_map_operations", [])),
+                "reduce_operations": len(getattr(self, "_reduce_operations", [])),
+                "inputs": list(inputs.keys()),
+            },
+        )
+
         results: dict[str, Any] = {}
 
         # Execute map operations
@@ -280,6 +312,17 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 kwargs = op_dict.get("kwargs", {})
                 chunk_config = kwargs.get("chunk_config")
                 max_parallel = kwargs.get("max_parallel")
+
+                logger.info(
+                    "Executing map operation",
+                    extra={
+                        "task_name": op_dict["task"].task_name,
+                        "output": op_dict["output"],
+                        "items_count": len(op_dict["items"]),
+                        "has_chunk_config": chunk_config is not None,
+                        "max_parallel": max_parallel,
+                    },
+                )
 
                 if chunk_config:
                     # Use advanced map with chunking
@@ -305,6 +348,17 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         "success_rate": map_result.success_rate,
                         "errors": len(map_result.errors),
                     }
+                    
+                    logger.info(
+                        "Map operation completed",
+                        extra={
+                            "task_name": op_dict["task"].task_name,
+                            "output": op_dict["output"],
+                            "items_processed": map_result.items_processed,
+                            "duration": map_result.duration,
+                            "success_rate": map_result.success_rate,
+                        },
+                    )
                 else:
                     # Standard map
                     result = await MapReduce.map(
@@ -317,6 +371,14 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         **kwargs,
                     )
                     results[op_dict["output"]] = result
+                    
+                    logger.info(
+                        "Standard map operation completed",
+                        extra={
+                            "task_name": op_dict["task"].task_name,
+                            "output": op_dict["output"],
+                        },
+                    )
 
         # Execute reduce operations
         if hasattr(self, "_reduce_operations"):
@@ -326,6 +388,17 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 kwargs = op_dict_reduce.get("kwargs", {})
                 chunk_size = kwargs.get("chunk_size")
                 initial = kwargs.get("initial")
+
+                logger.info(
+                    "Executing reduce operation",
+                    extra={
+                        "task_name": op_dict_reduce["task"].task_name,
+                        "input_name": op_dict_reduce["input_name"],
+                        "output": op_dict_reduce["output"],
+                        "input_count": len(input_data) if hasattr(input_data, "__len__") else None,
+                        "has_chunk_size": chunk_size is not None,
+                    },
+                )
 
                 if chunk_size:
                     # Use chunked reduction
@@ -349,11 +422,32 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         op_dict_reduce["task"],
                         input_data,
                         output=op_dict_reduce["output"],
-                        initial=initial if initial is not None else 0,
-                        **{k: v for k, v in kwargs.items() if k != "initial"},
+                        **kwargs,
                     )
-                results[op_dict_reduce["output"]] = result
 
+                results[op_dict_reduce["output"]] = result
+                
+                logger.info(
+                    "Reduce operation completed",
+                    extra={
+                        "task_name": op_dict_reduce["task"].task_name,
+                        "output": op_dict_reduce["output"],
+                    },
+                )
+
+        logger.info(
+            "Map-reduce pipeline execution completed",
+            extra={
+                "results_count": len(results),
+                "result_keys": list(results.keys()),
+            },
+        )
+
+        # Return the final result (last reduce output or first map output)
+        if hasattr(self, "_reduce_operations") and self._reduce_operations:
+            return results[self._reduce_operations[-1]["output"]]
+        elif hasattr(self, "_map_operations") and self._map_operations:
+            return results[self._map_operations[-1]["output"]]
         return results
 
     async def kiq_map_reduce_advanced(

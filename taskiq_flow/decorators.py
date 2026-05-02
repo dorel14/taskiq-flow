@@ -1,10 +1,13 @@
 """Decorators for pipeline tasks."""
 
 import inspect
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -152,6 +155,17 @@ def pipeline_task(
 
         # Attach metadata to wrapper for easy access
         wrapper._pipeline_metadata = metadata  # type: ignore
+
+        logger.info(
+            "Pipeline task registered",
+            extra={
+                "task_name": metadata.task_name,
+                "output": metadata.output,
+                "inputs": metadata.inputs,
+                "retries": metadata.retries,
+                "is_async": _is_async_function(func),
+            },
+        )
 
         return wrapper
 
