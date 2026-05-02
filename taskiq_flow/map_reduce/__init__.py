@@ -389,7 +389,7 @@ class MapReduce:
         errors: list[Exception] = []
 
         async def process_combination(
-            combination: tuple[Any, ...], index: int
+            combination: tuple[Any, ...], index: int,
         ) -> Any:
             """Process a single parameter combination."""
             try:
@@ -400,16 +400,16 @@ class MapReduce:
                 if semaphore:
                     async with semaphore:
                         return await MapReduce._execute_task(
-                            broker, task, inputs
+                            broker, task, inputs,
                         )
                 else:
                     return await MapReduce._execute_task(
-                        broker, task, inputs
+                        broker, task, inputs,
                     )
             except Exception as e:
                 errors.append(e)
                 logger.warning(
-                    "[SWEEP] Combination %d failed: %s", index, str(e)
+                    "[SWEEP] Combination %d failed: %s", index, str(e),
                 )
                 raise
 

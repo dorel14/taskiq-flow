@@ -186,11 +186,15 @@ class PipelineScheduler:
 
     async def start(self) -> None:
         """Start the scheduler."""
+        if self.scheduler is None:
+            raise RuntimeError("Scheduler is not available")
         logger.info("Starting pipeline scheduler")
         await self.scheduler.start()
 
     async def shutdown(self, wait: bool = True) -> None:
         """Shutdown the scheduler."""
+        if self.scheduler is None:
+            raise RuntimeError("Scheduler is not available")
         logger.info("Shutting down pipeline scheduler")
         await self.scheduler.shutdown(wait=wait)
 

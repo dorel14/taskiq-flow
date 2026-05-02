@@ -16,7 +16,14 @@ except ImportError:
     APSCHEDULER_AVAILABLE = False
 
 # Type alias for trigger types
-TriggerType: TypeAlias = CronTrigger | DateTrigger | IntervalTrigger | None
+if APSCHEDULER_AVAILABLE:
+    from apscheduler.triggers.cron import CronTrigger
+    from apscheduler.triggers.date import DateTrigger
+    from apscheduler.triggers.interval import IntervalTrigger
+    
+    TriggerType: TypeAlias = CronTrigger | DateTrigger | IntervalTrigger
+else:
+    TriggerType: TypeAlias = Any
 
 
 def create_cron_trigger(

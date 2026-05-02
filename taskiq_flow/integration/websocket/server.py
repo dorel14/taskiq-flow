@@ -147,8 +147,8 @@ def get_websocket_server(
 
     Server configuration is only used on first creation.
     """
-    global _server
+    global _server  # noqa: PLW0603
     if _server is None:
         _server = PipelineWebSocketServer(host, port)
-    assert _server is not None  # This should never happen
+    # _server should never be None after creation
     return _server
