@@ -34,6 +34,9 @@ class PipelineScheduler:
         if AsyncIOScheduler is None:
             raise ImportError("APScheduler is required for PipelineScheduler")
 
+        # Assert to help type checker
+        assert AsyncIOScheduler is not None
+
         self.broker = broker
         self.scheduler = scheduler or AsyncIOScheduler()
         self._configure_job_store(job_store_url or "sqlite:///./scheduler_jobs.db")
@@ -200,10 +203,12 @@ class PipelineScheduler:
 
     def list_jobs(self) -> Any:
         """List all scheduled jobs."""
+        assert self.scheduler is not None
         return self.scheduler.get_jobs()
 
     async def remove_job(self, job_id: str) -> bool:
         """Remove a job by ID."""
+        assert self.scheduler is not None
         try:
             self.scheduler.remove_job(job_id)
             return True
@@ -212,6 +217,7 @@ class PipelineScheduler:
 
     async def pause_job(self, job_id: str) -> bool:
         """Pause a job."""
+        assert self.scheduler is not None
         try:
             self.scheduler.pause_job(job_id)
             return True
@@ -220,6 +226,7 @@ class PipelineScheduler:
 
     async def resume_job(self, job_id: str) -> bool:
         """Resume a job."""
+        assert self.scheduler is not None
         try:
             self.scheduler.resume_job(job_id)
             return True
