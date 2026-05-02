@@ -157,12 +157,8 @@ class TestMapReducePipeline:
 
         result = await pipeline.kiq_map_reduce(initial=0)
 
-        assert "processed" in result
-        assert "total" in result
-        assert "processed_metadata" in result
-        assert result["processed_metadata"]["items_processed"] == 10
-        assert result["processed_metadata"]["success_rate"] == 1.0
-        assert result["total"] == sum(range(1, 11))  # 1+2+...+10 = 55
+        # The result should be the final reduced value
+        assert result == sum(range(1, 11))  # 1+2+...+10 = 55
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Literal
 
 
 @dataclass
@@ -22,10 +22,10 @@ class StructuredFormatter(logging.Formatter):
 
     def __init__(
         self,
-        fmt: Optional[str] = None,
-        datefmt: Optional[str] = None,
-        style: str = "%",
-        config: Optional[LogConfig] = None,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: Literal["%", "{", "$"] = "%",
+        config: LogConfig | None = None,
     ) -> None:
         """Initialize the structured formatter.
 
@@ -92,11 +92,13 @@ class StructuredFormatter(logging.Formatter):
         if step_index is not None:
             prefix_parts.append(f"Step={step_index}")
 
-        prefix = "["] + "] [".join(prefix_parts) + "]" if prefix_parts else ""
+        prefix = "[" + "] [".join(prefix_parts) + "]" if prefix_parts else ""
 
         # Build text message
         time_str = (
-            self.formatTime(record, self.datefmt) if self.config.include_timestamp else ""
+            self.formatTime(record, self.datefmt)
+            if self.config.include_timestamp
+            else ""
         )
         time_prefix = f"{time_str} " if time_str else ""
 
@@ -114,7 +116,7 @@ class StructuredFormatter(logging.Formatter):
 def setup_logging(
     level: int = logging.INFO,
     format_type: str = "text",
-    handlers: Optional[list[logging.Handler]] = None,
+    handlers: list[logging.Handler] | None = None,
 ) -> None:
     """Set up structured logging for TaskIQ-Flow.
 
@@ -131,8 +133,8 @@ def setup_logging(
         handler.setFormatter(formatter)
         handlers = [handler]
     else:
-        for handler in handlers:
-            handler.setFormatter(formatter)
+        for h in handlers:
+            h.setFormatter(formatter)
 
     # Configure root logger
     root_logger = logging.getLogger()
@@ -143,8 +145,8 @@ def setup_logging(
         root_logger.removeHandler(existing_handler)
 
     # Add our handlers
-    for handler in handlers:
-        root_logger.addHandler(handler)
+    for h in handlers:
+        root_logger.addHandler(h)
 
     # Set specific loggers
     loggers = [
@@ -163,8 +165,8 @@ def setup_logging(
         for existing_handler in logger.handlers[:]:
             logger.removeHandler(existing_handler)
         # Add our handlers
-        for handler in handlers:
-            logger.addHandler(handler)
+        for h in handlers:
+            logger.addHandler(h)
 
 
 def get_logger(name: str) -> logging.Logger:

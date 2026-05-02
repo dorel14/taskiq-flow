@@ -302,7 +302,7 @@ class ExecutionEngine:
         # Execute with retries
         last_error = None
         start_time = time.time()
-        
+
         for attempt in range(retries + 1):
             try:
                 execution.attempts = attempt + 1
@@ -315,7 +315,7 @@ class ExecutionEngine:
                 )
 
                 duration = time.time() - start_time
-                
+
                 self._log(
                     logging.INFO,
                     "Task execution completed successfully",
@@ -335,7 +335,7 @@ class ExecutionEngine:
             except Exception as e:
                 last_error = e
                 duration = time.time() - start_time
-                
+
                 self._log(
                     logging.WARNING,
                     "Task execution attempt failed",
@@ -450,13 +450,13 @@ class ExecutionEngine:
             f"Deadlock detected. Pending tasks: {pending}. "
             "Missing data dependencies or circular dependency."
         )
-        
+
         self._log(
             logging.ERROR,
             "Deadlock detected in pipeline execution",
             pending_tasks=pending,
         )
-        
+
         return ValueError(error_msg)
 
     def _create_execution_error(self) -> Exception:
@@ -467,13 +467,13 @@ class ExecutionEngine:
             if state.state == TaskState.FAILED
         ]
         error_msg = f"Pipeline execution failed. Errors: {'; '.join(errors)}"
-        
+
         self._log(
             logging.ERROR,
             "Pipeline execution failed",
             errors=errors,
         )
-        
+
         return Exception(error_msg)
 
     def _collect_outputs(self) -> dict[str, Any]:

@@ -348,7 +348,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         "success_rate": map_result.success_rate,
                         "errors": len(map_result.errors),
                     }
-                    
+
                     logger.info(
                         "Map operation completed",
                         extra={
@@ -371,7 +371,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         **kwargs,
                     )
                     results[op_dict["output"]] = result
-                    
+
                     logger.info(
                         "Standard map operation completed",
                         extra={
@@ -395,7 +395,9 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         "task_name": op_dict_reduce["task"].task_name,
                         "input_name": op_dict_reduce["input_name"],
                         "output": op_dict_reduce["output"],
-                        "input_count": len(input_data) if hasattr(input_data, "__len__") else None,
+                        "input_count": (
+                            len(input_data) if hasattr(input_data, "__len__") else None
+                        ),
                         "has_chunk_size": chunk_size is not None,
                     },
                 )
@@ -417,16 +419,21 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                     )
                 else:
                     # Standard reduction
+                    # Ensure initial is in kwargs if not present
+                    reduce_kwargs = kwargs.copy()
+                    if "initial" not in reduce_kwargs:
+                        reduce_kwargs["initial"] = 0
+
                     result = await MapReduce.reduce(
                         self.broker,
                         op_dict_reduce["task"],
                         input_data,
                         output=op_dict_reduce["output"],
-                        **kwargs,
+                        **reduce_kwargs,
                     )
 
                 results[op_dict_reduce["output"]] = result
-                
+
                 logger.info(
                     "Reduce operation completed",
                     extra={
@@ -446,7 +453,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         # Return the final result (last reduce output or first map output)
         if hasattr(self, "_reduce_operations") and self._reduce_operations:
             return results[self._reduce_operations[-1]["output"]]
-        elif hasattr(self, "_map_operations") and self._map_operations:
+        if hasattr(self, "_map_operations") and self._map_operations:
             return results[self._map_operations[-1]["output"]]
         return results
 

@@ -138,7 +138,9 @@ class MapReduce:
         start_time = time.time()
 
         if not items:
-            return MapResult(results=[], output_name=output, items_processed=0, duration=0.0)
+            return MapResult(
+                results=[], output_name=output, items_processed=0, duration=0.0,
+            )
 
         # Determine parameter name
         if param_name is None:
@@ -310,7 +312,9 @@ class MapReduce:
                     result = await process_item(item, i)
                     chunk_results.append(result)
                 except Exception as e:
-                    logger.warning("[MAP] Chunk %d item %d failed: %s", chunk_idx, i, str(e))
+                    logger.warning(
+                        "[MAP] Chunk %d item %d failed: %s", chunk_idx, i, str(e),
+                    )
                     raise
 
             completed_chunks += 1
@@ -319,9 +323,7 @@ class MapReduce:
 
             return chunk_results
 
-        chunk_tasks = [
-            process_chunk(chunk, i) for i, chunk in enumerate(chunks)
-        ]
+        chunk_tasks = [process_chunk(chunk, i) for i, chunk in enumerate(chunks)]
         results = await asyncio.gather(*chunk_tasks, return_exceptions=True)
         # Filter out exceptions and return only successful results
         final_results: list[list[Any]] = []
@@ -389,7 +391,8 @@ class MapReduce:
         errors: list[Exception] = []
 
         async def process_combination(
-            combination: tuple[Any, ...], index: int,
+            combination: tuple[Any, ...],
+            index: int,
         ) -> Any:
             """Process a single parameter combination."""
             try:
@@ -400,24 +403,27 @@ class MapReduce:
                 if semaphore:
                     async with semaphore:
                         return await MapReduce._execute_task(
-                            broker, task, inputs,
+                            broker,
+                            task,
+                            inputs,
                         )
                 else:
                     return await MapReduce._execute_task(
-                        broker, task, inputs,
+                        broker,
+                        task,
+                        inputs,
                     )
             except Exception as e:
                 errors.append(e)
                 logger.warning(
-                    "[SWEEP] Combination %d failed: %s", index, str(e),
+                    "[SWEEP] Combination %d failed: %s",
+                    index,
+                    str(e),
                 )
                 raise
 
         results = await asyncio.gather(
-            *[
-                process_combination(comb, i)
-                for i, comb in enumerate(combinations)
-            ],
+            *[process_combination(comb, i) for i, comb in enumerate(combinations)],
             return_exceptions=True,
         )
 
@@ -493,8 +499,7 @@ class MapReduce:
                 len(inputs),
             )
             chunks = [
-                inputs[i : i + chunk_size]
-                for i in range(0, len(inputs), chunk_size)
+                inputs[i : i + chunk_size] for i in range(0, len(inputs), chunk_size)
             ]
 
             # Reduce each chunk

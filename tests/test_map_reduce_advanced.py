@@ -1,6 +1,5 @@
 """Advanced map-reduce tests."""
 
-import asyncio
 
 import pytest
 from taskiq import InMemoryBroker
@@ -298,7 +297,6 @@ class TestMapReduceAdvanced:
     @pytest.mark.asyncio
     async def test_chunk_config_calculate_chunks(self) -> None:
         """Test ChunkConfig chunk calculation."""
-
         config = ChunkConfig(chunk_size=10)
         items = list(range(25))
         chunks = config.calculate_chunks(items)
@@ -311,7 +309,6 @@ class TestMapReduceAdvanced:
     @pytest.mark.asyncio
     async def test_chunk_config_max_chunks(self) -> None:
         """Test ChunkConfig with max_chunks limit."""
-
         config = ChunkConfig(chunk_size=5, max_chunks=3)
         items = list(range(100))
         chunks = config.calculate_chunks(items)
