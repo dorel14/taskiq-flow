@@ -42,8 +42,13 @@ class TrackingStorageFactory:
     @staticmethod
     def _extract_redis_url(broker: AsyncBroker) -> str | None:
         """Extract Redis URL from broker if possible."""
+        # First, try to get URL from broker's url attribute (for any broker type)
+        broker_url = getattr(broker, "url", None)
+        if broker_url and str(broker_url).startswith("redis://"):
+            return str(broker_url)
+
+        # Then, try to import taskiq_redis and check if it's a RedisBroker
         try:
-            # Import here: taskiq_redis is optional, checked at runtime
             from taskiq_redis.broker import RedisBroker  # type: ignore
 
             if isinstance(broker, RedisBroker):
