@@ -2,7 +2,7 @@
 
 Taskiq-Flow lets you chain intensive functions together and fire them off without waiting for each to complete. Think of it as orchestration for async task workflows—you define the steps, and the library handles the execution order, data passing, and parallelism automatically.
 
-*Version: 0.2.0*
+*Version: 0.3.0*
 
 ## Inspiration & Design Philosophy
 
