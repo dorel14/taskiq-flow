@@ -14,7 +14,7 @@ from taskiq_flow import (
     pipeline_task,
     pipeline_task_multi_output,
 )
-from taskiq_flow.decorators import _task_registry
+from taskiq_flow.decorators import PipelineTaskMetadata, _task_registry
 
 
 @pytest.fixture
@@ -202,29 +202,22 @@ class TestRegistryOperations:
         # Should not raise
         _task_registry.validate_outputs()
 
-
 class TestErrorHandling:
     """Tests for error handling in decorators."""
 
     def test_invalid_retries_negative(self) -> None:
         """Test that negative retries raise an error."""
         with pytest.raises(ValueError, match="Retries must be non-negative"):
-            from taskiq_flow.decorators import PipelineTaskMetadata
-
             PipelineTaskMetadata(output="test", retries=-1)
 
     def test_invalid_output_empty(self) -> None:
         """Test that empty output name raises an error."""
         with pytest.raises(ValueError, match="must specify an output name"):
-            from taskiq_flow.decorators import PipelineTaskMetadata
-
             PipelineTaskMetadata(output="", retries=0)
 
     def test_invalid_inputs_type(self) -> None:
         """Test that invalid inputs type raises an error."""
         with pytest.raises(ValueError, match="Inputs must be a list"):
-            from taskiq_flow.decorators import PipelineTaskMetadata
-
             PipelineTaskMetadata(output="test", inputs="invalid")  # type: ignore
 
 

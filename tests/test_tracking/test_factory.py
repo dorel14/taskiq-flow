@@ -1,6 +1,9 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for tracking storage factory."""
 
+import sys
+from unittest.mock import Mock, patch
+
 from taskiq import InMemoryBroker
 
 from taskiq_flow.broker.detector import BrokerType
@@ -19,7 +22,6 @@ def test_create_with_inmemory_broker():
 
 def test_create_with_redis_broker_mock() -> None:
     """Test creating storage with RedisBroker (mocked)."""
-    from unittest.mock import patch
 
     # Mock a RedisBroker
     class MockRedisBroker:
@@ -39,7 +41,6 @@ def test_create_with_redis_broker_mock() -> None:
 
 def test_create_with_redis_broker_auto_extract():
     """Test creating storage with RedisBroker auto-extract URL."""
-    from unittest.mock import patch
 
     # Mock RedisBroker with url attribute
     class MockRedisBroker:
@@ -48,49 +49,34 @@ def test_create_with_redis_broker_auto_extract():
 
     broker = MockRedisBroker("redis://auto:6379")
 
-    with (
-        patch(
-            "taskiq_flow.tracking.factory.BrokerDetector.detect",
-            return_value=BrokerType.REDIS,
-        ),
-        patch(
-            "taskiq_flow.tracking.factory.TrackingStorageFactory._extract_redis_url",
-            return_value="redis://auto:6379",
-        ),
+    with patch(
+        "taskiq_flow.tracking.factory.BrokerDetector.detect",
+        return_value=BrokerType.REDIS,
     ):
-        storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
+        storage = TrackingStorageFactory.create(broker)
 
     assert isinstance(storage, RedisPipelineStorage)
 
 
-def test_create_with_unknown_broker():
-    """Test creating storage with unknown broker type."""
+def test_create_with_rabbitmq_broker():
+    """Test creating storage with RabbitMQBroker."""
 
-    class UnknownBroker:
-        pass
-
-    broker = UnknownBroker()
-    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
-
-    assert isinstance(storage, InMemoryPipelineStorage)
-
-
-def test_create_with_rabbitmq_broker_no_redis():
-    """Test creating storage with RabbitMQ broker without Redis URL."""
-
-    # Mock RabbitMQ broker
     class MockRabbitMQBroker:
         pass
 
     broker = MockRabbitMQBroker()
-    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
+
+    with patch(
+        "taskiq_flow.tracking.factory.BrokerDetector.detect",
+        return_value=BrokerType.RABBITMQ,
+    ):
+        storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
 
     assert isinstance(storage, InMemoryPipelineStorage)
 
 
 def test_create_with_rabbitmq_broker_with_redis():
     """Test creating storage with RabbitMQ broker with Redis URL."""
-    from unittest.mock import patch
 
     class MockRabbitMQBroker:
         pass
@@ -109,9 +95,6 @@ def test_create_with_rabbitmq_broker_with_redis():
 def test_extract_redis_url_with_redis_broker():
     """Test extracting Redis URL from RedisBroker."""
     # Mock taskiq_redis import
-    import sys
-    from unittest.mock import Mock
-
     mock_redis_broker = Mock()
     mock_redis_broker.url = "redis://mock:6379"
 
@@ -142,9 +125,6 @@ def test_extract_redis_url_no_taskiq_redis():
 def test_extract_redis_url_redis_broker_no_url():
     """Test extracting Redis URL from RedisBroker without url attribute."""
     # Mock taskiq_redis import
-    import sys
-    from unittest.mock import Mock
-
     mock_redis_broker = Mock()
     # No url attribute
     del mock_redis_broker.url
@@ -167,8 +147,6 @@ def test_extract_redis_url_redis_broker_no_url():
 
 def test_create_with_ttl():
     """Test creating storage with custom TTL."""
-    from unittest.mock import patch
-
     broker = InMemoryBroker()
     storage = TrackingStorageFactory.create(broker, ttl_seconds=7200)
 
@@ -192,3 +170,28 @@ def test_create_with_ttl():
         )
 
     assert isinstance(storage, RedisPipelineStorage)
+
+
+def test_create_with_unknown_broker():
+    """Test creating storage with unknown broker type."""
+
+    class UnknownBroker:
+        pass
+
+    broker = UnknownBroker()
+    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
+
+    assert isinstance(storage, InMemoryPipelineStorage)
+
+
+def test_create_with_rabbitmq_broker_no_redis():
+    """Test creating storage with RabbitMQ broker without Redis URL."""
+
+    # Mock RabbitMQ broker
+    class MockRabbitMQBroker:
+        pass
+
+    broker = MockRabbitMQBroker()
+    storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
+
+    assert isinstance(storage, InMemoryPipelineStorage)

@@ -53,11 +53,13 @@ class PipelineOptions:
         timeout: int | None = None,
         fail_fast: bool = True,
         continue_on_error: bool = False,
+        skip_failed: bool = False,
     ) -> None:
         self.default_retries = retries
         self.default_timeout = timeout
         self.fail_fast = fail_fast
         self.continue_on_error = continue_on_error
+        self.skip_failed = skip_failed
 
     def update(
         self,
@@ -65,6 +67,7 @@ class PipelineOptions:
         timeout: int | None = None,
         fail_fast: bool | None = None,
         continue_on_error: bool | None = None,
+        skip_failed: bool | None = None,
     ) -> None:
         """Update options."""
         if retries is not None:
@@ -75,6 +78,8 @@ class PipelineOptions:
             self.fail_fast = fail_fast
         if continue_on_error is not None:
             self.continue_on_error = continue_on_error
+        if skip_failed is not None:
+            self.skip_failed = skip_failed
 
 
 class Pipeline(Generic[_FuncParams, _ReturnType]):

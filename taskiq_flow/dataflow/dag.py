@@ -96,7 +96,8 @@ class DAG:
         """
         ready = []
         for node in self.nodes:
-            if node not in completed:
-                if all(dep in completed for dep in node.dependencies):
-                    ready.append(node)
+            if node not in completed and all(
+                dep in completed for dep in node.dependencies
+            ):
+                ready.append(node)
         return ready

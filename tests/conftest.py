@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from taskiq import InMemoryBroker
 
-from taskiq_flow import PipelineMiddleware
+from taskiq_flow import PipelineMiddleware, pipeline_task
 
 
 @pytest.fixture(scope="session")
@@ -56,7 +56,6 @@ def dataflow_task(broker: InMemoryBroker) -> Callable[[dict[str, Any]], Any]:
     Returns:
         Decorated task function with @pipeline_task.
     """
-    from taskiq_flow import pipeline_task
 
     @broker.task
     @pipeline_task(output="result")

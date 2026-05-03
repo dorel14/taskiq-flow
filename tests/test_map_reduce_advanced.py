@@ -1,6 +1,5 @@
 """Advanced map-reduce tests."""
 
-
 import pytest
 from taskiq import InMemoryBroker
 

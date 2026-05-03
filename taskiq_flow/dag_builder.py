@@ -362,7 +362,7 @@ class DAGBuilder:
             )
 
     @staticmethod
-    def analyze_missing_dependencies(
+    def analyze_missing_dependencies(  # noqa: C901
         tasks: list[Any],
         registry: DataflowRegistry,
     ) -> dict[str, list[str]]:

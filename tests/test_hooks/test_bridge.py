@@ -3,10 +3,7 @@
 
 import pytest
 
-# The WebSocket bridge was removed in commit 61511c8 when chanx-based
-# integration was deemed non-functional. WebSocket support will be
-# re-added in a future version with a stable library.
-# See: taskiq-flow/issues/X
+from taskiq_flow.hooks import WebSocketHookBridge
 
 
 @pytest.mark.skip(
@@ -15,8 +12,6 @@ import pytest
 def test_bridge_placeholder_import():
     """Test that the bridge module can be imported."""
     # Bridge module is now bridge_picows, not bridge
-    from taskiq_flow.hooks import WebSocketHookBridge
-
     assert WebSocketHookBridge is not None
 
 
@@ -25,7 +20,5 @@ def test_bridge_placeholder_import():
 )
 def test_bridge_placeholder_comment():
     """Test that the bridge file contains expected placeholder content."""
-    from taskiq_flow.hooks import WebSocketHookBridge
-
     # Check if the class exists
     assert WebSocketHookBridge is not None

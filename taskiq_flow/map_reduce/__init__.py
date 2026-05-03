@@ -91,7 +91,7 @@ class MapReduce:
     """
 
     @staticmethod
-    async def map(
+    async def map(  # noqa: C901
         broker: AsyncBroker,
         task: Callable[..., Any],
         items: list[Any],
@@ -139,7 +139,10 @@ class MapReduce:
 
         if not items:
             return MapResult(
-                results=[], output_name=output, items_processed=0, duration=0.0,
+                results=[],
+                output_name=output,
+                items_processed=0,
+                duration=0.0,
             )
 
         # Determine parameter name
@@ -313,7 +316,10 @@ class MapReduce:
                     chunk_results.append(result)
                 except Exception as e:
                     logger.warning(
-                        "[MAP] Chunk %d item %d failed: %s", chunk_idx, i, str(e),
+                        "[MAP] Chunk %d item %d failed: %s",
+                        chunk_idx,
+                        i,
+                        str(e),
                     )
                     raise
 

@@ -38,7 +38,7 @@ class StructuredFormatter(logging.Formatter):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
         self.config = config or LogConfig()
 
-    def format(self, record: logging.LogRecord) -> str:
+    def format(self, record: logging.LogRecord) -> str:  # noqa: C901
         """Format the log record.
 
         Args:

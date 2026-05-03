@@ -118,10 +118,10 @@ class DAGVisualizer:
             plt.show()
         """
         try:
-            import networkx as nx
+            import networkx as nx  # noqa: PLC0415
         except ImportError as err:
             raise ImportError(
-                "NetworkX is required for to_networkx(). "
+                "NetworkX is required for DAG visualization. "
                 "Install with: pip install networkx",
             ) from err
 
@@ -152,20 +152,20 @@ class DAGVisualizer:
         if not dag.levels:
             dag.compute_levels()
 
-        print("\nPipeline DAG:")
-        print("=" * 50)
+        print("\nPipeline DAG:")  # noqa: T201
+        print("=" * 50)  # noqa: T201
 
         for level_idx, level in enumerate(dag.levels):
-            print(f"\nLevel {level_idx}:")
+            print(f"\nLevel {level_idx}:")  # noqa: T201
             for node in level:
                 deps = [d.task.task_name for d in node.dependencies]
                 if deps:
-                    print(f"  {node.task.task_name}")
-                    print(f"    <- {', '.join(deps)}")
+                    print(f"  {node.task.task_name}")  # noqa: T201
+                    print(f"    <- {', '.join(deps)}")  # noqa: T201
                 else:
-                    print(f"  {node.task.task_name} (input)")
+                    print(f"  {node.task.task_name} (input)")  # noqa: T201
 
-        print("\n" + "=" * 50)
+        print("\n" + "=" * 50)  # noqa: T201
 
 
 def visualize_pipeline(pipeline: Any) -> dict[str, Any]:

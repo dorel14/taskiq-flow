@@ -68,13 +68,11 @@ with contextlib.suppress(ImportError):
 
 __all__ = [
     "DAG",
-    # Original exports
     "AbortPipeline",
     "DAGBuilder",
     "DAGNode",
     "DAGVisualizer",
     "DataNode",
-    # New dataflow exports
     "DataflowPipeline",
     "DataflowRegistry",
     "ExecutionEngine",
@@ -85,7 +83,10 @@ __all__ = [
     "PipelineMiddleware",
     "PipelineScheduler",
     "PipelineTrackingManager",
+    # API exports
+    "PipelineVisualizationAPI",
     "TrackingStorageFactory",
+    "create_visualization_api",
     "get_all_pipeline_outputs",
     "get_pipeline_metadata",
     "get_task_by_output",

@@ -33,7 +33,7 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
             condition_met = self._eval_condition(self.condition, result.return_value)
         elif callable(self.condition):
             # Check if it's a coroutine function
-            import asyncio
+            import asyncio  # noqa: PLC0415
 
             if asyncio.iscoroutinefunction(self.condition):
                 condition_met = await self.condition(result.return_value)
@@ -62,7 +62,7 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
             )
         # If no else and condition not met, skip this step
 
-    def _eval_condition(self, expression: str, value: Any) -> bool:
+    def _eval_condition(self, expression: str, value: Any) -> bool:  # noqa: C901, PLR0911
         """Safe expression evaluation using AST."""
         # Basic support for simple expressions with value variable
         try:
@@ -120,26 +120,24 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
                     else:
                         return False
 
-                if isinstance(node, ast.Name):
-                    # Only allow 'value' variable and safe builtins
-                    if node.id not in [
-                        "value",
-                        "len",
-                        "str",
-                        "int",
-                        "float",
-                        "bool",
-                        "True",
-                        "False",
-                        "None",
-                    ]:
-                        return False
+                if isinstance(node, ast.Name) and node.id not in [
+                    "value",
+                    "len",
+                    "str",
+                    "int",
+                    "float",
+                    "bool",
+                    "True",
+                    "False",
+                    "None",
+                ]:
+                    return False
 
                 # Prevent dangerous attribute access
-                if isinstance(node, ast.Attribute):
-                    # Allow basic attribute access but prevent dangerous ones
-                    if hasattr(node, "attr") and node.attr.startswith("_"):
-                        return False
+                if isinstance(node, ast.Attribute) and (
+                    not hasattr(node, "attr") or node.attr.startswith("_")
+                ):
+                    return False
 
             # Compile and evaluate with restricted globals
             compiled = compile(tree, "<string>", "eval")
@@ -155,7 +153,7 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
                     "None": None,
                 },
             }
-            result = eval(compiled, safe_globals, {"value": value})
+            result = eval(compiled, safe_globals, {"value": value})  # noqa: S307
             return bool(result)
         except Exception:
             return False

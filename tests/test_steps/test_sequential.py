@@ -3,6 +3,7 @@
 
 import pytest
 from taskiq import InMemoryBroker
+from taskiq.kicker import AsyncKicker
 
 from taskiq_flow.steps.sequential import SequentialStep
 
@@ -68,8 +69,6 @@ def test_sequential_step_from_task(mock_task):
 
 def test_sequential_step_from_kicker(broker):
     """Test SequentialStep.from_task with AsyncKicker."""
-    from taskiq.kicker import AsyncKicker
-
     kicker: AsyncKicker[[None], None] = AsyncKicker(
         task_name="test",
         broker=broker,

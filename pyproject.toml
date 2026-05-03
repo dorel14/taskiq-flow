@@ -26,6 +26,7 @@ classifiers = [
 version = "0.2.0"
 dependencies = [
   "apscheduler[sqlalchemy]>=3.11.2",
+  "fastapi>=0.136.1",
   "mypy>=1.20.2",
   "networkx>=3.4.2",
   "picows>=1.19.0",

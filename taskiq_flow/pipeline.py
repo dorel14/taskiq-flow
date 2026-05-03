@@ -12,6 +12,8 @@ from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.execution_engine import ExecutionEngine
 from taskiq_flow.map_reduce import MapReduce
 from taskiq_flow.pipeliner import Pipeline as OriginalPipeline
+from taskiq_flow.scheduling.scheduler import LabelBasedScheduler
+from taskiq_flow.visualization import DAGVisualizer
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,9 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
     Extends the original Pipeline class with automatic DAG construction
     based on data dependencies, automatic parallelism, and map/reduce
     operations.
+
+    This class maintains full backward compatibility with the original
+    Pipeline class while adding new dataflow capabilities.
 
     This class maintains full backward compatibility with the original
     Pipeline class while adding new dataflow capabilities.
@@ -152,6 +157,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             dag=self._dag,
             fail_fast=self.options.fail_fast,
             continue_on_error=self.options.continue_on_error,
+            skip_failed=self.options.skip_failed,
         )
 
         # Execute
@@ -457,6 +463,96 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             return results[self._map_operations[-1]["output"]]
         return results
 
+    async def schedule_with_labels(
+        self,
+        scheduler: "LabelBasedScheduler",
+        label: str,
+        cron: str | None = None,
+        interval_seconds: int | None = None,
+        **inputs: Any,
+    ) -> str:
+        """Schedule the pipeline with label-based scheduling.
+
+        This method schedules the pipeline using TaskIQ LabelScheduleSource,
+        which is a lightweight alternative to APScheduler.
+
+        Args:
+            scheduler: LabelBasedScheduler instance
+            label: Unique label for this schedule
+            cron: Cron expression (e.g., "0 9 * * *" for daily at 9 AM)
+            interval_seconds: Interval in seconds (alternative to cron)
+            **inputs: External inputs to the pipeline
+
+        Returns:
+            The schedule ID
+
+        Raises:
+            ValueError: If neither cron nor interval is specified
+        """
+        return await scheduler.schedule_with_label(
+            pipeline=self,
+            label=label,
+            cron=cron,
+            interval_seconds=interval_seconds,
+            args=(),
+            kwargs=inputs,
+            enabled=True,
+        )
+
+    async def schedule_with_cron(
+        self,
+        scheduler: "LabelBasedScheduler",
+        label: str,
+        cron: str,
+        **inputs: Any,
+    ) -> str:
+        """Schedule the pipeline with a cron expression.
+
+        Args:
+            scheduler: LabelBasedScheduler instance
+            label: Unique label for this schedule
+            cron: Cron expression (e.g., "0 9 * * *" for daily at 9 AM)
+            **inputs: External inputs to the pipeline
+
+        Returns:
+            The schedule ID
+        """
+        return await scheduler.schedule_with_cron(
+            pipeline=self,
+            label=label,
+            cron=cron,
+            args=(),
+            kwargs=inputs,
+            enabled=True,
+        )
+
+    async def schedule_with_interval(
+        self,
+        scheduler: "LabelBasedScheduler",
+        label: str,
+        interval_seconds: int,
+        **inputs: Any,
+    ) -> str:
+        """Schedule the pipeline with a fixed interval.
+
+        Args:
+            scheduler: LabelBasedScheduler instance
+            label: Unique label for this schedule
+            interval_seconds: Interval in seconds
+            **inputs: External inputs to the pipeline
+
+        Returns:
+            The schedule ID
+        """
+        return await scheduler.schedule_with_interval(
+            pipeline=self,
+            label=label,
+            interval_seconds=interval_seconds,
+            args=(),
+            kwargs=inputs,
+            enabled=True,
+        )
+
     async def kiq_map_reduce_advanced(
         self,
         map_task: AsyncTaskiqDecoratedTask[Any, Any],
@@ -579,8 +675,6 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             viz = pipeline.visualize()
             print(json.dumps(viz, indent=2))
         """
-        from taskiq_flow.visualization import DAGVisualizer
-
         if not self._dag:
             self._build_dataflow_dag()
 
@@ -600,8 +694,6 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             dot = pipeline.visualize_dot()
             print(dot)
         """
-        from taskiq_flow.visualization import DAGVisualizer
-
         if not self._dag:
             self._build_dataflow_dag()
 
@@ -617,8 +709,6 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         Example:
             pipeline.print_dag()
         """
-        from taskiq_flow.visualization import DAGVisualizer
-
         if not self._dag:
             self._build_dataflow_dag()
 

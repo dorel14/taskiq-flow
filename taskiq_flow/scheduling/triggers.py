@@ -23,11 +23,10 @@ except ImportError:
 # Type alias for trigger types
 if TYPE_CHECKING:
     TriggerType = CronTrigger | DateTrigger | IntervalTrigger
+elif APSCHEDULER_AVAILABLE:
+    TriggerType = CronTrigger | DateTrigger | IntervalTrigger  # type: ignore
 else:
-    if APSCHEDULER_AVAILABLE:
-        TriggerType = CronTrigger | DateTrigger | IntervalTrigger  # type: ignore
-    else:
-        TriggerType = type(None)  # type: ignore
+    TriggerType = type(None)  # type: ignore
 
 
 def create_cron_trigger(

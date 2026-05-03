@@ -44,6 +44,9 @@ class WebSocketHookBridge:
             "PipelineCompleteEvent",
             "StepErrorEvent",
             "PipelineErrorEvent",
+            "StepRetryEvent",
+            "StepSkipEvent",
+            "PipelineSkipEvent",
         ]
 
         for event_type in event_types:

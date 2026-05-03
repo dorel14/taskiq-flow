@@ -1,6 +1,8 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for pipeline scheduler."""
 
+from unittest.mock import patch
+
 import pytest
 from taskiq import InMemoryBroker
 
@@ -26,7 +28,7 @@ def test_pipeline_scheduler_creation(broker):
 def test_pipeline_scheduler_with_custom_scheduler(broker):
     """Test PipelineScheduler with custom scheduler."""
     try:
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler  # noqa: PLC0415
 
         custom_scheduler = AsyncIOScheduler()
         scheduler = PipelineScheduler(broker, scheduler=custom_scheduler)
@@ -93,13 +95,13 @@ async def test_pipeline_scheduler_pause_resume_job(broker):
 
 def test_pipeline_scheduler_import_error():
     """Test that ImportError is raised when APScheduler not available."""
-    from unittest.mock import patch
-
     # The import happens at module level, so we need to patch the
     # AsyncIOScheduler in the scheduler module itself
-    with patch("taskiq_flow.scheduling.scheduler.AsyncIOScheduler", None):
-        with patch("taskiq_flow.scheduling.scheduler.CronTrigger", None):
-            with patch("taskiq_flow.scheduling.scheduler.DateTrigger", None):
-                with patch("taskiq_flow.scheduling.scheduler.IntervalTrigger", None):
-                    with pytest.raises(ImportError):
-                        PipelineScheduler(InMemoryBroker())
+    with patch("taskiq_flow.scheduling.scheduler.AsyncIOScheduler", None), patch(
+        "taskiq_flow.scheduling.scheduler.CronTrigger", None
+    ), patch(
+        "taskiq_flow.scheduling.scheduler.DateTrigger", None
+    ), patch(
+        "taskiq_flow.scheduling.scheduler.IntervalTrigger", None
+    ), pytest.raises(ImportError):
+        PipelineScheduler(InMemoryBroker())

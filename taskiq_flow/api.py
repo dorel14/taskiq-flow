@@ -1,0 +1,237 @@
+"""REST API for pipeline visualization and management."""
+
+import logging
+from typing import Any
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from taskiq import AsyncBroker
+
+from taskiq_flow.pipeline import DataflowPipeline
+from taskiq_flow.visualization import DAGVisualizer
+
+logger = logging.getLogger(__name__)
+
+
+class PipelineVisualizationAPI:
+    """REST API for pipeline visualization and management."""
+
+    def __init__(self, broker: AsyncBroker, app: FastAPI | None = None) -> None:
+        """Initialize the visualization API.
+
+        Args:
+            broker: TaskIQ broker instance
+            app: FastAPI app instance (creates new one if not provided)
+        """
+        self.broker = broker
+        self.app = app or FastAPI(title="TaskIQ Flow Visualization API")
+        self.pipelines: dict[str, DataflowPipeline] = {}
+        self._setup_routes()
+
+    def _setup_routes(self) -> None:  # noqa: C901
+        """Setup API routes."""
+
+        @self.app.get("/health")
+        async def health_check() -> dict[str, str]:
+            """Health check endpoint."""
+            return {"status": "healthy"}
+
+        @self.app.get("/pipelines")
+        async def list_pipelines() -> dict[str, list[dict[str, Any]]]:
+            """List all registered pipelines.
+
+            Returns:
+                Dictionary with pipeline information
+            """
+            pipeline_info = []
+            for pipeline_id, pipeline in self.pipelines.items():
+                info = {
+                    "id": pipeline_id,
+                    "has_dag": pipeline._dag is not None,
+                    "task_count": len(pipeline._dataflow_tasks),
+                }
+                if pipeline._dag:
+                    info["node_count"] = len(pipeline._dag.nodes)
+                    info["edge_count"] = len(pipeline._dag.edges)
+                pipeline_info.append(info)
+            return {"pipelines": pipeline_info}
+
+        @self.app.post("/pipelines/{pipeline_id}")
+        async def register_pipeline(
+            pipeline_id: str,
+            tasks: list[dict[str, Any]],
+        ) -> dict[str, str]:
+            """Register a pipeline for visualization.
+
+            Args:
+                pipeline_id: Unique pipeline identifier
+                tasks: List of task information
+
+            Returns:
+                Success message
+            """
+            # Note: This is a simplified registration
+            # In practice, you'd want to pass actual pipeline objects
+            logger.info("Registering pipeline %s", pipeline_id)
+            return {"message": f"Pipeline {pipeline_id} registered"}
+
+        @self.app.get("/pipelines/{pipeline_id}/dag")
+        async def get_pipeline_dag(pipeline_id: str) -> dict[str, Any]:
+            """Get pipeline DAG visualization.
+
+            Args:
+                pipeline_id: Pipeline identifier
+
+            Returns:
+                DAG visualization data
+            """
+            if pipeline_id not in self.pipelines:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Pipeline {pipeline_id} not found",
+                )
+
+            pipeline = self.pipelines[pipeline_id]
+            if not pipeline._dag:
+                pipeline._build_dataflow_dag()
+
+            if not pipeline._dag:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Pipeline has no DAG",
+                )
+
+            return DAGVisualizer.to_json(pipeline._dag)
+
+        @self.app.get("/pipelines/{pipeline_id}/dag/dot")
+        async def get_pipeline_dag_dot(pipeline_id: str) -> dict[str, str]:
+            """Get pipeline DAG in DOT format.
+
+            Args:
+                pipeline_id: Pipeline identifier
+
+            Returns:
+                DOT format string
+            """
+            if pipeline_id not in self.pipelines:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Pipeline {pipeline_id} not found",
+                )
+
+            pipeline = self.pipelines[pipeline_id]
+            if not pipeline._dag:
+                pipeline._build_dataflow_dag()
+
+            if not pipeline._dag:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Pipeline has no DAG",
+                )
+
+            dot = DAGVisualizer.to_dot(pipeline._dag)
+            return {"dot": dot}
+
+        @self.app.get("/pipelines/{pipeline_id}/status")
+        async def get_pipeline_status(pipeline_id: str) -> dict[str, Any]:
+            """Get pipeline execution status.
+
+            Args:
+                pipeline_id: Pipeline identifier
+
+            Returns:
+                Pipeline status information
+            """
+            if pipeline_id not in self.pipelines:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Pipeline {pipeline_id} not found",
+                )
+
+            # This would integrate with the tracking system
+            return {
+                "pipeline_id": pipeline_id,
+                "status": "registered",
+                "tasks": len(self.pipelines[pipeline_id]._dataflow_tasks),
+            }
+
+        @self.app.get("/pipelines/{pipeline_id}/visualize")
+        async def visualize_pipeline(pipeline_id: str) -> JSONResponse:
+            """Get complete pipeline visualization.
+
+            Args:
+                pipeline_id: Pipeline identifier
+
+            Returns:
+                Complete visualization data
+            """
+            if pipeline_id not in self.pipelines:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Pipeline {pipeline_id} not found",
+                )
+
+            pipeline = self.pipelines[pipeline_id]
+            if not pipeline._dag:
+                pipeline._build_dataflow_dag()
+
+            if not pipeline._dag:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Pipeline has no DAG",
+                )
+
+            dag_json = DAGVisualizer.to_json(pipeline._dag)
+            dot = DAGVisualizer.to_dot(pipeline._dag)
+
+            return JSONResponse(
+                content={
+                    "pipeline_id": pipeline_id,
+                    "dag": dag_json,
+                    "dot": dot,
+                    "levels": [
+                        [node.task.task_name for node in level]
+                        for level in pipeline._dag.levels
+                    ],
+                },
+            )
+
+    def add_pipeline(self, pipeline_id: str, pipeline: DataflowPipeline) -> None:
+        """Add a pipeline to the API.
+
+        Args:
+            pipeline_id: Unique pipeline identifier
+            pipeline: DataflowPipeline instance
+        """
+        self.pipelines[pipeline_id] = pipeline
+        logger.info("Added pipeline %s to visualization API", pipeline_id)
+
+    def get_app(self) -> FastAPI:
+        """Get the FastAPI application.
+
+        Returns:
+            FastAPI application instance
+        """
+        return self.app
+
+
+def create_visualization_api(
+    broker: AsyncBroker,
+    app: FastAPI | None = None,
+) -> PipelineVisualizationAPI:
+    """Create a pipeline visualization API.
+
+    Args:
+        broker: TaskIQ broker instance
+        app: Optional FastAPI app instance
+
+    Returns:
+        PipelineVisualizationAPI instance
+    """
+    return PipelineVisualizationAPI(broker, app)
+
+
+__all__ = [
+    "PipelineVisualizationAPI",
+    "create_visualization_api",
+]

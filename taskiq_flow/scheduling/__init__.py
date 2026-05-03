@@ -1,6 +1,6 @@
 """Scheduling module."""
 
-from .scheduler import PipelineScheduler
+from .scheduler import LabelBasedScheduler, PipelineScheduler
 from .triggers import (
     create_cron_trigger,
     create_date_trigger,
@@ -14,6 +14,7 @@ from .triggers import (
 )
 
 __all__ = [
+    "LabelBasedScheduler",
     "PipelineScheduler",
     "create_cron_trigger",
     "create_date_trigger",

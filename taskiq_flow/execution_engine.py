@@ -55,6 +55,7 @@ class ExecutionEngine:
         registry: DataflowRegistry | None = None,
         fail_fast: bool = True,
         continue_on_error: bool = False,
+        skip_failed: bool = False,
         max_parallel: int | None = None,
     ) -> None:
         """
@@ -65,12 +66,14 @@ class ExecutionEngine:
             dag: DAG to execute
             fail_fast: If True, stop on first error
             continue_on_error: If True, skip failed tasks and continue
+            skip_failed: If True, skip failed tasks without retrying
             max_parallel: Maximum number of parallel tasks (None = unlimited)
         """
         self.broker = broker
         self.dag = dag
         self.fail_fast = fail_fast
         self.continue_on_error = continue_on_error
+        self.skip_failed = skip_failed
         self.max_parallel = max_parallel
 
         # Execution state - use task as key since DAGNode is not hashable
@@ -181,7 +184,15 @@ class ExecutionEngine:
 
             # Check for failures
             if self.failed_tasks and not self.continue_on_error:
-                raise self._create_execution_error()
+                if self.skip_failed:
+                    # In skip_failed mode, we don't raise an error
+                    self._log(
+                        logging.WARNING,
+                        "Pipeline completed with skipped tasks",
+                        failed_count=len(self.failed_tasks),
+                    )
+                else:
+                    raise self._create_execution_error()
 
             # Collect all outputs
             outputs = self._collect_outputs()
@@ -206,6 +217,16 @@ class ExecutionEngine:
         total = len(self.dag.nodes)
         completed = len(self.completed_tasks)
         failed = len(self.failed_tasks)
+
+        # In skip_failed mode, failed tasks are marked as skipped
+        if self.skip_failed:
+            skipped = sum(
+                1
+                for state in self.task_states.values()
+                if state.state == TaskState.SKIPPED
+            )
+            return completed + skipped >= total
+
         return completed + failed >= total
 
     def _has_pending_tasks(self) -> bool:
@@ -349,6 +370,15 @@ class ExecutionEngine:
                 if attempt < retries:
                     # Exponential backoff
                     wait_time = min(2**attempt, 60)
+
+                    self._log(
+                        logging.INFO,
+                        "Task will be retried",
+                        task_node=task_node,
+                        wait_time=wait_time,
+                        next_attempt=attempt + 2,
+                    )
+
                     await asyncio.sleep(wait_time)
 
         # All retries exhausted
@@ -428,6 +458,22 @@ class ExecutionEngine:
                             "Task skipped due to fail_fast",
                             task_node=node,
                         )
+            elif self.skip_failed:
+                # Skip failed task and mark as skipped
+                execution.state = TaskState.SKIPPED
+                self.failed_tasks.discard(task_node.task)
+                self._log(
+                    logging.WARNING,
+                    "Task skipped due to skip_failed mode",
+                    task_node=task_node,
+                )
+            elif self.continue_on_error:
+                # Continue execution, mark task as failed but don't stop
+                self._log(
+                    logging.WARNING,
+                    "Task failed but continuing execution",
+                    task_node=task_node,
+                )
         else:
             execution.state = TaskState.COMPLETED
             execution.result = result
@@ -466,7 +512,14 @@ class ExecutionEngine:
             for node, state in self.task_states.items()
             if state.state == TaskState.FAILED
         ]
-        error_msg = f"Pipeline execution failed. Errors: {'; '.join(errors)}"
+
+        if self.skip_failed:
+            error_msg = (
+                f"Pipeline execution completed with skipped tasks. "
+                f"Errors: {'; '.join(errors) if errors else 'None'}"
+            )
+        else:
+            error_msg = f"Pipeline execution failed. Errors: {'; '.join(errors)}"
 
         self._log(
             logging.ERROR,

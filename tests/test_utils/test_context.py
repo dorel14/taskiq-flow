@@ -32,7 +32,6 @@ async def test_get_result_success(context, broker):
     # Set up a result
     task_id = "test_task_123"
     result_value = "test_result"
-    from taskiq import TaskiqResult
 
     result_obj = TaskiqResult(
         is_err=False,

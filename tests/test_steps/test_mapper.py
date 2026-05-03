@@ -3,6 +3,7 @@
 
 import pytest
 from taskiq import InMemoryBroker
+from taskiq.kicker import AsyncKicker
 
 from taskiq_flow.steps.mapper import MapperStep
 
@@ -76,8 +77,6 @@ def test_mapper_step_from_task(mock_task):
 
 def test_mapper_step_from_kicker(broker):
     """Test MapperStep.from_task with AsyncKicker."""
-    from taskiq.kicker import AsyncKicker
-
     kicker: AsyncKicker[[None], None] = AsyncKicker(
         task_name="test",
         broker=broker,
