@@ -58,4 +58,3 @@ class AbortPipeline(PipelineError):  # noqa: N818
     __template__ = "Pipeline was aborted. {reason}"
 
     reason: str = "No reason provided."
-

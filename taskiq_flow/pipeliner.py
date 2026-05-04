@@ -688,4 +688,3 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             ),
         )
         return self
-

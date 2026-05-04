@@ -196,4 +196,3 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
         :return: New group step.
         """
         return GroupStep(tasks=task_dicts)
-

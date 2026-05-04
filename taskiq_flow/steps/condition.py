@@ -189,4 +189,3 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
             return bool(result)
         except Exception:
             return False
-

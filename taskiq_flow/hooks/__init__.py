@@ -34,4 +34,3 @@ __all__ = [
     "WebSocketHookBridge",
     "setup_websocket_bridge",
 ]
-

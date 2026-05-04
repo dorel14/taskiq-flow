@@ -108,4 +108,3 @@ class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
                 break
 
         result.return_value = final_result
-

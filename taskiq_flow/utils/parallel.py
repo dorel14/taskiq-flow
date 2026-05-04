@@ -78,4 +78,3 @@ def chunked_map(
         pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
 
     return pipeline
-

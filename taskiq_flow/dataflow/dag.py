@@ -141,4 +141,3 @@ class DAG:
             ):
                 ready.append(node)
         return ready
-

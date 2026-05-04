@@ -477,4 +477,3 @@ class PipelineMiddleware(TaskiqMiddleware):
                 log="Error found while executing pipeline.",
             ),
         )
-

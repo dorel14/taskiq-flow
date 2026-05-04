@@ -10,4 +10,3 @@ Version: 0.3.2
 from taskiq_flow.utils.context import PipelineContext
 
 __all__ = ["PipelineContext"]
-

@@ -375,4 +375,3 @@ class RedisPipelineStorage(PipelineStorage):
         except Exception as e:
             logger.error(f"Failed to cleanup old pipeline data: {e}")
             return 0
-

@@ -13,4 +13,3 @@ from taskiq_flow.integration.websocket.server import (
 )
 
 __all__ = ["PipelineWebSocketServer", "get_websocket_server"]
-

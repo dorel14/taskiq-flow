@@ -16,4 +16,3 @@ from taskiq import async_shared_broker
 async def identity_task(value: Any) -> Any:
     """Identity task that returns the input value unchanged."""
     return value
-

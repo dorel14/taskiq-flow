@@ -646,4 +646,3 @@ class ExecutionEngine:
             "success_rate": completed / total if total > 0 else 0,
             "data_cache_size": len(self.data_cache),
         }
-

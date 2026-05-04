@@ -155,4 +155,3 @@ class PipelineTrackingManager:
         if self.storage:
             return await self.storage.cleanup_old(ttl_seconds)
         return 0
-

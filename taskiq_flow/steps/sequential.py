@@ -157,4 +157,3 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
-

@@ -113,4 +113,3 @@ class DataCache:
             Dictionary of all cached key-value pairs
         """
         return dict(self._cache)
-

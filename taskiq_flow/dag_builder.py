@@ -483,4 +483,3 @@ class PipelineDAGBuilder(DAGBuilder):
     def build(self) -> DAG:
         """Build the DAG from pipeline tasks."""
         return self.registry.build_dag()
-

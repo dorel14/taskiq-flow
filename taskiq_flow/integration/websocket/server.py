@@ -160,4 +160,3 @@ def get_websocket_server(
         _server = PipelineWebSocketServer(host, port)
     # _server should never be None after creation
     return _server
-

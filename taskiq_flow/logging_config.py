@@ -190,4 +190,3 @@ def get_logger(name: str) -> logging.Logger:
 
 # Module-level logger
 default_logger = get_logger(__name__)
-

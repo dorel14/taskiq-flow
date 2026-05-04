@@ -27,4 +27,3 @@ class PipelineContext:
         if result.is_err:
             raise RuntimeError(f"Task {task_id} failed: {result.error}")
         return result.return_value
-

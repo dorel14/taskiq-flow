@@ -6,4 +6,3 @@ Contient les implémentations de JobStore pour APScheduler
 Auteur: SoniqueBay Team
 Version: 0.3.2
 """
-

@@ -126,4 +126,3 @@ class PipelineSkipEvent(PipelineEvent):
     event_type: EventType = EventType.PIPELINE_SKIP
     reason: str
     skipped_steps: list[str] = []
-

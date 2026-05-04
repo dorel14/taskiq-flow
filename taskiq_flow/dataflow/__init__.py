@@ -14,4 +14,3 @@ from taskiq_flow.dataflow.node import DataNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
 
 __all__ = ["DAG", "DAGNode", "DataCache", "DataNode", "DataflowRegistry"]
-

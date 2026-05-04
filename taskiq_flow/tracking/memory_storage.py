@@ -136,4 +136,3 @@ class InMemoryPipelineStorage(PipelineStorage):
             for pid in to_remove:
                 del self._pipelines[pid]
             return len(to_remove)
-

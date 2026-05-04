@@ -8,10 +8,13 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 0
       - id: setup-uv
         uses: astral-sh/setup-uv@v7
@@ -22,11 +25,34 @@ jobs:
           python-version: 3.14
       - name: Install deps
         run: uv sync --frozen --all-extras
-      - name: Run lint check
-        run: uv run pre-commit run -a
-    permissions:
-      contents: read
-      pull-requests: write
+      - name: Run pre-commit and auto-fix
+        run: |
+          set +e
+          uv run pre-commit run --all-files 2>&1 | tee precommit.log
+          first_status=${PIPESTATUS[0]}
+          set -e
+          if [ $first_status -eq 0 ]; then
+            echo "Pre-commit passed, no fixes needed."
+          else
+            if ! git diff --quiet; then
+              echo "Pre-commit applied automatic fixes. Verifying..."
+              uv run pre-commit run --all-files
+              second_status=$?
+              if [ $second_status -eq 0 ]; then
+                git config user.email "action@github.com"
+                git config user.name "github-actions[bot]"
+                git add -A
+                git commit -m "chore: apply pre-commit fixes"
+                git push origin HEAD:${{ github.head_ref }}
+              else
+                echo "Pre-commit still failing after fixes."
+                exit $second_status
+              fi
+            else
+              echo "Pre-commit failed without automatic fixes."
+              exit $first_status
+            fi
+          fi
   pytest:
     strategy:
       matrix:

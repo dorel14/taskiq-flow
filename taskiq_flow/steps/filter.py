@@ -226,4 +226,3 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
-

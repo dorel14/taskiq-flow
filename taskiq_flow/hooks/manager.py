@@ -248,4 +248,3 @@ class HookManager:
     def get_transport_count(self) -> int:
         """Get the number of registered transports."""
         return len(self._transports)
-

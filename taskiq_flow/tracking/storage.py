@@ -157,4 +157,3 @@ class PipelineStorage(ABC):
             Nombre d'éléments supprimés
         """
         ...
-

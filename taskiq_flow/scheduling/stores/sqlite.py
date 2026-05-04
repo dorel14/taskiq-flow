@@ -20,4 +20,3 @@ def create_sqlite_jobstore(url: str = "sqlite:///./scheduler_jobs.db") -> Any:
     if SQLAlchemyJobStore is None:
         raise ImportError("APScheduler required for job stores")
     return SQLAlchemyJobStore(url=url)
-

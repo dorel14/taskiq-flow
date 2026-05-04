@@ -211,4 +211,3 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
             reduce_func=reduce_func,
             **additional_kwargs,
         )
-

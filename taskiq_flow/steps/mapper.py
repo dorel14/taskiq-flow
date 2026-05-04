@@ -226,4 +226,3 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
-

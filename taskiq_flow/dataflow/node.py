@@ -41,4 +41,3 @@ class DataNode:
     def set_producer(self, task: Any) -> None:
         """Set the producer task for this data."""
         self.producer_task = task
-

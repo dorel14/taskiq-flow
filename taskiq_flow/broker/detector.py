@@ -86,4 +86,3 @@ class BrokerDetector:
 
         # Unknown
         return BrokerType.UNKNOWN
-

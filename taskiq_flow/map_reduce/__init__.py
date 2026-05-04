@@ -737,4 +737,3 @@ class MapReduce:
             pass
 
         return "item"
-

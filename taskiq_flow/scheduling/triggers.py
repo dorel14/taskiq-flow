@@ -128,4 +128,3 @@ def in_minutes(minutes: int, jitter: int | None = None) -> IntervalTrigger:
 def in_hours(hours: int, jitter: int | None = None) -> IntervalTrigger:
     """Trigger in specified hours."""
     return create_interval_trigger(hours=hours, jitter=jitter)
-

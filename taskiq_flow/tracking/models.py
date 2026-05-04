@@ -100,4 +100,3 @@ class PipelineStatusInfo(BaseModel):
     result: Any = None
     error: str | None = None
     steps: list[StepStatusInfo] = Field(default_factory=list)
-

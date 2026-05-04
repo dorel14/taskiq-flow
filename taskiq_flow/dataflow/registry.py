@@ -198,4 +198,3 @@ class DataflowRegistry:
                 name=input_name,
                 is_external=True,
             )
-

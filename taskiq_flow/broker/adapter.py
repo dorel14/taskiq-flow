@@ -49,4 +49,3 @@ class BrokerAdapter:
     def get_task_id(self, task_id: str) -> str:
         """Get task ID (pass through)."""
         return task_id
-

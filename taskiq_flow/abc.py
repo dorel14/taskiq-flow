@@ -73,4 +73,3 @@ class AbstractStep(ABC):
             La tâche créée doit hériter des labels pipe_data et
             current_step pour que le middleware puisse la chaîner.
         """
-

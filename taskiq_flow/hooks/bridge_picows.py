@@ -278,4 +278,3 @@ def setup_websocket_bridge(hook_manager: HookManager) -> WebSocketHookBridge:
     bridge = get_websocket_bridge(hook_manager)
     bridge.register_pipeline_events()
     return bridge
-
