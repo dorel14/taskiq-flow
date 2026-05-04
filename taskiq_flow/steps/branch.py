@@ -4,7 +4,7 @@ Exécute plusieurs branches de pipeline en parallèle et combine
 leurs résultats en ne retenant que le premier non-None.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -108,3 +108,4 @@ class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
                 break
 
         result.return_value = final_result
+

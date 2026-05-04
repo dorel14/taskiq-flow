@@ -7,7 +7,7 @@ Ces événements sont utilisés par le HookManager pour notifier
 les callbacks enregistrés.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from datetime import datetime, timezone
@@ -126,3 +126,4 @@ class PipelineSkipEvent(PipelineEvent):
     event_type: EventType = EventType.PIPELINE_SKIP
     reason: str
     skipped_steps: list[str] = []
+

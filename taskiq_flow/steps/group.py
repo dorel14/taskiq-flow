@@ -4,7 +4,7 @@ Exécute plusieurs tâches en parallèle sans dépendances entre elles
 et collecte leurs résultats dans une liste ordonnée.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -196,3 +196,4 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
         :return: New group step.
         """
         return GroupStep(tasks=task_dicts)
+

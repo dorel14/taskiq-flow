@@ -5,7 +5,7 @@ connexions client, les abonnements par pipeline et la diffusion
 d'événements.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -160,3 +160,4 @@ def get_websocket_server(
         _server = PipelineWebSocketServer(host, port)
     # _server should never be None after creation
     return _server
+

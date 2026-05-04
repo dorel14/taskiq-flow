@@ -4,7 +4,7 @@ Implémentation de PipelineStorage utilisant un dictionnaire en mémoire.
 Destiné au développement et aux tests, non persistant.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -136,3 +136,4 @@ class InMemoryPipelineStorage(PipelineStorage):
             for pid in to_remove:
                 del self._pipelines[pid]
             return len(to_remove)
+

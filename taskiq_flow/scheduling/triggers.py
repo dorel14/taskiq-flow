@@ -5,7 +5,7 @@ Fournit des fonctions factory pour créer des triggers APScheduler
 every_minute, every_hour, every_day, in_seconds, etc.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from datetime import datetime
@@ -128,3 +128,4 @@ def in_minutes(minutes: int, jitter: int | None = None) -> IntervalTrigger:
 def in_hours(hours: int, jitter: int | None = None) -> IntervalTrigger:
     """Trigger in specified hours."""
     return create_interval_trigger(hours=hours, jitter=jitter)
+

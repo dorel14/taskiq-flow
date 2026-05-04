@@ -4,7 +4,7 @@ Contient des fonctions utilitaires pour gérer l'exécution
 parallèle et les synchronisations.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from collections.abc import Iterable
@@ -78,3 +78,4 @@ def chunked_map(
         pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
 
     return pipeline
+

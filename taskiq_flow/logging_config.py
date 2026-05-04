@@ -4,7 +4,7 @@ Fournit des utilitaires pour configurer le logging avec format JSON
 et contexte enrichi.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import json
@@ -190,3 +190,4 @@ def get_logger(name: str) -> logging.Logger:
 
 # Module-level logger
 default_logger = get_logger(__name__)
+

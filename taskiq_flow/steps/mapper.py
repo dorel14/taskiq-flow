@@ -5,7 +5,7 @@ d'une collection en parallèle, ainsi que la tâche partagée wait_tasks
 pour la collecte des résultats.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -226,3 +226,4 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
+

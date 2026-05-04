@@ -5,7 +5,7 @@ leurs métadonnées (outputs, inputs) et construit le graphe de dépendances.
 C'est le cœur de l'analyse automatique des flux de données.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any
@@ -198,3 +198,4 @@ class DataflowRegistry:
                 name=input_name,
                 is_external=True,
             )
+

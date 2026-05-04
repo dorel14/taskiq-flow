@@ -5,7 +5,7 @@ exécute une tâche après une autre en passant le résultat de la
 précédente comme argument à la suivante.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any
@@ -157,3 +157,4 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
+

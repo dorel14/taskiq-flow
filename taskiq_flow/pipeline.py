@@ -6,7 +6,7 @@ des dépendances déclarées via @pipeline_task. Permet l'exécution
 parallèle automatique, les opérations map-reduce et la visualisation du graphe.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import logging
@@ -808,3 +808,4 @@ __all__ = [
     "DataflowPipeline",
     "Pipeline",
 ]
+

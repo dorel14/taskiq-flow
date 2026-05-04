@@ -5,7 +5,7 @@ de résultats (is_result_ready, get_result, set_result) independent
 de l'implémentation concrète du broker TaskIQ.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import logging
@@ -49,3 +49,4 @@ class BrokerAdapter:
     def get_task_id(self, task_id: str) -> str:
         """Get task ID (pass through)."""
         return task_id
+

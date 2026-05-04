@@ -5,7 +5,7 @@ pour les implémentations concrètes, notamment AbstractStep qui
 doit être étendue par tous les steps de pipeline.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from abc import ABC, abstractmethod
@@ -73,3 +73,4 @@ class AbstractStep(ABC):
             La tâche créée doit hériter des labels pipe_data et
             current_step pour que le middleware puisse la chaîner.
         """
+

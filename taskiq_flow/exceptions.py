@@ -8,7 +8,7 @@ taskiq-flow, including:
 - MappingError, FilterError: Erreurs spécifiques aux steps
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import ClassVar
@@ -58,3 +58,4 @@ class AbortPipeline(PipelineError):  # noqa: N818
     __template__ = "Pipeline was aborted. {reason}"
 
     reason: str = "No reason provided."
+

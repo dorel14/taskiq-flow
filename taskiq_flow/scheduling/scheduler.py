@@ -7,7 +7,7 @@ Ce module fournit deux classes principales:
 Permet de programmer l'exécution périodique ou différée des pipelines.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import logging
@@ -552,3 +552,4 @@ class PipelineScheduler:
             return True
         except Exception:
             return False
+

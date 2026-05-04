@@ -5,7 +5,7 @@ Offre persistance des données et partage entre multiples instances.
 Inclut la logique de retry pour les opérations Redis.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -375,3 +375,4 @@ class RedisPipelineStorage(PipelineStorage):
         except Exception as e:
             logger.error(f"Failed to cleanup old pipeline data: {e}")
             return 0
+

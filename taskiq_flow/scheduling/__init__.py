@@ -4,7 +4,7 @@ Fournit les classes et fonctions pour planifier l'exécution
 des pipelines via APScheduler ou le système de labels TaskIQ.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from .scheduler import LabelBasedScheduler, PipelineScheduler
@@ -33,3 +33,4 @@ __all__ = [
     "in_minutes",
     "in_seconds",
 ]
+

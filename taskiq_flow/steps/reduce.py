@@ -4,7 +4,7 @@ Applique une fonction de réduction sur une liste de valeurs,
 avec support de la pré-traitement par tâche et du chunking.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -211,3 +211,4 @@ class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
             reduce_func=reduce_func,
             **additional_kwargs,
         )
+

@@ -7,7 +7,7 @@ sont intégrées dans les pipelines dataflow via les steps
 MapperStep et ReduceStep.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -737,3 +737,4 @@ class MapReduce:
             pass
 
         return "item"
+

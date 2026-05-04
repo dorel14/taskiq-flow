@@ -4,7 +4,7 @@ Contient des tâches communes comme identity_task utilisées
 par divers steps.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any
@@ -16,3 +16,4 @@ from taskiq import async_shared_broker
 async def identity_task(value: Any) -> Any:
     """Identity task that returns the input value unchanged."""
     return value
+

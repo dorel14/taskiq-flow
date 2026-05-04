@@ -6,7 +6,7 @@ Utilisé notamment par le TrackingStorageFactory pour choisir
 le stockage approprié.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from taskiq_flow.broker.adapter import BrokerAdapter
@@ -17,3 +17,4 @@ __all__ = [
     "BrokerDetector",
     "BrokerType",
 ]
+

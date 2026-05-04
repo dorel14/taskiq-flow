@@ -5,7 +5,7 @@ lorsque possible. Gère les retentatives, les modes d'erreur
 (fail_fast, continue_on_error, skip_failed) et le cache de données.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -646,3 +646,4 @@ class ExecutionEngine:
             "success_rate": completed / total if total > 0 else 0,
             "data_cache_size": len(self.data_cache),
         }
+

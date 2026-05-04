@@ -20,7 +20,7 @@ class PipelineVisualizationAPI:
     des exécutions et suivre le statut des pipelines.
 
     Auteur: SoniqueBay Team
-    Version: 0.3.1
+    Version: 0.3.2
     """
 
     pipelines: dict[str, DataflowPipeline]
@@ -232,3 +232,4 @@ __all__ = [
     "PipelineVisualizationAPI",
     "create_visualization_api",
 ]
+

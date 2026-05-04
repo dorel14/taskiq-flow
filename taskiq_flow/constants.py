@@ -5,7 +5,7 @@ TaskIQ et autres valeurs fixes utilisées par le middleware
 et les steps du pipeline.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Literal
@@ -20,3 +20,4 @@ PIPELINE_ID = "_pipe_id"
 STEP_RETRIES = "_step_retries"
 STEP_TIMEOUT = "_step_timeout"
 STEP_RETRY_DELAY = "_step_retry_delay"
+

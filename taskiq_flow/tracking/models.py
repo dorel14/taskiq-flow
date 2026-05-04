@@ -5,7 +5,7 @@ des pipelines et de leurs étapes: PipelineStatusInfo, StepStatusInfo,
 ainsi que les enums PipelineStatus et StepStatus.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from datetime import datetime, timezone
@@ -100,3 +100,4 @@ class PipelineStatusInfo(BaseModel):
     result: Any = None
     error: str | None = None
     steps: list[StepStatusInfo] = Field(default_factory=list)
+

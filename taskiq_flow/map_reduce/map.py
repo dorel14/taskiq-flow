@@ -5,7 +5,7 @@ Ce module fournit la fonction `map` qui applique une tâche à chaque
 MapReduce.map fournissant une interface simplifiée.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from collections.abc import Callable
@@ -65,3 +65,4 @@ async def map(
 
 
 __all__ = ["map"]
+

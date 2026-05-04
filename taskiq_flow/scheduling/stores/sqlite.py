@@ -4,7 +4,7 @@ Fournit une configuration simple utilisant SQLite comme backend
 de persistance des tâches planifiées.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any
@@ -20,3 +20,4 @@ def create_sqlite_jobstore(url: str = "sqlite:///./scheduler_jobs.db") -> Any:
     if SQLAlchemyJobStore is None:
         raise ImportError("APScheduler required for job stores")
     return SQLAlchemyJobStore(url=url)
+

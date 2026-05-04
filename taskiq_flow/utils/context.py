@@ -4,7 +4,7 @@ Fournit PipelineContext, un accès contexteux au broker et
 aux informations de pipeline pendant l'exécution.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any
@@ -27,3 +27,4 @@ class PipelineContext:
         if result.is_err:
             raise RuntimeError(f"Task {task_id} failed: {result.error}")
         return result.return_value
+

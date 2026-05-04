@@ -5,7 +5,7 @@ sur chaque élément d'une liste en parallèle, ne conservant que les éléments
 pour lesquels le prédicat renvoie une valeur truthy.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio
@@ -226,3 +226,4 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
             timeout=timeout,
             retry_delay=retry_delay,
         )
+

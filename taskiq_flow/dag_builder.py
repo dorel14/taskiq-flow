@@ -5,7 +5,7 @@ dépendances. Valide également le graphe (détection de cycles,
 connexité et calcul des niveaux topologiques).
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import inspect
@@ -483,3 +483,4 @@ class PipelineDAGBuilder(DAGBuilder):
     def build(self) -> DAG:
         """Build the DAG from pipeline tasks."""
         return self.registry.build_dag()
+
