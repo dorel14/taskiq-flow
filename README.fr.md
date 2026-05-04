@@ -11,6 +11,7 @@ Taskiq-Flow vous permet d'enchaîner des fonctions intensives et de les exécute
 Taskiq-Flow repose sur deux excellents projets :
 
 ### Inspiré de taskiq-pipelines
+
 - **Enchaînement séquentiel de pipelines** — La classe d'origine `Pipeline` avec les opérations `.call_next()`, `.map()`, `.filter()`, et `.group()`.
 - **Orchestration basée sur des middleware** — Le `PipelineMiddleware` qui intercepte la complétion des tâches et déclenche l'étape suivante.
 - **Suivi & monitoring** — Suivi d'exécution de pipeline, gestion des états et backends de stockage.
@@ -18,13 +19,16 @@ Taskiq-Flow repose sur deux excellents projets :
 - **Hooks WebSocket** — Streaming d'événements en temps réel grâce à un système de hooks.
 
 ### Inspiré de pipefunc
+
 - **Dataflow déclaratif** — Construction automatique de DAG à partir des dépendances entre tâches via les annotations `@pipeline_task(output=...)`.
 - **Résolution implicite des dépendances** — Les tâches déclarent ce qu'elles produisent ; les tâches en aval reçoivent automatiquement les entrées nécessaires par correspondance des noms de paramètres.
 - **Exécution parallèle** — Les tâches indépendantes s'exécutent concurremment ; la bibliothèque gère le passage de données et la synchronisation.
 - **Aides map-reduce** — Support de première classe pour le traitement parallèle et les motifs d'agrégation.
 
 ### Le Résultat
+
 Taskiq-Flow combine l'orchestration éprouvée de taskiq-pipelines avec l'élégant modèle de programmation dataflow de pipefunc, vous offrant :
+
 - **Pipelines séquentiels** pour des workflows linéaires simples.
 - **Pipelines dataflow** pour des workflows complexes, ramifiés ou parallèles où les tâches dépendent naturellement les unes des autres.
 - **Suivi, planification et monitoring unifiés** à travers les deux styles.
@@ -117,6 +121,7 @@ Deux choses à garder en tête :
 Taskiq-pipelines offre deux approches principales :
 
 #### 1. Pipeline Séquentiel Classique
+
 La classe `Pipeline` d'origine où vous enchaînez manuellement les étapes dans l'ordre :
 
 ```python
@@ -302,6 +307,7 @@ print(f"Statut : {status.status}, Étapes : {len(status.steps)}")
 ```
 
 Backends de stockage :
+
 - `InMemoryPipelineStorage` — transitoire, pour le développement
 - `RedisPipelineStorage` — persistant, multi-Workers
 
@@ -417,6 +423,7 @@ Une fois abonnés, les clients recevront des événements en temps réel comme :
 ```
 
 Types d'événements disponibles :
+
 - `PipelineStartEvent` - Exécution de pipeline démarrée
 - `StepStartEvent` - Une étape de pipeline a démarré
 - `StepCompleteEvent` - Une étape de pipeline s'est terminée
@@ -482,7 +489,7 @@ uvicorn my_app:app --reload --port 8000
 Tous les endpoints sont automatiquement disponibles :
 
 | Méthode | Endpoint | Description |
-|---------|----------|-------------|
+| --------- | ---------- | ------------- |
 | GET | `/health` | Health check |
 | GET | `/pipelines` | Lister tous les pipelines enregistrés |
 | POST | `/pipelines/{pipeline_id}` | Enregistrer un nouveau pipeline |
