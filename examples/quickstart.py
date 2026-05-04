@@ -2,7 +2,7 @@
 
 from taskiq import InMemoryBroker
 
-from taskiq_flow import Pipeline
+from taskiq_flow import DataflowPipeline
 from taskiq_flow.middleware import PipelineMiddleware
 
 # Create broker (using InMemoryBroker for simplicity in quickstart)
@@ -32,8 +32,8 @@ def print_result(x: int) -> None:
 async def main() -> None:
     """Run the quickstart example."""
     # Create pipeline
-    pipeline = (
-        Pipeline(broker)
+    pipeline: DataflowPipeline = (
+        DataflowPipeline(broker)
         .call_next(add_one)
         .call_next(multiply_by_two)
         .call_next(print_result)

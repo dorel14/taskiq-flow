@@ -12,6 +12,7 @@ from taskiq import AsyncBroker
 from taskiq_flow.dataflow.cache import DataCache
 from taskiq_flow.dataflow.dag import DAG, DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
+from taskiq_flow.decorators import get_pipeline_metadata
 from taskiq_flow.exceptions import AbortPipeline
 
 logger = logging.getLogger(__name__)
@@ -31,42 +32,6 @@ class TaskState(Enum):
 @dataclass
 class TaskExecution:
     """Tracks execution state of a task."""
-
-    node: DAGNode
-    state: TaskState = TaskState.PENDING
-    result: Any | None = None
-    error: Exception | None = None
-    task_id: str | None = None
-    attempts: int = 0
-
-
-class TaskState(Enum):
-    """État d'une tâche dans le moteur d'exécution."""
-
-    PENDING = "pending"
-    READY = "ready"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
-@dataclass
-class TaskExecution:
-    """
-    Suivi de l'exécution d'une tâche individuelle.
-
-    Contient l'état courant, le résultat, l'erreur éventuelle,
-    le nombre de tentatives, et l'ID de la tâche TaskIQ.
-
-    Attributes:
-        node: Nœud DAG de la tâche
-        state: État courant (TaskState)
-        result: Résultat de l'exécution (si completed)
-        error: Exception en cas d'échec
-        task_id: ID de la tâche dans TaskIQ
-        attempts: Nombre de tentatives effectuées
-    """
 
     node: DAGNode
     state: TaskState = TaskState.PENDING
@@ -467,8 +432,6 @@ class ExecutionEngine:
             original = getattr(task, "original_function", None)
             if original is not None:
                 # Get metadata from the original function
-                from taskiq_flow.decorators import get_pipeline_metadata
-
                 metadata = get_pipeline_metadata(original)
                 if metadata:
                     return metadata

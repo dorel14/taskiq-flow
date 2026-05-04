@@ -17,6 +17,7 @@ from taskiq import InMemoryBroker
 
 from taskiq_flow import DataflowPipeline, pipeline_task
 from taskiq_flow.api import PipelineVisualizationAPI, create_visualization_api
+from taskiq_flow.visualization import DAGVisualizer
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True)
@@ -114,7 +115,10 @@ def create_app() -> FastAPI:
                 "status": "executed",
                 "pipeline_id": pipeline_id,
                 "task_id": result.task_id,
-                "message": "Pipeline execution started. Use /result/{task_id} to check status.",
+                "message": (
+                    "Pipeline execution started. "
+                    "Use /result/{task_id} to check status."
+                ),
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
@@ -124,12 +128,12 @@ def create_app() -> FastAPI:
     async def get_result(task_id: str) -> dict[str, Any]:
         """Get the result of a pipeline execution."""
         try:
-            result = await broker.get_result(task_id)
+            result = await broker.result_backend.get_result(task_id)
             if result is None:
                 raise HTTPException(
                     status_code=404, detail=f"No result found for task_id {task_id}"
                 )
-            return {"task_id": task_id, "result": result}
+            return {"task_id": task_id, "result": result.return_value}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -177,9 +181,7 @@ async def demo_api_usage() -> None:
         )  # noqa: T201
 
     # Get JSON representation using public visualization API
-    from taskiq_flow.visualization import DAGVisualizer
-
-    dag_json = DAGVisualizer.to_json(dag)
+    dag_json = DAGVisualizer.to_json(dag) if dag else {"nodes": [], "edges": []}
     print(f"\nDAG JSON nodes: {len(dag_json['nodes'])}")  # noqa: T201
 
     # Also show using pipeline's public methods (alternative)
