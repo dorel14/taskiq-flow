@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineVisualizationAPI:
-"""API REST pour la visualisation et la gestion des pipelines.
+    """API REST pour la visualisation et la gestion des pipelines.
 
-Fournit des endpoints FastAPI pour inspecter les DAGs, déclencher
-des exécutions et suivre le statut des pipelines.
+    Fournit des endpoints FastAPI pour inspecter les DAGs, déclencher
+    des exécutions et suivre le statut des pipelines.
 
-Auteur: SoniqueBay Team
-Version: 0.3.1
-"""
+    Auteur: SoniqueBay Team
+    Version: 0.3.1
+    """
 
     def __init__(self, broker: AsyncBroker, app: FastAPI | None = None) -> None:
         """Initialize the visualization API.
