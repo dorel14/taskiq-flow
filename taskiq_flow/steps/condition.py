@@ -62,7 +62,7 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
             )
         # If no else and condition not met, skip this step
 
-    def _eval_condition(self, expression: str, value: Any) -> bool:  # noqa: C901, PLR0911
+    def _eval_condition(self, expression: str, value: Any) -> bool:
         """Safe expression evaluation using AST."""
         # Basic support for simple expressions with value variable
         try:

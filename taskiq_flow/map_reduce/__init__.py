@@ -91,7 +91,7 @@ class MapReduce:
     """
 
     @staticmethod
-    async def map(  # noqa: C901
+    async def map(
         broker: AsyncBroker,
         task: Callable[..., Any],
         items: list[Any],

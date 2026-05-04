@@ -38,7 +38,7 @@ class StructuredFormatter(logging.Formatter):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
         self.config = config or LogConfig()
 
-    def format(self, record: logging.LogRecord) -> str:  # noqa: C901
+    def format(self, record: logging.LogRecord) -> str:
         """Format the log record.
 
         Args:
@@ -102,7 +102,7 @@ class StructuredFormatter(logging.Formatter):
         )
         time_prefix = f"{time_str} " if time_str else ""
 
-        duration_str = f" ({duration*1000:.2f}ms)" if duration else ""
+        duration_str = f" ({duration * 1000:.2f}ms)" if duration else ""
 
         level_str = f"{record.levelname:8s}"
 

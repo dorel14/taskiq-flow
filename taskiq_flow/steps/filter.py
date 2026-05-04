@@ -20,7 +20,7 @@ from taskiq_flow.exceptions import AbortPipeline, FilterError
 
 
 @async_shared_broker.task(task_name="taskiq_flow.shared.filter_tasks")
-async def filter_tasks(  # noqa: C901
+async def filter_tasks(
     task_ids: list[str],
     parent_task_id: str,
     check_interval: float,

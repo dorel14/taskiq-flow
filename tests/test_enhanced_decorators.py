@@ -202,6 +202,7 @@ class TestRegistryOperations:
         # Should not raise
         _task_registry.validate_outputs()
 
+
 class TestErrorHandling:
     """Tests for error handling in decorators."""
 

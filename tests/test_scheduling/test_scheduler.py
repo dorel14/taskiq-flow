@@ -97,11 +97,11 @@ def test_pipeline_scheduler_import_error():
     """Test that ImportError is raised when APScheduler not available."""
     # The import happens at module level, so we need to patch the
     # AsyncIOScheduler in the scheduler module itself
-    with patch("taskiq_flow.scheduling.scheduler.AsyncIOScheduler", None), patch(
-        "taskiq_flow.scheduling.scheduler.CronTrigger", None
-    ), patch(
-        "taskiq_flow.scheduling.scheduler.DateTrigger", None
-    ), patch(
-        "taskiq_flow.scheduling.scheduler.IntervalTrigger", None
-    ), pytest.raises(ImportError):
+    with (
+        patch("taskiq_flow.scheduling.scheduler.AsyncIOScheduler", None),
+        patch("taskiq_flow.scheduling.scheduler.CronTrigger", None),
+        patch("taskiq_flow.scheduling.scheduler.DateTrigger", None),
+        patch("taskiq_flow.scheduling.scheduler.IntervalTrigger", None),
+        pytest.raises(ImportError),
+    ):
         PipelineScheduler(InMemoryBroker())

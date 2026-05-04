@@ -126,6 +126,7 @@ lint.ignore = [
   "D100",  # Missing docstring in public module
   "ANN401",  # typing.Any are disallowed in `**kwargs
   "PLR0913",  # Too many arguments for function call
+  "PLR0911",  # Too many return statements
   "D106",  # Missing docstring in public nested class
   "SLF001",  # Private member accessed
   "COM812",  # Trailing comma conflicts with formatter
