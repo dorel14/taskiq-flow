@@ -23,7 +23,7 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.46.0
     hooks:
       - id: typos
 
