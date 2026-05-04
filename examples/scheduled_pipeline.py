@@ -8,7 +8,6 @@ See TaskIQ documentation for setting up label-based scheduling.
 """
 
 import asyncio
-from datetime import datetime, timedelta
 
 from taskiq import InMemoryBroker
 
@@ -61,9 +60,10 @@ async def main() -> None:
     schedules = scheduler.list_schedules()
     print(f"Active schedules: {len(schedules)}")  # noqa: T201
     for sched in schedules:
-        print(
-            f"  - {sched['label']}: cron={sched.get('cron')}, enabled={sched['enabled']}"
-        )  # noqa: T201
+        print(  # noqa: T201
+            f"  - {sched['label']}: cron={sched.get('cron')}, "
+            f"enabled={sched['enabled']}"
+        )
 
 
 if __name__ == "__main__":

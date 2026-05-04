@@ -10,6 +10,7 @@ Install with: pip install uvicorn[standard]
 """
 
 import asyncio
+import logging
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -22,6 +23,8 @@ from taskiq_flow.api import PipelineVisualizationAPI, create_visualization_api
 # Create broker
 broker = InMemoryBroker(await_inplace=True)
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 # ============================================================================
 # Define sample tasks for testing
 # ============================================================================
@@ -150,7 +153,7 @@ def create_app() -> FastAPI:
 
 async def demo_api_usage() -> None:
     """Demonstrate programmatic usage of the PipelineVisualizationAPI."""
-    print("\n=== PipelineVisualizationAPI Demo ===\n")  # noqa: T201
+    logger.info("\n=== PipelineVisualizationAPI Demo ===\n")
 
     # Create a standalone FastAPI app
     app = FastAPI()
@@ -165,32 +168,32 @@ async def demo_api_usage() -> None:
     viz_api.add_pipeline("demo_pipeline", pipeline)
 
     # Use the API's pipeline storage directly (for demonstration purposes)
-    print("Registered pipelines:")  # noqa: T201
+    logger.info("Registered pipelines:")
     for pid, p in viz_api.pipelines.items():
         viz = p.visualize()
-        print(f"  - {pid} (tasks: {len(viz['nodes'])})")  # noqa: T201
+        logger.info(f"  - {pid} (tasks: {len(viz['nodes'])})")
 
     # Use the public visualize() method to get DAG structure
     # This method internally builds the DAG if needed
     viz_json = pipeline.visualize()
-    print("\nPipeline DAG structure:")  # noqa: T201
-    print(f"  Nodes: {[node['id'] for node in viz_json['nodes']]}")  # noqa: T201
-    print(f"  Edges: {viz_json['edges']}")  # noqa: T201
-    print(f"  Levels: {viz_json['levels']}")  # noqa: T201
+    logger.info("\nPipeline DAG structure:")
+    logger.info(f"  Nodes: {[node['id'] for node in viz_json['nodes']]}")
+    logger.info(f"  Edges: {viz_json['edges']}")
+    logger.info(f"  Levels: {viz_json['levels']}")
 
     # Get DOT representation using public method
     dot = pipeline.visualize_dot()
-    print(f"\nDOT format (first 150 chars): {dot[:150]}...")  # noqa: T201
+    logger.info(f"\nDOT format (first 150 chars): {dot[:150]}...")
 
-    print("\n=== Demo Complete ===")  # noqa: T201
-    print("\nThe API provides the following FastAPI routes:")  # noqa: T201
-    print("  GET  /health")  # noqa: T201
-    print("  GET  /pipelines")  # noqa: T201
-    print("  POST /pipelines/{pipeline_id}")  # noqa: T201
-    print("  GET  /pipelines/{pipeline_id}/status")  # noqa: T201
-    print("  GET  /pipelines/{pipeline_id}/dag")  # noqa: T201
-    print("  GET  /pipelines/{pipeline_id}/dag/dot")  # noqa: T201
-    print("  GET  /pipelines/{pipeline_id}/visualize")  # noqa: T201
+    logger.info("\n=== Demo Complete ===")
+    logger.info("\nThe API provides the following FastAPI routes:")
+    logger.info("  GET  /health")
+    logger.info("  GET  /pipelines")
+    logger.info("  POST /pipelines/{pipeline_id}")
+    logger.info("  GET  /pipelines/{pipeline_id}/status")
+    logger.info("  GET  /pipelines/{pipeline_id}/dag")
+    logger.info("  GET  /pipelines/{pipeline_id}/dag/dot")
+    logger.info("  GET  /pipelines/{pipeline_id}/visualize")
 
 
 # ============================================================================
@@ -200,25 +203,31 @@ async def demo_api_usage() -> None:
 
 async def main() -> None:
     """Run the API example."""
-    print("TaskIQ Flow REST API Example")  # noqa: T201
-    print("=" * 50)  # noqa: T201
+    logger.info("TaskIQ Flow REST API Example")
+    logger.info("=" * 50)
 
     # Demonstrate API usage programmatically
     await demo_api_usage()
 
     # Show how to run the server (commented out for demo)
-    print("\nTo start the API server, run:")  # noqa: T201
-    print("  uvicorn examples.api_example:create_app --reload --port 8000")  # noqa: T201
-    print("\nThen access:")  # noqa: T201
-    print("  - API docs: http://localhost:8000/docs")  # noqa: T201
-    print("  - Health: http://localhost:8000/health")  # noqa: T201
-    print("  - List pipelines: http://localhost:8000/pipelines")  # noqa: T201
-    print("  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag")  # noqa: T201
-    print("  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot")  # noqa: T201
-    print("  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize")  # noqa: T201
-    print("  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute")  # noqa: T201
-    print("\nExample execution request body:")  # noqa: T201
-    print('  {"user_id": 123}')  # noqa: T201
+    logger.info("\nTo start the API server, run:")
+    logger.info("  uvicorn examples.api_example:create_app --reload --port 8000")
+    logger.info("\nThen access:")
+    logger.info("  - API docs: http://localhost:8000/docs")
+    logger.info("  - Health: http://localhost:8000/health")
+    logger.info("  - List pipelines: http://localhost:8000/pipelines")
+    logger.info("  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag")
+    logger.info(
+        "  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot"
+    )
+    logger.info(
+        "  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize"
+    )
+    logger.info(
+        "  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute"
+    )
+    logger.info("\nExample execution request body:")
+    logger.info('  {"user_id": 123}')
 
 
 if __name__ == "__main__":
