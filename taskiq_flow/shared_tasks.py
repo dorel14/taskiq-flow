@@ -1,4 +1,11 @@
-"""Shared utility tasks for pipeline operations."""
+"""Tâches utilitaires partagées pour les opérations de pipeline.
+
+Contient des tâches communes comme identity_task utilisées
+par divers steps.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 

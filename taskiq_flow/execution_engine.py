@@ -1,4 +1,12 @@
-"""Execution engine for dataflow-based pipelines."""
+"""Moteur d'exécution pour pipelines basés sur un DAG.
+
+Exécute les tâches en respectant les dépendances, en parallèle
+lorsque possible. Gère les retentatives, les modes d'erreur
+(fail_fast, continue_on_error, skip_failed) et le cache de données.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging

@@ -32,7 +32,7 @@ def print_result(x: int) -> None:
 async def main() -> None:
     """Run the quickstart example."""
     # Create pipeline
-    pipeline: DataflowPipeline = (
+    pipeline = (
         DataflowPipeline(broker)
         .call_next(add_one)
         .call_next(multiply_by_two)

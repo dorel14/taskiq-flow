@@ -1,4 +1,11 @@
-"""Reduce step for cumulative aggregation."""
+"""Step de réduction pour agrégation cumulative.
+
+Applique une fonction de réduction sur une liste de valeurs,
+avec support de la pré-traitement par tâche et du chunking.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 from typing import Any

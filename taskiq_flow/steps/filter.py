@@ -1,3 +1,13 @@
+"""Step de filtrage pour pipelines.
+
+Ce module définit FilterStep, une étape qui exécute une tâche prédicat
+sur chaque élément d'une liste en parallèle, ne conservant que les éléments
+pour lesquels le prédicat renvoie une valeur truthy.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 import asyncio
 from collections.abc import Iterable
 from typing import Any

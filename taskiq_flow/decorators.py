@@ -1,4 +1,12 @@
-"""Decorators for pipeline tasks."""
+"""Décorateurs pour les tâches de pipeline.
+
+Fournit @pipeline_task et @pipeline_task_multi_output pour déclarer
+les dépendances de données des tâches. Ces décorateurs enregistrent
+les métadonnées nécessaires à la construction automatique du DAG.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import inspect
 import logging

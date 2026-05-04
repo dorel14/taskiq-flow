@@ -1,4 +1,11 @@
-"""Condition step for conditional execution."""
+"""Step conditionnel pour exécution sous condition.
+
+Exécute une tâche si une condition (expression ou callable) est vraie,
+sinon exécute une tâche alternative si fournie.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import ast
 from collections.abc import Callable

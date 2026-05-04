@@ -1,4 +1,13 @@
-"""Enhanced Pipeline class with dataflow support."""
+"""Pipeline avec orchestration basée sur les dépendances de données.
+
+Ce module fournit la classe DataflowPipeline qui étend Pipeline
+en construisant automatiquement un DAG (Directed Acyclic Graph) à partir
+des dépendances déclarées via @pipeline_task. Permet l'exécution
+parallèle automatique, les opérations map-reduce et la visualisation du graphe.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import logging
 from typing import Any

@@ -17,7 +17,6 @@ from taskiq import InMemoryBroker
 
 from taskiq_flow import DataflowPipeline, pipeline_task
 from taskiq_flow.api import PipelineVisualizationAPI, create_visualization_api
-from taskiq_flow.visualization import DAGVisualizer
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True)
@@ -153,7 +152,7 @@ async def demo_api_usage() -> None:
     app = FastAPI()
     viz_api = PipelineVisualizationAPI(broker, app)
 
-    # Register a pipeline using the API's internal storage
+    # Register a pipeline using the visualization API's public method
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [fetch_user_data, fetch_orders, generate_recommendations],
@@ -161,33 +160,19 @@ async def demo_api_usage() -> None:
     pipeline.pipeline_id = "demo_pipeline"
     viz_api.add_pipeline("demo_pipeline", pipeline)
 
-    # Use the API's pipeline storage directly
+    # Use the API's pipeline storage directly (for demonstration purposes)
     print("Registered pipelines:")  # noqa: T201
     for pid, p in viz_api.pipelines.items():
-        print(f"  - {pid} (tasks: {len(p._dataflow_tasks)})")  # noqa: T201
+        viz = p.visualize()
+        print(f"  - {pid} (tasks: {len(viz['nodes'])})")  # noqa: T201
 
-    # Build the DAG if not already built
-    if not pipeline._dag:
-        pipeline._build_dataflow_dag()
-
-    # Get DAG via public methods
-    print("\nPipeline DAG structure:")  # noqa: T201
-    dag = pipeline._dag
-    if dag:
-        print(f"  Nodes: {[node.task.task_name for node in dag.nodes]}")  # noqa: T201
-        print(f"  Edges: {dag.edges}")  # noqa: T201
-        print(
-            f"  Levels: {[[n.task.task_name for n in level] for level in dag.levels]}"
-        )  # noqa: T201
-
-    # Get JSON representation using public visualization API
-    dag_json = DAGVisualizer.to_json(dag) if dag else {"nodes": [], "edges": []}
-    print(f"\nDAG JSON nodes: {len(dag_json['nodes'])}")  # noqa: T201
-
-    # Also show using pipeline's public methods (alternative)
+    # Use the public visualize() method to get DAG structure
+    # This method internally builds the DAG if needed
     viz_json = pipeline.visualize()
-    # visualize() returns the DAG JSON directly
-    print(f"Pipeline visualization has {len(viz_json['nodes'])} nodes")  # noqa: T201
+    print("\nPipeline DAG structure:")  # noqa: T201
+    print(f"  Nodes: {[node['id'] for node in viz_json['nodes']]}")  # noqa: T201
+    print(f"  Edges: {viz_json['edges']}")  # noqa: T201
+    print(f"  Levels: {viz_json['levels']}")  # noqa: T201
 
     # Get DOT representation using public method
     dot = pipeline.visualize_dot()

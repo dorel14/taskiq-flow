@@ -1,4 +1,12 @@
-"""DAG builder for automatic pipeline construction."""
+"""Constructeur de DAG pour la construction automatique de pipelines.
+
+Analyse les métadonnées des tâches et construit le graphe de
+dépendances. Valide également le graphe (détection de cycles,
+connexité et calcul des niveaux topologiques).
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import inspect
 from collections.abc import Callable

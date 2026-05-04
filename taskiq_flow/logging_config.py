@@ -1,4 +1,11 @@
-"""Structured logging configuration for TaskIQ-Flow."""
+"""Configuration de logging structuré pour TaskIQ-Flow.
+
+Fournit des utilitaires pour configurer le logging avec format JSON
+et contexte enrichi.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import json
 import logging

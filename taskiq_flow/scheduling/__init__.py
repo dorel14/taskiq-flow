@@ -1,4 +1,11 @@
-"""Scheduling module."""
+"""Module d'ordonnancement pour les pipelines.
+
+Fournit les classes et fonctions pour planifier l'exécution
+des pipelines via APScheduler ou le système de labels TaskIQ.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from .scheduler import LabelBasedScheduler, PipelineScheduler
 from .triggers import (

@@ -1,4 +1,11 @@
-"""Group step for parallel execution of multiple independent tasks."""
+"""Step de groupe pour exécution parallèle de tâches indépendantes.
+
+Exécute plusieurs tâches en parallèle sans dépendances entre elles
+et collecte leurs résultats dans une liste ordonnée.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging

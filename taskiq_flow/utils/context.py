@@ -1,4 +1,11 @@
-"""Pipeline context utilities."""
+"""Utilitaires de contexte de pipeline.
+
+Fournit PipelineContext, un accès contexteux au broker et
+aux informations de pipeline pendant l'exécution.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 

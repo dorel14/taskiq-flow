@@ -1,4 +1,11 @@
-"""Parallel utilities for pipelines."""
+"""Outils de parallélisme pour pipelines.
+
+Contient des fonctions utilitaires pour gérer l'exécution
+parallèle et les synchronisations.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from collections.abc import Iterable
 from typing import Any, TypeVar
