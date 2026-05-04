@@ -1956,6 +1956,7 @@ dependencies = [
     { name = "taskiq-aio-kafka" },
     { name = "taskiq-aio-pika" },
     { name = "taskiq-redis" },
+    { name = "typos" },
 ]
 
 [package.optional-dependencies]
@@ -2000,6 +2001,7 @@ requires-dist = [
     { name = "taskiq-aio-kafka", specifier = ">=0.3.0" },
     { name = "taskiq-aio-pika", specifier = ">=0.6.0" },
     { name = "taskiq-redis", specifier = ">=1.0.9" },
+    { name = "typos", specifier = ">=1.46.0" },
 ]
 provides-extras = ["scheduler", "redis", "all"]
 
@@ -2103,6 +2105,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/55/e3/70399cb7dd41c10ac53367ae42139cf4b1ca5f36bb3dc6c9d33acdb43655/typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464", size = 75949, upload_time = "2025-10-01T02:14:41.687Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7", size = 14611, upload_time = "2025-10-01T02:14:40.154Z" },
+]
+
+[[package]]
+name = "typos"
+version = "1.46.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/87/8769161e958d715ed00b6cc110452c1a3921009a239944b66279acb63898/typos-1.46.0.tar.gz", hash = "sha256:afcc399b3ef9aedc0b037de935ebdef60654a3cc616bc160aac14de7fb4d5592", size = 1822140, upload_time = "2026-04-30T16:20:18.779Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/61/241cc5a28e7daf78e9f00345776a06d34b43a7901ec127875c18d5e864c4/typos-1.46.0-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:21709d52d62c32010151edb1ae4b2c9278f93f6d3a57cd6ab1a5ff3425de1e1c", size = 3473633, upload_time = "2026-04-30T16:20:01.865Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/a8/5c465e2f09fb2aead5af646bb1027d9c86eb2def7fe110a8e2a42a986562/typos-1.46.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:7d9811d112420cb866d2ed2b23a7eb4c97ea5fecfa81f9bb6ab5b57e59bd70b6", size = 3378427, upload_time = "2026-04-30T16:20:04.337Z" },
+    { url = "https://files.pythonhosted.org/packages/49/ec/38b5b2edbb88b5a610bb7ba35b991558ed7df3584091f48546d2fe26dcf6/typos-1.46.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2d612b6ace64f2219da5a18c9ac008042b37079a5fbaabcd6a20f060686205ac", size = 8234098, upload_time = "2026-04-30T16:20:05.981Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/63/ec68ddb454e56dcecc8c7f57efab4a1d527881fd5121a1c926cd914abc39/typos-1.46.0-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c3b0859517d73d13537a3f4a3662ceadb988e6bb5bdb8ba53bc6de86302d5154", size = 7325493, upload_time = "2026-04-30T16:20:08.508Z" },
+    { url = "https://files.pythonhosted.org/packages/36/4e/a6eb51e56dd80468086543aa84f554cffb99942d31b49f452e6999d377dd/typos-1.46.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:696b94e7d73cc74ee47d05d8aab1f1a3d50ee427b7e2a30337430eaa613b8f9c", size = 7741777, upload_time = "2026-04-30T16:20:10.297Z" },
+    { url = "https://files.pythonhosted.org/packages/89/31/7cf4a2b59797284feb81933ef6c793db6e5a9150a5ca76eb7cfd39a5657f/typos-1.46.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:7b9b32bca025049d68f6c571baccb2dbaded8e32299b91bd184ef1b0ec2755ae", size = 7093146, upload_time = "2026-04-30T16:20:11.96Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/3a/cab42c900888a49049b8bb33acea64f8b0c76cbb1a6e69a2771a6f11feae/typos-1.46.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:7284909bd27e487de31c5eb3b53817df9e705e14b96f226315dca8a8c653363f", size = 8128222, upload_time = "2026-04-30T16:20:13.587Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/e3/f0e2a727af4b1ac6f231d454f7ba85565039c930c9a4197c6345326ac1f9/typos-1.46.0-py3-none-win32.whl", hash = "sha256:563c54404f253450f195e2ec1cd4ca5e0d659e78c5d23b4062cea5cf2150fc9f", size = 3135787, upload_time = "2026-04-30T16:20:15.285Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/04/cf00d7df41e910b7a5bd7d83ac2fa0d771aa2ca3a2fde17388725ee1c20f/typos-1.46.0-py3-none-win_amd64.whl", hash = "sha256:595e614b9b9967247a68c2cb3a4712ced7a5cc434f2cabcf945afbebaccf885b", size = 3310337, upload_time = "2026-04-30T16:20:17.131Z" },
 ]
 
 [[package]]
