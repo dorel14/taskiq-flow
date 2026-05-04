@@ -1,0 +1,5 @@
+[default]
+# Allow French words in documentation
+extend-ignore-words = [
+    "reste",  # French for "rest" - used in documentation
+]

@@ -158,13 +158,9 @@ class LabelBasedScheduler:
 
         # Ensure pipeline has an ID and register it
         if not pipeline.pipeline_id:
-            from taskiq_flow.pipeliner import Pipeline as PipelineClass
-
-            pipeline.pipeline_id = PipelineClass.register_pipeline(pipeline)
+            pipeline.pipeline_id = Pipeline.register_pipeline(pipeline)
         else:
-            from taskiq_flow.pipeliner import Pipeline as PipelineClass
-
-            PipelineClass.register_pipeline(pipeline)
+            Pipeline.register_pipeline(pipeline)
 
         task_name = pipeline.pipeline_id
 

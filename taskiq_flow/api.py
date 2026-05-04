@@ -75,9 +75,12 @@ class PipelineVisualizationAPI:
 
             Args:
                 pipeline_id: Unique pipeline identifier
-                tasks: List of task definitions with optional 'name', 'dependencies' keys
+                tasks: List of task definitions with optional 'name',
+                    'dependencies' keys
             """
-            logger.info("Registering pipeline %s with %d tasks", pipeline_id, len(tasks))
+            logger.info(
+                "Registering pipeline %s with %d tasks", pipeline_id, len(tasks)
+            )
             pipeline = DataflowPipeline(self.broker)
             pipeline.pipeline_id = pipeline_id
             pipeline._registered_tasks = tasks

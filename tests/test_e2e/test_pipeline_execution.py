@@ -56,7 +56,7 @@ async def test_e2e_basic_pipeline(e2e_setup):
     task = await pipeline.kiq()
     result = await task.wait_result()
 
-    assert result.success
+    assert result.error is None
     assert result.return_value["doubled"] == [2, 4, 6]
 
     status = await tracking.get_status(pipeline.pipeline_id)
@@ -83,7 +83,7 @@ async def test_e2e_error_handling(e2e_setup):
     task = await pipeline.kiq()
     result = await task.wait_result()
 
-    assert not result.success
+    assert result.error is not None
 
     status = await tracking.get_status(pipeline.pipeline_id)
     assert status is not None

@@ -53,7 +53,7 @@ def test_create_with_redis_broker_auto_extract():
         "taskiq_flow.tracking.factory.BrokerDetector.detect",
         return_value=BrokerType.REDIS,
     ):
-        storage = TrackingStorageFactory.create(broker)
+        storage = TrackingStorageFactory.create(broker)  # type: ignore[arg-type]
 
     assert isinstance(storage, RedisPipelineStorage)
 
