@@ -129,6 +129,7 @@ lint.ignore = [
   "D106",  # Missing docstring in public nested class
   "SLF001",  # Private member accessed
   "COM812",  # Trailing comma conflicts with formatter
+  "C901",  # Function is too complex
 ]
 lint.mccabe = { max-complexity = 10 }
 line-length = 88

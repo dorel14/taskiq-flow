@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Coroutine
 from types import CoroutineType
-from typing import Any, Generic, Literal, ParamSpec, TypeVar, overload
+from typing import Any, ClassVar, Generic, Literal, ParamSpec, TypeVar, overload
 
 import pydantic
 from taskiq import AsyncBroker, AsyncTaskiqTask
@@ -96,10 +96,10 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
     """
 
     # Global registry for pipelines (needed for distributed task execution)
-    _pipeline_registry: dict[str, "Pipeline[Any, Any]"] = {}
+    _pipeline_registry: ClassVar[dict[str, Pipeline[Any, Any]]] = {}
 
     @classmethod
-    def register_pipeline(cls, pipeline: "Pipeline[Any, Any]") -> str:
+    def register_pipeline(cls, pipeline: Pipeline[Any, Any]) -> str:
         """Register a pipeline in the global registry.
 
         Args:
@@ -114,7 +114,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         return pipeline.pipeline_id
 
     @classmethod
-    def get_pipeline(cls, pipeline_id: str) -> "Pipeline[Any, Any] | None":
+    def get_pipeline(cls, pipeline_id: str) -> Pipeline[Any, Any] | None:
         """Get a pipeline from the registry.
 
         Args:

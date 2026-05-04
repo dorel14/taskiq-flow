@@ -225,7 +225,8 @@ class DAGBuilder:
             params = list(sig.parameters.values())
 
             # Skip 'self' and 'cls' parameters
-            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY, and KEYWORD_ONLY parameters
+            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY,
+            # and KEYWORD_ONLY parameters
             input_names = []
             for param in params:
                 if (
@@ -258,7 +259,8 @@ class DAGBuilder:
 
             # Skip 'self' and 'cls' parameters, plus parameters with defaults
             # Also skip *args and **kwargs
-            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY, and KEYWORD_ONLY parameters
+            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY,
+            # and KEYWORD_ONLY parameters
             input_names = []
             for param in params:
                 if (
@@ -375,7 +377,7 @@ class DAGBuilder:
             )
 
     @staticmethod
-    def analyze_missing_dependencies(  # noqa: C901
+    def analyze_missing_dependencies(
         tasks: list[Any],
         registry: DataflowRegistry,
     ) -> dict[str, list[str]]:
