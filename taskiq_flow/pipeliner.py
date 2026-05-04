@@ -95,6 +95,51 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
     but it's nice to have.
     """
 
+    # Global registry for pipelines (needed for distributed task execution)
+    _pipeline_registry: dict[str, "Pipeline[Any, Any]"] = {}
+
+    @classmethod
+    def register_pipeline(cls, pipeline: "Pipeline[Any, Any]") -> str:
+        """Register a pipeline in the global registry.
+
+        Args:
+            pipeline: Pipeline to register
+
+        Returns:
+            The pipeline ID
+        """
+        if pipeline.pipeline_id is None:
+            pipeline.pipeline_id = str(uuid.uuid4())
+        cls._pipeline_registry[pipeline.pipeline_id] = pipeline
+        return pipeline.pipeline_id
+
+    @classmethod
+    def get_pipeline(cls, pipeline_id: str) -> "Pipeline[Any, Any] | None":
+        """Get a pipeline from the registry.
+
+        Args:
+            pipeline_id: The pipeline ID
+
+        Returns:
+            The pipeline or None if not found
+        """
+        return cls._pipeline_registry.get(pipeline_id)
+
+    @classmethod
+    def unregister_pipeline(cls, pipeline_id: str) -> bool:
+        """Remove a pipeline from the registry.
+
+        Args:
+            pipeline_id: The pipeline ID
+
+        Returns:
+            True if removed, False if not found
+        """
+        if pipeline_id in cls._pipeline_registry:
+            del cls._pipeline_registry[pipeline_id]
+            return True
+        return False
+
     @overload
     def __init__(
         self,

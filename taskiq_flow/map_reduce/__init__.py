@@ -160,7 +160,7 @@ class MapReduce:
                     chunk_config.chunk_size,
                 )
                 # Process chunks in parallel
-                chunk_results = await MapReduce._map_chunks(
+                chunk_results, chunk_errors = await MapReduce._map_chunks(
                     broker,
                     task,
                     chunks,
@@ -178,6 +178,7 @@ class MapReduce:
                     output_name=output,
                     items_processed=len(items),
                     duration=duration,
+                    errors=chunk_errors,
                 )
 
         # Standard parallel map without chunking
@@ -267,7 +268,7 @@ class MapReduce:
         max_parallel: int | None,
         progress_callback: Callable[[int, int], None] | None,
         **kwargs: Any,
-    ) -> list[list[Any]]:
+    ) -> tuple[list[list[Any]], list[Exception]]:
         """
         Process multiple chunks in parallel.
 
@@ -282,11 +283,12 @@ class MapReduce:
             **kwargs: Additional kwargs
 
         Returns:
-            List of chunk results
+            Tuple of (list of chunk results, list of errors from failed chunks)
         """
         semaphore = asyncio.Semaphore(max_parallel) if max_parallel else None
         total_chunks = len(chunks)
         completed_chunks = 0
+        errors: list[Exception] = []
 
         async def process_chunk(chunk: list[Any], chunk_idx: int) -> list[Any]:
             """Process a single chunk."""
@@ -336,11 +338,12 @@ class MapReduce:
         for r in results:
             if isinstance(r, Exception):
                 logger.warning("[MAP] Chunk failed: %s", str(r))
-                # Return empty list for failed chunks
+                # Track the error instead of silently returning empty list
+                errors.append(r)
                 final_results.append([])
             elif isinstance(r, list):
                 final_results.append(r)
-        return final_results
+        return final_results, errors
 
     @staticmethod
     async def map_sweep(

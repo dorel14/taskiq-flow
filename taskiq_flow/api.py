@@ -28,21 +28,26 @@ class PipelineVisualizationAPI:
         self.pipelines: dict[str, DataflowPipeline] = {}
         self._setup_routes()
 
-    def _setup_routes(self) -> None:  # noqa: C901
+    def _setup_routes(self) -> None:
         """Setup API routes."""
+        self._add_health_routes()
+        self._add_pipeline_routes()
+        self._add_dag_routes()
+
+    def _add_health_routes(self) -> None:
+        """Add health check routes."""
 
         @self.app.get("/health")
         async def health_check() -> dict[str, str]:
             """Health check endpoint."""
             return {"status": "healthy"}
 
+    def _add_pipeline_routes(self) -> None:
+        """Add pipeline management routes."""
+
         @self.app.get("/pipelines")
         async def list_pipelines() -> dict[str, list[dict[str, Any]]]:
-            """List all registered pipelines.
-
-            Returns:
-                Dictionary with pipeline information
-            """
+            """List all registered pipelines."""
             pipeline_info = []
             for pipeline_id, pipeline in self.pipelines.items():
                 info = {
@@ -61,30 +66,31 @@ class PipelineVisualizationAPI:
             pipeline_id: str,
             tasks: list[dict[str, Any]],
         ) -> dict[str, str]:
-            """Register a pipeline for visualization.
-
-            Args:
-                pipeline_id: Unique pipeline identifier
-                tasks: List of task information
-
-            Returns:
-                Success message
-            """
-            # Note: This is a simplified registration
-            # In practice, you'd want to pass actual pipeline objects
+            """Register a pipeline for visualization."""
             logger.info("Registering pipeline %s", pipeline_id)
             return {"message": f"Pipeline {pipeline_id} registered"}
 
+        @self.app.get("/pipelines/{pipeline_id}/status")
+        async def get_pipeline_status(pipeline_id: str) -> dict[str, Any]:
+            """Get pipeline execution status."""
+            if pipeline_id not in self.pipelines:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Pipeline {pipeline_id} not found",
+                )
+
+            return {
+                "pipeline_id": pipeline_id,
+                "status": "registered",
+                "tasks": len(self.pipelines[pipeline_id]._dataflow_tasks),
+            }
+
+    def _add_dag_routes(self) -> None:
+        """Add DAG visualization routes."""
+
         @self.app.get("/pipelines/{pipeline_id}/dag")
         async def get_pipeline_dag(pipeline_id: str) -> dict[str, Any]:
-            """Get pipeline DAG visualization.
-
-            Args:
-                pipeline_id: Pipeline identifier
-
-            Returns:
-                DAG visualization data
-            """
+            """Get pipeline DAG visualization."""
             if pipeline_id not in self.pipelines:
                 raise HTTPException(
                     status_code=404,
@@ -105,14 +111,7 @@ class PipelineVisualizationAPI:
 
         @self.app.get("/pipelines/{pipeline_id}/dag/dot")
         async def get_pipeline_dag_dot(pipeline_id: str) -> dict[str, str]:
-            """Get pipeline DAG in DOT format.
-
-            Args:
-                pipeline_id: Pipeline identifier
-
-            Returns:
-                DOT format string
-            """
+            """Get pipeline DAG in DOT format."""
             if pipeline_id not in self.pipelines:
                 raise HTTPException(
                     status_code=404,
@@ -132,39 +131,9 @@ class PipelineVisualizationAPI:
             dot = DAGVisualizer.to_dot(pipeline._dag)
             return {"dot": dot}
 
-        @self.app.get("/pipelines/{pipeline_id}/status")
-        async def get_pipeline_status(pipeline_id: str) -> dict[str, Any]:
-            """Get pipeline execution status.
-
-            Args:
-                pipeline_id: Pipeline identifier
-
-            Returns:
-                Pipeline status information
-            """
-            if pipeline_id not in self.pipelines:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Pipeline {pipeline_id} not found",
-                )
-
-            # This would integrate with the tracking system
-            return {
-                "pipeline_id": pipeline_id,
-                "status": "registered",
-                "tasks": len(self.pipelines[pipeline_id]._dataflow_tasks),
-            }
-
         @self.app.get("/pipelines/{pipeline_id}/visualize")
         async def visualize_pipeline(pipeline_id: str) -> JSONResponse:
-            """Get complete pipeline visualization.
-
-            Args:
-                pipeline_id: Pipeline identifier
-
-            Returns:
-                Complete visualization data
-            """
+            """Get complete pipeline visualization."""
             if pipeline_id not in self.pipelines:
                 raise HTTPException(
                     status_code=404,

@@ -47,6 +47,32 @@ async def _run_pipeline(
         raise
 
 
+async def _execute_scheduled_pipeline(
+    pipeline_id: str,
+    args: list[Any] | tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> Any:
+    """Execute a scheduled pipeline by ID.
+
+    This is a module-level function that can be pickled for distributed brokers.
+    It retrieves the pipeline from the registry and executes it.
+
+    Args:
+        pipeline_id: The ID of the pipeline to execute
+        args: Positional arguments to pass to the pipeline
+        kwargs: Keyword arguments to pass to the pipeline
+
+    Returns:
+        The pipeline result
+    """
+    # Get the pipeline from the global registry
+    pipeline = Pipeline.get_pipeline(pipeline_id)
+    if pipeline is None:
+        raise ValueError(f"Pipeline not found: {pipeline_id}")
+
+    return await pipeline.kiq(*args, **kwargs)
+
+
 class LabelBasedScheduler:
     """Lightweight scheduler using TaskIQ's LabelScheduleSource.
 
@@ -130,16 +156,21 @@ class LabelBasedScheduler:
         if cron and interval_seconds:
             raise ValueError("Cannot specify both cron and interval_seconds")
 
-        # Register the task with the broker if not already registered
-        task_name = pipeline.pipeline_id or f"pipeline_{label}"
+        # Ensure pipeline has an ID and register it
+        if not pipeline.pipeline_id:
+            from taskiq_flow.pipeliner import Pipeline as PipelineClass
 
-        # Create a wrapper function that executes the pipeline
-        async def pipeline_wrapper(*wrapper_args: Any, **wrapper_kwargs: Any) -> Any:
-            """Wrapper function to execute the pipeline."""
-            return await pipeline.kiq(*args, **{**(kwargs or {}), **wrapper_kwargs})
+            pipeline.pipeline_id = PipelineClass.register_pipeline(pipeline)
+        else:
+            from taskiq_flow.pipeliner import Pipeline as PipelineClass
 
-        # Register the task with the broker
-        task = self.broker.task(name=task_name)(pipeline_wrapper)
+            PipelineClass.register_pipeline(pipeline)
+
+        task_name = pipeline.pipeline_id
+
+        # Register the task with the broker using a module-level function
+        # This ensures the task is picklable for distributed brokers
+        task = self.broker.task(name=task_name)(_execute_scheduled_pipeline)
 
         # Create schedule entry in the format expected by LabelScheduleSource
         schedule_entry: dict[str, Any] = {
