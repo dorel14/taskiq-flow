@@ -9,7 +9,7 @@ from typing import Any
 from .events import PipelineEvent
 
 try:
-    from ..integration.websocket.server import get_websocket_server
+    from taskiq_flow.integration.websocket.server import get_websocket_server
 
     WEBSOCKET_AVAILABLE = True
 except ImportError:

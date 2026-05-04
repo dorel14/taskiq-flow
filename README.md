@@ -4,6 +4,8 @@ Taskiq-Flow lets you chain intensive functions together and fire them off withou
 
 *Version: 0.3.0*
 
+> 🌐 **International Documentation**: This project also provides documentation in [Français](README.fr.md).
+
 ## Inspiration & Design Philosophy
 
 Taskiq-Flow is built on the shoulders of two excellent projects:
@@ -428,6 +430,105 @@ Available event types:
 
 See `examples/websocket_demo.py` for a complete working example.
 
+## REST API for Pipeline Management
+
+TaskIQ Flow includes a FastAPI-based REST API for pipeline visualization, management, and remote execution. This is useful for building dashboards, CI/CD integrations, or any system that needs to interact with pipelines via HTTP.
+
+### Features
+
+- List all registered pipelines
+- View pipeline DAG structure (JSON or DOT format)
+- Execute pipelines remotely with parameters
+- Check execution results
+- Health check endpoint
+
+### Quick Start
+
+Install FastAPI and uvicorn if you haven't already:
+
+```bash
+pip install fastapi uvicorn[standard]
+```
+
+Then create your API server:
+
+```python
+from fastapi import FastAPI
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task, create_visualization_api
+
+# Create broker and tasks
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="result")
+async def process(data: str) -> dict:
+    return {"processed": data.upper()}
+
+# Build pipeline
+pipeline = DataflowPipeline.from_tasks(broker, [process])
+pipeline.pipeline_id = "my_pipeline"
+
+# Create FastAPI app with visualization API
+app = FastAPI()
+viz_api = create_visualization_api(broker, app)
+viz_api.add_pipeline("my_pipeline", pipeline)
+```
+
+Run with:
+
+```bash
+uvicorn my_app:app --reload --port 8000
+```
+
+### API Endpoints
+
+All endpoints are automatically available:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/pipelines` | List all registered pipelines |
+| POST | `/pipelines/{pipeline_id}` | Register a new pipeline |
+| GET | `/pipelines/{pipeline_id}/status` | Get pipeline status |
+| GET | `/pipelines/{pipeline_id}/dag` | Get DAG as JSON |
+| GET | `/pipelines/{pipeline_id}/dag/dot` | Get DAG in DOT format |
+| GET | `/pipelines/{pipeline_id}/visualize` | Complete pipeline visualization |
+
+**Note:** The core API focuses on visualization and management. For execution, you can add custom endpoints (see example below).
+
+### Extending the API
+
+You can add custom endpoints to execute pipelines and retrieve results:
+
+```python
+from fastapi import FastAPI, HTTPException
+from taskiq_flow.api import PipelineVisualizationAPI
+
+app = FastAPI()
+viz_api = PipelineVisualizationAPI(broker, app)
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute_pipeline(pipeline_id: str, parameters: dict):
+    """Execute a pipeline with given parameters."""
+    if pipeline_id not in viz_api.pipelines:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    
+    pipeline = viz_api.pipelines[pipeline_id]
+    result = await pipeline.kiq_dataflow(**parameters)
+    return {"task_id": result.task_id, "status": "started"}
+
+@app.get("/pipelines/result/{task_id}")
+async def get_result(task_id: str):
+    """Get the result of a pipeline execution."""
+    result = await broker.get_result(task_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Result not found")
+    return {"task_id": task_id, "result": result}
+```
+
+*Complete example: `examples/api_example.py`*
+
 ## Example Scripts
 
 The `examples/` directory includes:
@@ -437,5 +538,6 @@ The `examples/` directory includes:
 - `scheduled_pipeline.py` – cron-based recurring pipeline execution
 - `dataflow_audio_pipeline.py` – full-featured dataflow DAG, parallelism, map-reduce, and visualization
 - `websocket_demo.py` – WebSocket server streaming live pipeline events
+- `api_example.py` – FastAPI REST API for pipeline management and visualization **(NEW)**
 
 Run any example directly: `python examples/quickstart.py`

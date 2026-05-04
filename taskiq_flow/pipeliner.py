@@ -1,6 +1,14 @@
-from __future__ import annotations
+"""Pipeline de base pour l'orchestration de tâches TaskIQ.
 
-import uuid
+Ce module fournit la classe Pipeline de base qui permet de construire
+des séquences de tâches avec passage de résultats. C'est le cœur de
+l'orchestration de taskiq-flow, gérant l'enchaînement des étapes et
+leur exécution via le middleware.
+
+Auteur: SoniqueBay Team
+Version: 1.0.0
+"""
+from __future__ import annotations
 from collections.abc import Coroutine
 from types import CoroutineType
 from typing import Any, ClassVar, Generic, Literal, ParamSpec, TypeVar, overload

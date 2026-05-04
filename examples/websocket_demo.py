@@ -8,12 +8,13 @@ from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 from taskiq_flow.integration.websocket import get_websocket_server
+from taskiq_flow.middleware import PipelineMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # Create broker and pipeline
-broker = InMemoryBroker()
+broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
 
 
 # Define tasks
@@ -40,11 +41,11 @@ async def main() -> None:
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(
         add_one,
-        param_name="value",
+        param_name="x",
     )
     pipeline.call_next(
         multiply_by_two,
-        param_name="value",
+        param_name="x",
     )
 
     # Enable hooks for WebSocket events

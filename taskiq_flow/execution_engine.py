@@ -247,8 +247,8 @@ class ExecutionEngine:
         ready = []
 
         for node in self.dag.nodes:
-            state = self.task_states[node.task]
-            if state.state != TaskState.PENDING:
+            state = self.task_states.get(node.task)
+            if state is None or state.state != TaskState.PENDING:
                 continue
 
             # Check if all dependencies are completed
@@ -392,9 +392,25 @@ class ExecutionEngine:
 
     def _get_task_metadata(self, task: Any) -> dict[str, Any]:
         """Get metadata for a task."""
-        # Check if task has metadata attribute
-        if hasattr(task, "metadata"):
-            return task.metadata  # type: ignore
+        # Check if task is an AsyncTaskiqDecoratedTask (has original_function attribute)
+        if hasattr(task, "original_function"):
+            original = getattr(task, "original_function", None)
+            if original is not None:
+                # Get metadata from the original function
+                from taskiq_flow.decorators import get_pipeline_metadata
+                metadata = get_pipeline_metadata(original)
+                if metadata:
+                    return metadata
+        
+        # Check if task has attached metadata (legacy support)
+        if hasattr(task, "_pipeline_metadata"):
+            meta = task._pipeline_metadata
+            return {
+                "output": meta.output,
+                "inputs": meta.inputs,
+                "retries": meta.retries,
+            }
+        
         return {}
 
     def _prepare_inputs(self, task_node: DAGNode) -> dict[str, Any]:
@@ -407,6 +423,15 @@ class ExecutionEngine:
             output_name = metadata.get("output", producer.task_name)
             if self.data_cache.has(output_name):
                 inputs[output_name] = self.data_cache.get(output_name)
+        
+        # Also include external inputs for tasks with no dependencies
+        # This allows the first task in a pipeline to receive external inputs
+        if not task_node.dependencies:
+            # Get all inputs that were passed to execute()
+            for key in self.data_cache.keys:
+                if key not in inputs:
+                    inputs[key] = self.data_cache.get(key)
+        
         return inputs
 
     async def _execute_task_step(
@@ -418,7 +443,10 @@ class ExecutionEngine:
         """Execute a single task step."""
         # Create kicker and execute
         kicker = task.kicker()
-        return await kicker.kiq(**inputs)
+        result = await kicker.kiq(**inputs)
+        # Wait for the result
+        task_result = await result.wait_result()
+        return task_result.return_value
 
     async def _handle_task_result(
         self,
@@ -488,8 +516,8 @@ class ExecutionEngine:
     def _create_deadlock_error(self) -> Exception:
         """Create a deadlock error."""
         pending = [
-            node.task.task_name
-            for node, state in self.task_states.items()
+            task.task_name
+            for task, state in self.task_states.items()
             if state.state == TaskState.PENDING
         ]
         error_msg = (
@@ -508,8 +536,8 @@ class ExecutionEngine:
     def _create_execution_error(self) -> Exception:
         """Create an execution error."""
         errors = [
-            f"{node.task.task_name}: {state.error}"
-            for node, state in self.task_states.items()
+            f"{task.task_name}: {state.error}"
+            for task, state in self.task_states.items()
             if state.state == TaskState.FAILED
         ]
 
@@ -538,10 +566,11 @@ class ExecutionEngine:
         """
         outputs = {}
 
-        for node, state in self.task_states.items():
+        for task, state in self.task_states.items():
             if state.state == TaskState.COMPLETED:
-                metadata = self._get_task_metadata(node.task)
-                output_name = metadata.get("output", node.task.task_name)
+                # task is the AsyncTaskiqDecoratedTask
+                metadata = self._get_task_metadata(task)
+                output_name = metadata.get("output", task.task_name)
                 outputs[output_name] = state.result
 
         self._log(

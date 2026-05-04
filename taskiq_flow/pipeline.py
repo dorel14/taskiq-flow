@@ -201,6 +201,11 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         if not hasattr(self, "_map_operations"):
             self._map_operations = []
 
+        # Also add task to dataflow tasks for DAG building
+        if task not in self._dataflow_tasks:
+            self._dataflow_tasks.append(task)
+        self._is_dataflow_built = False
+
         self._map_operations.append(
             {
                 "type": "map",
@@ -257,6 +262,11 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         # Store reduce operation for execution
         if not hasattr(self, "_reduce_operations"):
             self._reduce_operations = []
+
+        # Also add task to dataflow tasks for DAG building
+        if task not in self._dataflow_tasks:
+            self._dataflow_tasks.append(task)
+        self._is_dataflow_built = False
 
         self._reduce_operations.append(
             {
@@ -375,9 +385,13 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                         output=op_dict["output"],
                         param_name=op_dict.get("param_name"),
                         max_parallel=max_parallel,
-                        **kwargs,
+                        **{
+                            k: v
+                            for k, v in kwargs.items()
+                            if k not in ("max_parallel",)
+                        },
                     )
-                    results[op_dict["output"]] = result
+                    results[op_dict["output"]] = result.results
 
                     logger.info(
                         "Standard map operation completed",

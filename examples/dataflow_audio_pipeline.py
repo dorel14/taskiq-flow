@@ -15,7 +15,7 @@ from taskiq_flow import (
     pipeline_task,
 )
 
-broker = InMemoryBroker()
+broker = InMemoryBroker(await_inplace=True)
 # ============================================================================
 # Define audio processing tasks
 # ============================================================================
@@ -109,16 +109,16 @@ async def example_sequential_pipeline() -> None:
     4. create_embedding runs last (depends on mir_features and tags)
     """
     # Create broker
-    broker = InMemoryBroker()
+    broker = InMemoryBroker(await_inplace=True)
 
     # Create pipeline from tasks
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [
-            extract_audio_features,
-            compute_mir_features,
-            generate_tags,
-            create_embedding,
+            extract_audio_features,  # type: ignore
+            compute_mir_features,  # type: ignore
+            generate_tags,  # type: ignore
+            create_embedding,  # type: ignore
         ],
     )
 
@@ -168,16 +168,16 @@ async def example_parallel_pipeline() -> None:
     compute_mir_features and extract_spectral_features run in parallel
     because they both only depend on audio_features.
     """
-    broker = InMemoryBroker()
+    broker = InMemoryBroker(await_inplace=True)
 
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [
-            extract_audio_features,
-            compute_mir_features,
-            extract_spectral_features,
-            generate_tags,
-            combine_features,
+            extract_audio_features,  # type: ignore
+            compute_mir_features,  # type: ignore
+            extract_spectral_features,  # type: ignore
+            generate_tags,  # type: ignore
+            combine_features,  # type: ignore
         ],
     )
 
@@ -227,23 +227,21 @@ async def example_map_reduce() -> None:
 
     Process multiple tracks in parallel, then aggregate results.
     """
-    broker = InMemoryBroker()
-
-    # Create pipeline
+    # Use the module-level broker which has tasks registered
     pipeline = DataflowPipeline(broker)
 
     # Add map-reduce operations
     tracks = ["track1.mp3", "track2.mp3", "track3.mp3", "track4.mp3"]
 
     pipeline.map(
-        process_single_track,
+        process_single_track,  # type: ignore
         tracks,
         output="track_features",
         max_parallel=4,
     )
 
     pipeline.reduce(
-        aggregate_track_features,
+        aggregate_track_features,  # type: ignore
         input_name="track_features",
         output="playlist_stats",
     )
@@ -267,15 +265,13 @@ async def example_visualization() -> None:
 
     Generate DOT format for visualization with Graphviz.
     """
-    broker = InMemoryBroker()
-
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [
-            extract_audio_features,
-            compute_mir_features,
-            generate_tags,
-            create_embedding,
+            extract_audio_features,  # type: ignore
+            compute_mir_features,  # type: ignore
+            generate_tags,  # type: ignore
+            create_embedding,  # type: ignore
         ],
     )
 

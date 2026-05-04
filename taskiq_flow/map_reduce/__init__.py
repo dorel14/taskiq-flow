@@ -501,6 +501,12 @@ class MapReduce:
         if not inputs:
             return initial
 
+        # Infer the parameter name from the task signature
+        param_name = MapReduce._infer_parameter_name(task)
+
+        # Build the inputs dict with the correct parameter name
+        task_inputs = {param_name: inputs, **kwargs}
+
         # Chunked reduction for large lists
         if chunk_size and len(inputs) > chunk_size:
             logger.info(
@@ -514,26 +520,28 @@ class MapReduce:
             # Reduce each chunk
             chunk_results = []
             for i, chunk in enumerate(chunks):
+                chunk_inputs = {param_name: chunk, **kwargs}
                 result = await MapReduce._execute_task(
                     broker,
                     task,
-                    {"items": chunk, "initial": initial, **kwargs},
+                    chunk_inputs,
                 )
                 chunk_results.append(result)
                 logger.debug("[REDUCE] Chunk %d reduced", i)
 
             # Final reduction of chunk results
+            final_inputs = {param_name: chunk_results, **kwargs}
             return await MapReduce._execute_task(
                 broker,
                 task,
-                {"items": chunk_results, "initial": initial, **kwargs},
+                final_inputs,
             )
 
         # Standard reduction
         return await MapReduce._execute_task(
             broker,
             task,
-            {"items": inputs, "initial": initial, **kwargs},
+            task_inputs,
         )
 
     @staticmethod

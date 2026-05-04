@@ -1,7 +1,7 @@
 """Hooks and events module."""
 
-from .bridge_picows import WebSocketHookBridge, setup_websocket_bridge
-from .events import (
+from taskiq_flow.hooks.bridge_picows import WebSocketHookBridge, setup_websocket_bridge
+from taskiq_flow.hooks.events import (
     PipelineCompleteEvent,
     PipelineErrorEvent,
     PipelineEvent,
@@ -10,6 +10,7 @@ from .events import (
     StepErrorEvent,
     StepStartEvent,
 )
+
 from .manager import HookManager
 
 __all__ = [

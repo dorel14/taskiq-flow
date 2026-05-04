@@ -4,9 +4,9 @@ from typing import Any
 
 from taskiq import AsyncBroker
 
-from .factory import TrackingStorageFactory
-from .models import PipelineStatusInfo
-from .storage import PipelineStorage
+from taskiq_flow.tracking.factory import TrackingStorageFactory
+from taskiq_flow.tracking.models import PipelineStatusInfo
+from taskiq_flow.tracking.storage import PipelineStorage
 
 
 class PipelineTrackingManager:

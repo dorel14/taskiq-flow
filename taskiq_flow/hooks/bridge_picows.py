@@ -9,9 +9,9 @@ import logging
 from collections import deque
 from typing import Any
 
-from ..integration.websocket.server import get_websocket_server
-from .events import PipelineEvent
-from .manager import HookManager
+from taskiq_flow.hooks.events import PipelineEvent
+from taskiq_flow.hooks.manager import HookManager
+from taskiq_flow.integration.websocket.server import get_websocket_server
 
 logger = logging.getLogger(__name__)
 

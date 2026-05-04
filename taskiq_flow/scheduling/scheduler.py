@@ -501,7 +501,7 @@ class PipelineScheduler:
             raise RuntimeError("Scheduler is not available")
         scheduler = cast("AsyncIOScheduler", self.scheduler)
         logger.info("Starting pipeline scheduler")
-        await scheduler.start()
+        scheduler.start()
 
     async def shutdown(self, wait: bool = True) -> None:
         """Shutdown the scheduler."""
@@ -509,7 +509,7 @@ class PipelineScheduler:
             raise RuntimeError("Scheduler is not available")
         scheduler = cast("AsyncIOScheduler", self.scheduler)
         logger.info("Shutting down pipeline scheduler")
-        await scheduler.shutdown(wait=wait)
+        scheduler.shutdown(wait=wait)
 
     def list_jobs(self) -> Any:
         """List all scheduled jobs."""

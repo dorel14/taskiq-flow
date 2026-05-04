@@ -1,34 +1,32 @@
 """Quickstart example for taskiq-flow."""
 
-from taskiq import AsyncBroker, InMemoryBroker
-from taskiq_redis import RedisStreamBroker
+from taskiq import InMemoryBroker
 
 from taskiq_flow import Pipeline
+from taskiq_flow.middleware import PipelineMiddleware
 
-# Create broker
-try:
-    broker: AsyncBroker = RedisStreamBroker("redis://localhost:6379")
-except Exception as e:
-    print(f"Error creating RedisStreamBroker: {e}")  # noqa: T201
-    broker = InMemoryBroker()
+# Create broker (using InMemoryBroker for simplicity in quickstart)
+# For production, use RedisStreamBroker with a running Redis instance
+broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
 
 
 # Define some tasks
 @broker.task
-async def add_one(x: int) -> int:
+def add_one(x: int) -> int:
     """Add one to the input."""
     return x + 1
 
 
 @broker.task
-async def multiply_by_two(x: int) -> int:
+def multiply_by_two(x: int) -> int:
     """Multiply the input by two."""
     return x * 2
 
 
 @broker.task
-async def print_result(x: int) -> None:
+def print_result(x: int) -> None:
     """Print the final result."""
+    print(f"Result: {x}")  # noqa: T201
 
 
 async def main() -> None:
@@ -48,3 +46,9 @@ async def main() -> None:
     # Wait for completion
     await result.wait_result()
     _ = task_id
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())

@@ -1,7 +1,7 @@
 """Broker compatibility module."""
 
-from .adapter import BrokerAdapter
-from .detector import BrokerDetector, BrokerType
+from taskiq_flow.broker.adapter import BrokerAdapter
+from taskiq_flow.broker.detector import BrokerDetector, BrokerType
 
 __all__ = [
     "BrokerAdapter",

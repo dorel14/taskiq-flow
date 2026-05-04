@@ -12,8 +12,13 @@ try:
 except ImportError:
     redis = None  # type: ignore
 
-from .models import PipelineStatus, PipelineStatusInfo, StepStatus, StepStatusInfo
-from .storage import PipelineStorage
+from taskiq_flow.tracking.models import (
+    PipelineStatus,
+    PipelineStatusInfo,
+    StepStatus,
+    StepStatusInfo,
+)
+from taskiq_flow.tracking.storage import PipelineStorage
 
 logger = logging.getLogger(__name__)
 

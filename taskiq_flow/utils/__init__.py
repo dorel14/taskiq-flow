@@ -1,5 +1,5 @@
 """Utilities module."""
 
-from .context import PipelineContext
+from taskiq_flow.utils.context import PipelineContext
 
 __all__ = ["PipelineContext"]

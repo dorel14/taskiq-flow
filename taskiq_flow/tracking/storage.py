@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from .models import PipelineStatusInfo
+from taskiq_flow.tracking.models import PipelineStatusInfo
 
 
 class PipelineStorage(ABC):
