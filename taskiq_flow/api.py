@@ -23,6 +23,8 @@ class PipelineVisualizationAPI:
     Version: 0.3.1
     """
 
+    pipelines: dict[str, DataflowPipeline]
+
     def __init__(self, broker: AsyncBroker, app: FastAPI | None = None) -> None:
         """Initialize the visualization API.
 

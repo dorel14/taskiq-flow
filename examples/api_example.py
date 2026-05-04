@@ -14,6 +14,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from taskiq import InMemoryBroker
+from taskiq.decor import AsyncTaskiqDecoratedTask
 
 from taskiq_flow import DataflowPipeline, pipeline_task
 from taskiq_flow.api import PipelineVisualizationAPI, create_visualization_api
@@ -61,16 +62,20 @@ async def generate_recommendations(
     return ["product_A", "product_B", "product_C"]
 
 
+# Type alias for the decorated tasks
+TaskType = AsyncTaskiqDecoratedTask[Any, Any]
+
+
 # ============================================================================
 # Create a sample pipeline
 # ============================================================================
 
-sample_pipeline = DataflowPipeline.from_tasks(
+sample_pipeline: DataflowPipeline = DataflowPipeline.from_tasks(
     broker,
     [
-        fetch_user_data,
-        fetch_orders,
-        generate_recommendations,
+        fetch_user_data,  # type: ignore
+        fetch_orders,  # type: ignore
+        generate_recommendations,  # type: ignore
     ],
 )
 sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
@@ -115,8 +120,7 @@ def create_app() -> FastAPI:
                 "pipeline_id": pipeline_id,
                 "task_id": result.task_id,
                 "message": (
-                    "Pipeline execution started. "
-                    "Use /result/{task_id} to check status."
+                    "Pipeline execution started. Use /result/{task_id} to check status."
                 ),
             }
         except Exception as e:
@@ -153,9 +157,9 @@ async def demo_api_usage() -> None:
     viz_api = PipelineVisualizationAPI(broker, app)
 
     # Register a pipeline using the visualization API's public method
-    pipeline = DataflowPipeline.from_tasks(
+    pipeline: DataflowPipeline = DataflowPipeline.from_tasks(
         broker,
-        [fetch_user_data, fetch_orders, generate_recommendations],
+        [fetch_user_data, fetch_orders, generate_recommendations],  # type: ignore
     )
     pipeline.pipeline_id = "demo_pipeline"
     viz_api.add_pipeline("demo_pipeline", pipeline)
@@ -204,25 +208,15 @@ async def main() -> None:
 
     # Show how to run the server (commented out for demo)
     print("\nTo start the API server, run:")  # noqa: T201
-    print(
-        "  uvicorn examples.api_example:create_app --reload --port 8000"
-    )  # noqa: T201
+    print("  uvicorn examples.api_example:create_app --reload --port 8000")  # noqa: T201
     print("\nThen access:")  # noqa: T201
     print("  - API docs: http://localhost:8000/docs")  # noqa: T201
     print("  - Health: http://localhost:8000/health")  # noqa: T201
     print("  - List pipelines: http://localhost:8000/pipelines")  # noqa: T201
-    print(
-        "  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag"
-    )  # noqa: T201
-    print(
-        "  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot"
-    )  # noqa: T201
-    print(
-        "  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize"
-    )  # noqa: T201
-    print(
-        "  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute"
-    )  # noqa: T201
+    print("  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag")  # noqa: T201
+    print("  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot")  # noqa: T201
+    print("  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize")  # noqa: T201
+    print("  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute")  # noqa: T201
     print("\nExample execution request body:")  # noqa: T201
     print('  {"user_id": 123}')  # noqa: T201
 
