@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1]
+
+### Added
+
+- Comprehensive French module docstrings across all taskiq_flow modules
+- Enhanced class and method docstrings for IDE autocomplete
+- Improved documentation for Pipeline, DataflowPipeline, and Steps
+- Enhanced decorator documentation (@pipeline_task, @pipeline_task_multi_output)
+- Completed dataflow component documentation (DAG, DAGNode, DataNode, Registry)
+- Enhanced tracking system documentation (PipelineTrackingManager, models, storage)
+- Improved ExecutionEngine documentation
+- Added detailed examples and Args/Returns sections throughout
+
+### Changed
+
+- Standardized all docstrings to French format with comprehensive details
+- Improved type hint consistency across public APIs
+
 ## [0.3.0] - 2026-05-03
 
 ### Added
@@ -87,6 +105,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple scheduling
 - Basic tracking
 
+[0.3.1]: https://github.com/dorel14/taskiq-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/dorel14/taskiq-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dorel14/taskiq-flow/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/dorel14/taskiq-flow/releases/tag/v0.1.0
+
+---
+
+> 🌐 **International Documentation**: This project also provides documentation in [Français](CHANGELOG.fr.md).

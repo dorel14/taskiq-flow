@@ -1,4 +1,12 @@
-"""WebSocket server implementation using picows for pipeline event broadcasting."""
+"""Serveur WebSocket pour la diffusion d'événements de pipeline.
+
+Implémentation serveur asynchrone utilisant picows. Gère les
+connexions client, les abonnements par pipeline et la diffusion
+d'événements.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import json

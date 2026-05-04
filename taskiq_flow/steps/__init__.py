@@ -1,4 +1,12 @@
-"""Package with default pipeline steps."""
+"""Package contenant les steps par défaut pour les pipelines.
+
+Ce module expose les différents steps (sequential, mapper, filter,
+group, branch, condition, reduce) et fournit la fonction parse_step
+pour instancier un step à partir de sa représentation sérialisée.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from logging import getLogger
 from typing import Any

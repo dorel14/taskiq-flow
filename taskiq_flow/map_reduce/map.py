@@ -1,4 +1,12 @@
-"""Map operation for batch processing."""
+"""Fonction map pour l'application parallèle d'une tâche.
+
+Ce module fournit la fonction `map` qui applique une tâche à chaque
+élément d'une liste en parallèle. C'est un wrapper autour de
+MapReduce.map fournissant une interface simplifiée.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from collections.abc import Callable
 from typing import Any

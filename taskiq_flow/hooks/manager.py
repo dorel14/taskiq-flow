@@ -1,4 +1,14 @@
-"""Hook manager for pipeline events."""
+"""Gestionnaire de hooks pour les événements de pipeline.
+
+Ce module fournit HookManager qui permet d'enregistrer des callbacks
+sur les événements de cycle de vie des pipelines. Il gère un
+système de publication-abonnement avec weak references pour éviter
+les fuites mémoire, et supporte des transports multiples (WebSocket,
+etc.) pour la diffusion des événements.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging
@@ -9,7 +19,7 @@ from typing import Any
 from .events import PipelineEvent
 
 try:
-    from ..integration.websocket.server import get_websocket_server
+    from taskiq_flow.integration.websocket.server import get_websocket_server
 
     WEBSOCKET_AVAILABLE = True
 except ImportError:

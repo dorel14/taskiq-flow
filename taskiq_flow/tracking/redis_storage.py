@@ -1,4 +1,12 @@
-"""Redis implementation of pipeline storage."""
+"""Stockage Redis pour le suivi des pipelines.
+
+Implémentation de PipelineStorage utilisant Redis comme backend de stockage.
+Offre persistance des données et partage entre multiples instances.
+Inclut la logique de retry pour les opérations Redis.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import json
@@ -12,8 +20,13 @@ try:
 except ImportError:
     redis = None  # type: ignore
 
-from .models import PipelineStatus, PipelineStatusInfo, StepStatus, StepStatusInfo
-from .storage import PipelineStorage
+from taskiq_flow.tracking.models import (
+    PipelineStatus,
+    PipelineStatusInfo,
+    StepStatus,
+    StepStatusInfo,
+)
+from taskiq_flow.tracking.storage import PipelineStorage
 
 logger = logging.getLogger(__name__)
 

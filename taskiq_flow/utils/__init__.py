@@ -1,5 +1,12 @@
-"""Utilities module."""
+"""Module d'utilitaires.
 
-from .context import PipelineContext
+Fournit des classes utilitaires comme PipelineContext pour
+accéder au contexte d'exécution.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
+from taskiq_flow.utils.context import PipelineContext
 
 __all__ = ["PipelineContext"]

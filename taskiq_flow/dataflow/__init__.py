@@ -1,4 +1,12 @@
-"""Dataflow module for pipeline data dependency tracking."""
+"""Module Dataflow pour le suivi des dépendances de données.
+
+Ce module fournit les composants de base pour la construction
+et l'exécution de pipelines basés sur un graphe orienté acyclique
+(DAG) où les dépendances sont exprimées en termes de flux de données.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from taskiq_flow.dataflow.cache import DataCache
 from taskiq_flow.dataflow.dag import DAG, DAGNode

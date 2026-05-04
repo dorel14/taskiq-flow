@@ -1,4 +1,11 @@
-"""Reduce step for cumulative aggregation."""
+"""Step de réduction pour agrégation cumulative.
+
+Applique une fonction de réduction sur une liste de valeurs,
+avec support de la pré-traitement par tâche et du chunking.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 from typing import Any
@@ -84,7 +91,20 @@ async def reduce_tasks(
 
 
 class ReduceStep(pydantic.BaseModel, AbstractStep, step_name="reduce"):
-    """Step that performs cumulative reduction on an iterable."""
+    """
+    Step de réduction cumulée sur une collection.
+
+    Prend un itérable et réduit ses éléments en une seule valeur
+    en appliquant éventuellement une tâche de pré-traitement à
+    chaque élément, puis une fonction de réduction.
+
+    Attributs:
+        task: Tâche de pré-traitement optionnelle (SequentialStep)
+        initial: Valeur initiale de l'accumulateur
+        reduce_func: Fonction de réduction (
+            "sum", "max", "min", "concat", "count", "last"
+        )
+    """
 
     task: Any  # SequentialStep for processing each item
     initial: Any | None = None

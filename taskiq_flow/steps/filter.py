@@ -1,3 +1,13 @@
+"""Step de filtrage pour pipelines.
+
+Ce module définit FilterStep, une étape qui exécute une tâche prédicat
+sur chaque élément d'une liste en parallèle, ne conservant que les éléments
+pour lesquels le prédicat renvoie une valeur truthy.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 import asyncio
 from collections.abc import Iterable
 from typing import Any
@@ -81,7 +91,22 @@ async def filter_tasks(
 
 
 class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
-    """Task to filter results."""
+    """
+    Step de filtrage basé sur un prédicat.
+
+    Similaire à MapperStep mais conserve uniquement les éléments
+    pour lesquels la tâche prédicat renvoie une valeur truthy.
+    La tâche est exécutée sur chaque élément en parallèle.
+
+    Attributs:
+        task_name: Nom de la tâche prédicat
+        labels: Labels TaskIQ
+        param_name: Nom du paramètre recevant chaque élément
+        additional_kwargs: Arguments additionnels
+        skip_errors: Ignorer les erreurs de tâches
+        check_interval: Intervalle de vérification
+        retries, timeout, retry_delay: Contrôle des tentatives
+    """
 
     task_name: str
     labels: dict[str, str]
@@ -103,19 +128,22 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
         result: "TaskiqResult[Any]",
     ) -> None:
         """
-        Run filter action.
+        Exécute l'étape de filtre.
 
-        This function creates many small filter steps,
-        and then collects all results in one big filtered array,
-        using 'filter_tasks' shared task.
+        Pour chaque élément de l'itérable précédent, exécute la tâche
+        prédicat. Conserve les éléments pour lesquels le résultat
+        de la tâche est truthy.
 
-        :param broker: current broker.
-        :param step_number: current step number.
-        :param parent_task_id: task_id of the previous step.
-        :param task_id: task_id to use in this step.
-        :param pipe_data: serialized pipeline.
-        :param result: result of the previous task.
-        :raises AbortPipeline: if result is not iterable.
+        Args:
+            broker: Broker TaskIQ
+            step_number: Numéro d'étape
+            parent_task_id: ID tâche parente
+            task_id: ID de la tâche collectrice
+            pipe_data: Pipeline sérialisé
+            result: Résultat précédent (itérable à filtrer)
+
+        Raises:
+            AbortPipeline: Si le résultat n'est pas itérable
         """
         if not isinstance(result.return_value, Iterable):
             raise AbortPipeline(reason="Result of the previous task is not iterable.")

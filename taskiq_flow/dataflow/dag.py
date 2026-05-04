@@ -1,4 +1,12 @@
-"""DAG representation for pipeline execution."""
+"""Graphe Orienté Acyclique (DAG) pour l'exécution de pipeline.
+
+Ce module définit les classes DAG et DAGNode pour représenter
+la structure de dépendances entre tâches. Le DAG permet de
+déterminer l'ordre d'exécution et les niveaux de parallélisme.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from dataclasses import dataclass, field
 from typing import Any
@@ -6,7 +14,20 @@ from typing import Any
 
 @dataclass
 class DAGNode:
-    """Represents a task node in the DAG."""
+    """
+    Nœud du graphe représentant une tâche et ses dépendances.
+
+    Chaque DAGNode encapsule une tâche (AsyncTaskiqDecoratedTask)
+    et maintient les listes de dépendances (prédécesseurs) et
+    de dépendants (successeurs). Le niveau (level) indique la
+    profondeur topologique et permet le parallélisme.
+
+    Attributes:
+        task: La tâche TaskIQ décorée
+        dependencies: Liste des nœuds dont ce nœud dépend
+        dependents: Liste des nœuds dépendant de celui-ci
+        level: Niveau topologique (0 = pas de dépendances)
+    """
 
     task: Any
     dependencies: list["DAGNode"] = field(default_factory=list)
@@ -15,13 +36,32 @@ class DAGNode:
 
     @property
     def task_name(self) -> str:
-        """Get the task name."""
+        """Nom de la tâche (propriété de convenance)."""
         return self.task.task_name
 
 
 @dataclass
 class DAG:
-    """Directed Acyclic Graph representing task dependencies."""
+    """
+    Graphe Orienté Acyclique (DAG) des dépendances de tâches.
+
+    Structure centrale de l'orchestration dataflow. Permet de:
+    - Ajouter des nœuds et des arêtes
+    - Calculer un ordre topologique d'exécution
+    - Déterminer les niveaux de parallélisme
+    - Identifier les tâches prêtes à être exécutées
+
+    Utilisation:
+        dag = DAG()
+        node_a = DAGNode(task=task_a)
+        node_b = DAGNode(task=task_b)
+        dag.add_node(node_a)
+        dag.add_node(node_b)
+        dag.add_edge(node_a, node_b)  # a -> b
+
+        order = dag.topological_sort()
+        dag.compute_levels()  # pour exécution parallèle par niveau
+    """
 
     nodes: list[DAGNode] = field(default_factory=list)
     edges: list[tuple[DAGNode, DAGNode]] = field(default_factory=list)

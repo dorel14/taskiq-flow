@@ -4,11 +4,14 @@ Taskiq-Flow lets you chain intensive functions together and fire them off withou
 
 *Version: 0.3.0*
 
+> 🌐 **International Documentation**: This project also provides documentation in [Français](README.fr.md).
+
 ## Inspiration & Design Philosophy
 
 Taskiq-Flow is built on the shoulders of two excellent projects:
 
 ### From taskiq-pipelines
+
 - **Sequential pipeline chaining** — The original `Pipeline` class with `.call_next()`, `.map()`, `.filter()`, and `.group()` operations.
 - **Middleware-based orchestration** — The `PipelineMiddleware` that intercepts task completion and triggers the next step.
 - **Tracking & monitoring** — Pipeline execution tracking, status management, and storage backends.
@@ -16,13 +19,16 @@ Taskiq-Flow is built on the shoulders of two excellent projects:
 - **WebSocket hooks** — Real-time event streaming through a hook system.
 
 ### From pipefunc
+
 - **Declarative dataflow** — Automatic DAG construction from task dependencies using `@pipeline_task(output=...)` annotations.
 - **Implicit dependency resolution** — Tasks declare what they produce; downstream tasks automatically receive needed inputs by parameter name matching.
 - **Parallel execution** — Independent tasks run concurrently; the library handles data passing and synchronization.
 - **Map-reduce helpers** — First-class support for parallel processing and aggregation patterns.
 
 ### The Result
+
 Taskiq-Flow combines taskiq-pipelines' battle-tested orchestration with pipefunc's elegant dataflow programming model, giving you:
+
 - **Sequential pipelines** for straightforward linear workflows.
 - **Dataflow pipelines** for complex, branched, or parallel workflows where tasks naturally depend on each other.
 - **Unified tracking, scheduling, and monitoring** across both styles.
@@ -61,7 +67,6 @@ broker.add_middlewares(PipelineMiddleware())
 ```
 
 **Important**: Your broker needs a shared result backend (Redis, database, etc.) so workers can read results. The `InMemoryBroker` works for local development only.
-
 
 ### Quick Example
 
@@ -109,7 +114,6 @@ Two things to keep in mind:
 1. **All functions in the pipeline must be tasks** (decorated with `@broker.task`). Regular functions need to be wrapped.
 2. The `PipelineMiddleware` must be added to your broker before creating pipelines.
 
-
 ## Core Concepts
 
 ### Pipeline Types
@@ -117,6 +121,7 @@ Two things to keep in mind:
 Taskiq-pipelines offers two main approaches:
 
 #### 1. Classic Sequential Pipeline
+
 The original `Pipeline` class where you manually chain steps in order:
 
 ```python
@@ -302,6 +307,7 @@ print(f"Status: {status.status}, Steps: {len(status.steps)}")
 ```
 
 Storage backends:
+
 - `InMemoryPipelineStorage` – transient, for development
 - `RedisPipelineStorage` – persistent, multi-worker
 
@@ -419,6 +425,7 @@ Once subscribed, clients will receive real-time events like:
 ```
 
 Available event types:
+
 - `PipelineStartEvent` - Pipeline execution started
 - `StepStartEvent` - A pipeline step started
 - `StepCompleteEvent` - A pipeline step completed
@@ -427,6 +434,105 @@ Available event types:
 - `PipelineErrorEvent` - Pipeline execution failed
 
 See `examples/websocket_demo.py` for a complete working example.
+
+## REST API for Pipeline Management
+
+TaskIQ Flow includes a FastAPI-based REST API for pipeline visualization, management, and remote execution. This is useful for building dashboards, CI/CD integrations, or any system that needs to interact with pipelines via HTTP.
+
+### Features
+
+- List all registered pipelines
+- View pipeline DAG structure (JSON or DOT format)
+- Execute pipelines remotely with parameters
+- Check execution results
+- Health check endpoint
+
+### Quick Start
+
+Install FastAPI and uvicorn if you haven't already:
+
+```bash
+pip install fastapi uvicorn[standard]
+```
+
+Then create your API server:
+
+```python
+from fastapi import FastAPI
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task, create_visualization_api
+
+# Create broker and tasks
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="result")
+async def process(data: str) -> dict:
+    return {"processed": data.upper()}
+
+# Build pipeline
+pipeline = DataflowPipeline.from_tasks(broker, [process])
+pipeline.pipeline_id = "my_pipeline"
+
+# Create FastAPI app with visualization API
+app = FastAPI()
+viz_api = create_visualization_api(broker, app)
+viz_api.add_pipeline("my_pipeline", pipeline)
+```
+
+Run with:
+
+```bash
+uvicorn my_app:app --reload --port 8000
+```
+
+### API Endpoints
+
+All endpoints are automatically available:
+
+| Method | Endpoint | Description |
+| -------- | ---------- | ------------- |
+| GET | `/health` | Health check |
+| GET | `/pipelines` | List all registered pipelines |
+| POST | `/pipelines/{pipeline_id}` | Register a new pipeline |
+| GET | `/pipelines/{pipeline_id}/status` | Get pipeline status |
+| GET | `/pipelines/{pipeline_id}/dag` | Get DAG as JSON |
+| GET | `/pipelines/{pipeline_id}/dag/dot` | Get DAG in DOT format |
+| GET | `/pipelines/{pipeline_id}/visualize` | Complete pipeline visualization |
+
+**Note:** The core API focuses on visualization and management. For execution, you can add custom endpoints (see example below).
+
+### Extending the API
+
+You can add custom endpoints to execute pipelines and retrieve results:
+
+```python
+from fastapi import FastAPI, HTTPException
+from taskiq_flow.api import PipelineVisualizationAPI
+
+app = FastAPI()
+viz_api = PipelineVisualizationAPI(broker, app)
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute_pipeline(pipeline_id: str, parameters: dict):
+    """Execute a pipeline with given parameters."""
+    if pipeline_id not in viz_api.pipelines:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+
+    pipeline = viz_api.pipelines[pipeline_id]
+    result = await pipeline.kiq_dataflow(**parameters)
+    return {"task_id": result.task_id, "status": "started"}
+
+@app.get("/pipelines/result/{task_id}")
+async def get_result(task_id: str):
+    """Get the result of a pipeline execution."""
+    result = await broker.get_result(task_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Result not found")
+    return {"task_id": task_id, "result": result}
+```
+
+*Complete example: `examples/api_example.py`*
 
 ## Example Scripts
 
@@ -437,5 +543,6 @@ The `examples/` directory includes:
 - `scheduled_pipeline.py` – cron-based recurring pipeline execution
 - `dataflow_audio_pipeline.py` – full-featured dataflow DAG, parallelism, map-reduce, and visualization
 - `websocket_demo.py` – WebSocket server streaming live pipeline events
+- `api_example.py` – FastAPI REST API for pipeline management and visualization **(NEW)**
 
 Run any example directly: `python examples/quickstart.py`

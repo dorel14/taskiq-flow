@@ -1,4 +1,12 @@
-"""Decorators for pipeline tasks."""
+"""Décorateurs pour les tâches de pipeline.
+
+Fournit @pipeline_task et @pipeline_task_multi_output pour déclarer
+les dépendances de données des tâches. Ces décorateurs enregistrent
+les métadonnées nécessaires à la construction automatique du DAG.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import inspect
 import logging
@@ -92,32 +100,53 @@ def pipeline_task(
     retries: int = 0,
 ) -> Callable[..., Any]:
     """
-    Decorator for pipeline tasks.
+    Décorateur pour marquer une fonction comme tâche de pipeline.
 
-    Marks a function as a pipeline task with metadata about
-    its data dependencies.
+    Ce décorateur attache les métadonnées nécessaires à l'analyse
+    automatique des dépendances de données dans les pipelines
+    de type DataflowPipeline.
+
+    Le décorateur enregistre la tâche dans un registre global avec:
+    - Le nom de la sortie produite (output)
+    - La liste des entrées requises (inputs, optionnel, inféré si omis)
+    - Le nombre de tentatives en cas d'échec (retries)
 
     Args:
-        output: Name of the data produced by this task
-        inputs: Optional list of data names consumed by this task.
-                If None, will be inferred from function signature.
-        retries: Number of retry attempts on failure
+        output: Nom du flux de données produit par cette tâche.
+                Ce nom sera utilisé pour lier les dépendances.
+                Exemple: "audio_features", "mir_features"
+        inputs: Liste des noms de flux de données consommés.
+                Si None (défaut), les noms sont inférés depuis
+                les paramètres de la fonction.
+                Exemple: ["track_paths", "config"]
+        retries: Nombre de tentatives en cas d'échec (défaut: 0)
 
     Returns:
-        Decorated function with pipeline metadata
+        Décorateur qui transforme la fonction en tâche de pipeline
 
     Example:
-        @pipeline_task(output="audio_features")
-        async def extract_audio(track_paths):
-            return extract_features(track_paths)
+        @broker.task
+        @pipeline_task(output="user_profile")
+        async def fetch_user(user_id: int) -> dict:
+            return await db.get_user(user_id)
 
-        @pipeline_task(output="mir_features")
-        async def compute_mir(audio_features):
-            return compute_mir_features(audio_features)
+        @broker.task
+        @pipeline_task(output="user_orders", inputs=["user_profile"])
+        async def fetch_orders(user_profile: dict) -> list:
+            return await db.get_orders(user_profile["id"])
+
+        # Le pipeline détecte automatiquement que fetch_orders
+        # dépend de fetch_user via le flux "user_profile"
 
     Raises:
-        ValueError: If output name is invalid or retries is negative
-        PipelineError: If output name conflicts with existing task
+        ValueError: Si output est vide ou si retries < 0
+        PipelineError: Si le nom de sortie est déjà utilisé
+
+    Note:
+        - Peut être combiné avec @broker.task (ordre important:
+          @broker.task doit être le plus à l'extérieur)
+        - Compatible avec les fonctions async et sync
+        - Les inputs sont inférés depuis la signature si non spécifiés
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -174,13 +203,33 @@ def pipeline_task(
 
 def get_pipeline_metadata(func: Any) -> dict[str, Any]:
     """
-    Get pipeline metadata for a function or task.
+    Récupère les métadonnées de pipeline d'une fonction.
+
+    Inspecte la fonction (ou tâche) pour déterminer si elle
+    est décorée avec @pipeline_task ou @pipeline_task_multi_output
+    et renvoie ses métadonnées.
 
     Args:
-        func: Function or task to check
+        func: Fonction ou tâche décorée à inspecter
 
     Returns:
-        Dictionary of pipeline metadata, or empty dict if not a pipeline task
+        Dictionnaire avec les clés:
+        - "output": nom de la sortie principale
+        - "inputs": liste des noms d'entrées
+        - "retries": nombre de tentatives
+        - "is_pipeline_task": True si c'est une tâche pipeline
+        - "multiple_outputs": True si multi-sorties
+        - "output_types": dict des types de sorties si multi
+
+    Example:
+        from taskiq_flow.decorators import get_pipeline_metadata
+
+        @pipeline_task(output="result")
+        async def my_task(x: int) -> int:
+            return x * 2
+
+        meta = get_pipeline_metadata(my_task)
+        # meta = {"output": "result", "inputs": ["x"], ...}
     """
     # Check if it's a TaskiqDecoratedTask
     if hasattr(func, "original_function"):
@@ -252,13 +301,14 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
 
 def is_pipeline_task(func: Any) -> bool:
     """
-    Check if a function is a pipeline task.
+    Vérifie si une fonction est une tâche de pipeline.
 
     Args:
-        func: Function to check
+        func: Fonction à vérifier
 
     Returns:
-        True if the function is a pipeline task
+        True si la fonction est décorée avec @pipeline_task ou
+        @pipeline_task_multi_output, False sinon
     """
     metadata = get_pipeline_metadata(func)
     return metadata.get("is_pipeline_task", False)
@@ -266,13 +316,16 @@ def is_pipeline_task(func: Any) -> bool:
 
 def get_task_outputs(func: Any) -> list[str]:
     """
-    Get all output names produced by a task.
+    Récupère tous les noms de sortie produits par une tâche.
+
+    Pour une tâche standard, renvoie [output].
+    Pour une tâche multi-sorties, renvoie [output_principal, ...sorties_supp].
 
     Args:
-        func: Task function to check
+        func: Tâche de pipeline
 
     Returns:
-        List of output names
+        Liste des noms de sortie
     """
     metadata = get_pipeline_metadata(func)
     if not metadata:
@@ -280,7 +333,6 @@ def get_task_outputs(func: Any) -> list[str]:
 
     outputs = [metadata["output"]]
     if metadata.get("multiple_outputs"):
-        # For multiple outputs, check the output_types dict
         output_types = metadata.get("output_types", {})
         outputs.extend(output_types.keys())
 
@@ -289,36 +341,46 @@ def get_task_outputs(func: Any) -> list[str]:
 
 def validate_pipeline_outputs(tasks: list[Any]) -> None:
     """
-    Validate that all tasks have unique output names.
+    Valide que toutes les tâches ont des noms de sortie uniques.
+
+    Vérifie l'absence de conflits: deux tâches différentes ne peuvent
+    pas produire le même flux de données.
 
     Args:
-        tasks: List of task functions to validate
+        tasks: Liste de tâches de pipeline à valider
 
     Raises:
-        PipelineError: If there are duplicate output names
+        PipelineError: Si des noms de sortie sont dupliqués
+
+    Example:
+        validate_pipeline_outputs([task1, task2, task3])
     """
     _task_registry.validate_outputs()
 
 
 def get_all_pipeline_outputs() -> list[str]:
     """
-    Get all registered pipeline output names.
+    Récupère tous les noms de sortie enregistrés.
+
+    Parcourt le registre global et renvoie la liste complète
+    de tous les flux de données produits par les tâches
+    de pipeline enregistrées.
 
     Returns:
-        List of all output names across all registered tasks
+        Liste de tous les output names
     """
     return _task_registry.get_all_outputs()
 
 
 def get_task_by_output(output_name: str) -> Any | None:
     """
-    Get the task that produces the given output.
+    Récupère la tâche qui produit un flux de données donné.
 
     Args:
-        output_name: Name of the output to find
+        output_name: Nom du flux produit à rechercher
 
     Returns:
-        Task function that produces the output, or None
+        Tâche correspondante ou None si non trouvée
     """
     return _task_registry.get_task_by_output(output_name)
 
@@ -329,21 +391,24 @@ def pipeline_task_multi_output(
     retries: int = 0,
 ) -> Callable[..., Any]:
     """
-    Decorator for pipeline tasks with multiple outputs.
+    Décorateur pour tâche de pipeline produisant plusieurs sorties.
 
-    Marks a function as a pipeline task that produces multiple named outputs.
-    The function must return a dictionary mapping output names to values.
+    Similaire à @pipeline_task mais la tâche renvoie un dictionnaire
+    mappant plusieurs noms de sorties à leurs valeurs. Permet de
+    produire plusieurs flux de données depuis une unique tâche.
 
     Args:
-        outputs: Dictionary mapping output names to their types/descriptions
-        inputs: Optional list of data names consumed by this task.
-                If None, will be inferred from function signature.
-        retries: Number of retry attempts on failure
+        outputs: Dictionnaire {nom_sortie: type} pour toutes les sorties.
+                 Le premier clé est utilisée comme sortie principale.
+                 Exemple: {"features": dict, "metadata": dict}
+        inputs: Liste des noms de données consommées (inférés si None)
+        retries: Nombre de tentatives en cas d'échec
 
     Returns:
-        Decorated function with pipeline metadata
+        Décorateur transformant la fonction en tâche multi-sorties
 
     Example:
+        @broker.task
         @pipeline_task_multi_output(
             outputs={"features": dict, "metadata": dict},
             retries=2
@@ -355,6 +420,12 @@ def pipeline_task_multi_output(
                 "features": features,
                 "metadata": metadata
             }
+
+        # Les deux sorties 'features' et 'metadata' sont
+        # enregistrées et peuvent être consommées par des tâches dépendantes
+
+    Raises:
+        ValueError: Si outputs est vide ou si retries < 0
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

@@ -1,4 +1,12 @@
-"""Models for pipeline tracking."""
+"""Modèles de données pour le suivi des pipelines.
+
+Définit les modèles Pydantic pour représenter l'état d'exécution
+des pipelines et de leurs étapes: PipelineStatusInfo, StepStatusInfo,
+ainsi que les enums PipelineStatus et StepStatus.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from datetime import datetime, timezone
 from enum import Enum
@@ -8,7 +16,11 @@ from pydantic import BaseModel, Field
 
 
 class PipelineStatus(str, Enum):
-    """Pipeline execution status."""
+    """
+    Enumération des états d'exécution d'un pipeline.
+
+    Utilisé pour catégoriser l'état global du pipeline à tout moment.
+    """
 
     PENDING = "pending"
     RUNNING = "running"
@@ -17,7 +29,12 @@ class PipelineStatus(str, Enum):
 
 
 class StepStatus(str, Enum):
-    """Step execution status."""
+    """
+    Enumération des états d'une étape individuelle.
+
+    Chaque étape du pipeline traverse ces états séquentiellement
+    ou peut être SKIPPED en cas d'option skip_failed/fail_fast.
+    """
 
     PENDING = "pending"
     RUNNING = "running"
@@ -26,7 +43,22 @@ class StepStatus(str, Enum):
 
 
 class StepStatusInfo(BaseModel):
-    """Status information for a pipeline step."""
+    """
+    Informations de statut pour une étape de pipeline.
+
+    Représente l'état d'une étape individuelle, incluant
+    ses timestamps et d'éventuelles erreurs.
+
+    Attributes:
+        step_index: Index de l'étape dans le pipeline (0-based)
+        task_name: Nom de la tâche exécutée
+        task_id: ID TaskIQ de l'exécution
+        status: État actuel (StepStatus)
+        started_at: Horodatage de début (ou None)
+        finished_at: Horodatage de fin (ou None)
+        retries: Nombre de tentatives effectuées
+        error: Message d'erreur si échec
+    """
 
     step_index: int
     task_name: str
@@ -39,7 +71,24 @@ class StepStatusInfo(BaseModel):
 
 
 class PipelineStatusInfo(BaseModel):
-    """Status information for a pipeline."""
+    """
+    Information complète de statut pour un pipeline.
+
+    Agrège l'état global et les états de chaque étape.
+    Utilisé comme objet de retour pour get_status().
+
+    Attributes:
+        pipeline_id: Identifiant unique du pipeline
+        status: État global (PipelineStatus)
+        total_steps: Nombre total d'étapes attendues
+        current_step: Index de l'étape en cours (0 si none en cours)
+        created_at: Horodatage de création
+        started_at: Horodatage de premier démarrage (ou None)
+        finished_at: Horodatage de fin (ou None)
+        result: Résultat final si complété
+        error: Message d'erreur si échoué
+        steps: Liste des statuts d'étape
+    """
 
     pipeline_id: str
     status: PipelineStatus

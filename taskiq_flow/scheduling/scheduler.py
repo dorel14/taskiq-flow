@@ -1,4 +1,14 @@
-"""Pipeline scheduler using APScheduler."""
+"""Ordonnanceur de pipelines avec APScheduler.
+
+Ce module fournit deux classes principales:
+- LabelBasedScheduler: ordonnanceur léger utilisant les labels TaskIQ
+- PipelineScheduler: ordonnanceur complet basé sur APScheduler
+
+Permet de programmer l'exécution périodique ou différée des pipelines.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import logging
 from datetime import datetime
@@ -501,7 +511,7 @@ class PipelineScheduler:
             raise RuntimeError("Scheduler is not available")
         scheduler = cast("AsyncIOScheduler", self.scheduler)
         logger.info("Starting pipeline scheduler")
-        await scheduler.start()
+        scheduler.start()
 
     async def shutdown(self, wait: bool = True) -> None:
         """Shutdown the scheduler."""
@@ -509,7 +519,7 @@ class PipelineScheduler:
             raise RuntimeError("Scheduler is not available")
         scheduler = cast("AsyncIOScheduler", self.scheduler)
         logger.info("Shutting down pipeline scheduler")
-        await scheduler.shutdown(wait=wait)
+        scheduler.shutdown(wait=wait)
 
     def list_jobs(self) -> Any:
         """List all scheduled jobs."""

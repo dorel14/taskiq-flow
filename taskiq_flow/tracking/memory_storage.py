@@ -1,11 +1,23 @@
-"""In-memory implementation of pipeline storage."""
+"""Stockage en mémoire pour le suivi des pipelines.
+
+Implémentation de PipelineStorage utilisant un dictionnaire en mémoire.
+Destiné au développement et aux tests, non persistant.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from .models import PipelineStatus, PipelineStatusInfo, StepStatus, StepStatusInfo
-from .storage import PipelineStorage
+from taskiq_flow.tracking.models import (
+    PipelineStatus,
+    PipelineStatusInfo,
+    StepStatus,
+    StepStatusInfo,
+)
+from taskiq_flow.tracking.storage import PipelineStorage
 
 
 class InMemoryPipelineStorage(PipelineStorage):

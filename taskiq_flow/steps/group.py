@@ -1,4 +1,11 @@
-"""Group step for parallel execution of multiple independent tasks."""
+"""Step de groupe pour exécution parallèle de tâches indépendantes.
+
+Exécute plusieurs tâches en parallèle sans dépendances entre elles
+et collecte leurs résultats dans une liste ordonnée.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging
@@ -14,7 +21,15 @@ logger = logging.getLogger(__name__)
 
 
 class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
-    """Step that executes multiple independent tasks in parallel."""
+    """
+    Step de groupe pour exécution parallèle de tâches indépendantes.
+
+    Exécute plusieurs tâches en parallèle sans dépendances entre elles
+    et collecte leurs résultats dans une liste ordonnée.
+
+    Attributs:
+        tasks: Liste de spécifications de tâches (dict avec task_name, labels, etc.)
+    """
 
     tasks: list[dict[str, Any]]  # List of task specifications
 
@@ -27,7 +42,24 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
         pipe_data: str,
         result: TaskiqResult[Any],
     ) -> None:
-        """Execute all tasks in parallel and collect results."""
+        """
+        Exécute toutes les tâches du groupe en parallèle.
+
+        Pour chaque spécification de tâche, crée un AsyncKicker
+        et lance l'exécution. Collecte tous les résultats dans
+        une liste qui devient le nouveau résultat du pipeline.
+
+        Args:
+            broker: Broker TaskIQ
+            step_number: Numéro d'étape
+            parent_task_id: ID de la tâche parente
+            task_id: ID à utiliser (non utilisé directement ici)
+            pipe_data: Pipeline sérialisé
+            result: Résultat de l'étape précédente (peut être passé aux tâches)
+
+        Note:
+            Si aucune tâche n'est définie, le résultat est passé through.
+        """
         if not self.tasks:
             # No tasks to execute, pass through the result
             return
@@ -101,13 +133,23 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
         **additional_kwargs: Any,
     ) -> "GroupStep":
         """
-        Create a group step from a list of tasks.
+        Crée un step de groupe à partir d'une liste de tâches.
 
-        :param tasks: List of tasks to execute in parallel.
-        :param param_names: Optional list of parameter names for each task.
-                           If None, no parameters are passed.
-        :param additional_kwargs: Additional kwargs to pass to each task.
-        :return: New group step.
+        Args:
+            tasks: Liste de tâches TaskIQ décorées ou kickers
+            param_names: Liste optionnelle des noms de paramètres
+                        pour injection du résultat précédent
+            **additional_kwargs: Arguments additionnels (peut inclure
+                                 des kwargs spécifiques par task_name)
+
+        Returns:
+            Instance GroupStep prête pour l'exécution
+
+        Example:
+            group = GroupStep.from_tasks(
+                [task_a, task_b, task_c],
+                param_names=["data", None, "config"]
+            )
         """
         task_specs = []
         for i, task in enumerate(tasks):

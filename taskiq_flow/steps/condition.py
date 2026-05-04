@@ -1,4 +1,11 @@
-"""Condition step for conditional execution."""
+"""Step conditionnel pour exécution sous condition.
+
+Exécute une tâche si une condition (expression ou callable) est vraie,
+sinon exécute une tâche alternative si fournie.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import ast
 from collections.abc import Callable
@@ -11,7 +18,17 @@ from taskiq_flow.abc import AbstractStep
 
 
 class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
-    """Step that executes conditionally based on previous result."""
+    """
+    Step d'exécution conditionnelle.
+
+    Exécute une tâche (ou une alternative) en fonction d'une condition
+    évaluée sur le résultat de l'étape précédente.
+
+    Attributs:
+        condition: Condition sous forme de string (expression) ou callable
+        task: Tâche à exécuter si condition vraie
+        else_task: Tâche alternative à exécuter si condition fausse (optionnel)
+    """
 
     condition: str | Callable[[Any], bool]
     task: Any  # SequentialStep
@@ -26,7 +43,22 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
         pipe_data: str,
         result: TaskiqResult[Any],
     ) -> None:
-        """Execute conditionally."""
+        """
+        Évalue la condition et exécute la tâche correspondante.
+
+        Args:
+            broker: Broker TaskIQ
+            step_number: Numéro d'étape
+            parent_task_id: ID tâche parente
+            task_id: ID pour cette étape
+            pipe_data: Pipeline sérialisé
+            result: Résultat de l'étape précédente
+
+        Note:
+            Si condition est une chaîne, elle est évaluée comme
+            une expression Python safe avec variable 'value'.
+            Si callable, elle est appelée avec le résultat.
+        """
         # Evaluate condition
         if isinstance(self.condition, str):
             # Simple expression evaluation (safe support)

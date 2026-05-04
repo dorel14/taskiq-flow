@@ -1,4 +1,12 @@
-"""Execution engine for dataflow-based pipelines."""
+"""Moteur d'exécution pour pipelines basés sur un DAG.
+
+Exécute les tâches en respectant les dépendances, en parallèle
+lorsque possible. Gère les retentatives, les modes d'erreur
+(fail_fast, continue_on_error, skip_failed) et le cache de données.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging
@@ -12,6 +20,7 @@ from taskiq import AsyncBroker
 from taskiq_flow.dataflow.cache import DataCache
 from taskiq_flow.dataflow.dag import DAG, DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
+from taskiq_flow.decorators import get_pipeline_metadata
 from taskiq_flow.exceptions import AbortPipeline
 
 logger = logging.getLogger(__name__)
@@ -42,10 +51,32 @@ class TaskExecution:
 
 class ExecutionEngine:
     """
-    Executes a dataflow DAG with automatic parallelism.
+    Moteur d'exécution pour pipelines basés sur un DAG.
 
-    Manages task execution order based on data dependencies,
-    handles parallel execution, retries, and error handling.
+    Gère l'exécution ordonnée et parallèle des tâches en respectant
+    les dépendances de données. Le moteur:
+    - Identifie les tâches prêtes (dépendances satisfaites)
+    - Exécute les tâches prêtes en parallèle (limite configurable)
+    - Gère les retentements selon les métadonnées de chaque tâche
+    - Propage les résultats dans le cache de données
+    - Gère les modes d'erreur (fail_fast, continue_on_error, skip_failed)
+
+    Exemple d'utilisation:
+        engine = ExecutionEngine(
+            broker=broker,
+            dag=dag,
+            fail_fast=True,
+            max_parallel=10
+        )
+        outputs = await engine.execute(inputs={"data": [...]})
+
+    Attributes:
+        broker: Broker TaskIQ pour soumettre les tâches
+        dag: DAG des tâches à exécuter
+        fail_fast: Arrête au premier échec
+        continue_on_error: Continue malgré les erreurs
+        skip_failed: Ignore les tâches échouées
+        max_parallel: Limite de tâches simultanées
     """
 
     def __init__(
@@ -135,18 +166,30 @@ class ExecutionEngine:
         pipeline_id: str | None = None,
     ) -> dict[str, Any]:
         """
-        Execute the pipeline with given inputs.
+        Exécute le DAG avec les données d'entrée fournies.
 
         Args:
-            inputs: External inputs to the pipeline
-            pipeline_id: Optional pipeline ID for tracking
+            inputs: Dictionnaire des données externes fournies au pipeline.
+                    Les clés doivent correspondre aux inputs des tâches
+                    sans producteur interne.
+            pipeline_id: Optionnel, identifiant pour tracking et logging
 
         Returns:
-            Dictionary of all outputs produced by the pipeline
+            Dictionnaire de toutes les sorties produites, indexées
+            par leur nom de flux.
 
         Raises:
-            PipelineError: If execution fails
-            AbortPipeline: If pipeline is aborted
+            PipelineError: Si l'exécution échoue (selon mode d'erreur)
+            AbortPipeline: Si le pipeline est abandonné via raise AbortPipeline
+
+        Algorithm:
+            1. Stocke les inputs externes dans le cache de données
+            2. Tant que toutes les tâches ne sont pas terminées:
+               - Identifie les tâches prêtes (dépendances complétées)
+               - Exécute les tâches prêtes en parallèle (limité par max_parallel)
+               - Gère les résultats (succès, échec, retry)
+            3. Collecte toutes les sorties des tâches complétées
+            4. Retourne le dictionnaire de sorties
         """
         self.pipeline_id = pipeline_id
 
@@ -247,8 +290,8 @@ class ExecutionEngine:
         ready = []
 
         for node in self.dag.nodes:
-            state = self.task_states[node.task]
-            if state.state != TaskState.PENDING:
+            state = self.task_states.get(node.task)
+            if state is None or state.state != TaskState.PENDING:
                 continue
 
             # Check if all dependencies are completed
@@ -392,9 +435,24 @@ class ExecutionEngine:
 
     def _get_task_metadata(self, task: Any) -> dict[str, Any]:
         """Get metadata for a task."""
-        # Check if task has metadata attribute
-        if hasattr(task, "metadata"):
-            return task.metadata  # type: ignore
+        # Check if task is an AsyncTaskiqDecoratedTask (has original_function attribute)
+        if hasattr(task, "original_function"):
+            original = getattr(task, "original_function", None)
+            if original is not None:
+                # Get metadata from the original function
+                metadata = get_pipeline_metadata(original)
+                if metadata:
+                    return metadata
+
+        # Check if task has attached metadata (legacy support)
+        if hasattr(task, "_pipeline_metadata"):
+            meta = task._pipeline_metadata
+            return {
+                "output": meta.output,
+                "inputs": meta.inputs,
+                "retries": meta.retries,
+            }
+
         return {}
 
     def _prepare_inputs(self, task_node: DAGNode) -> dict[str, Any]:
@@ -407,6 +465,15 @@ class ExecutionEngine:
             output_name = metadata.get("output", producer.task_name)
             if self.data_cache.has(output_name):
                 inputs[output_name] = self.data_cache.get(output_name)
+
+        # Also include external inputs for tasks with no dependencies
+        # This allows the first task in a pipeline to receive external inputs
+        if not task_node.dependencies:
+            # Get all inputs that were passed to execute()
+            for key in self.data_cache.keys:
+                if key not in inputs:
+                    inputs[key] = self.data_cache.get(key)
+
         return inputs
 
     async def _execute_task_step(
@@ -418,7 +485,10 @@ class ExecutionEngine:
         """Execute a single task step."""
         # Create kicker and execute
         kicker = task.kicker()
-        return await kicker.kiq(**inputs)
+        result = await kicker.kiq(**inputs)
+        # Wait for the result
+        task_result = await result.wait_result()
+        return task_result.return_value
 
     async def _handle_task_result(
         self,
@@ -488,8 +558,8 @@ class ExecutionEngine:
     def _create_deadlock_error(self) -> Exception:
         """Create a deadlock error."""
         pending = [
-            node.task.task_name
-            for node, state in self.task_states.items()
+            task.task_name
+            for task, state in self.task_states.items()
             if state.state == TaskState.PENDING
         ]
         error_msg = (
@@ -508,8 +578,8 @@ class ExecutionEngine:
     def _create_execution_error(self) -> Exception:
         """Create an execution error."""
         errors = [
-            f"{node.task.task_name}: {state.error}"
-            for node, state in self.task_states.items()
+            f"{task.task_name}: {state.error}"
+            for task, state in self.task_states.items()
             if state.state == TaskState.FAILED
         ]
 
@@ -538,10 +608,11 @@ class ExecutionEngine:
         """
         outputs = {}
 
-        for node, state in self.task_states.items():
+        for task, state in self.task_states.items():
             if state.state == TaskState.COMPLETED:
-                metadata = self._get_task_metadata(node.task)
-                output_name = metadata.get("output", node.task.task_name)
+                # task is the AsyncTaskiqDecoratedTask
+                metadata = self._get_task_metadata(task)
+                output_name = metadata.get("output", task.task_name)
                 outputs[output_name] = state.result
 
         self._log(

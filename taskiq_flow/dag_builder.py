@@ -1,4 +1,12 @@
-"""DAG builder for automatic pipeline construction."""
+"""Constructeur de DAG pour la construction automatique de pipelines.
+
+Analyse les métadonnées des tâches et construit le graphe de
+dépendances. Valide également le graphe (détection de cycles,
+connexité et calcul des niveaux topologiques).
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import inspect
 from collections.abc import Callable
@@ -13,10 +21,18 @@ from taskiq_flow.decorators import _task_registry, get_pipeline_metadata
 
 class DAGBuilder:
     """
-    Builds a DAG from registered tasks.
+    Constructeur de DAG à partir de tâches de pipeline.
 
-    Analyzes task signatures and metadata to automatically
-    determine data dependencies and execution order.
+    Analyse les métadonnées des tâches (via @pipeline_task) pour
+    construire automatiquement un graphe de dépendances. Le DAG
+    résultant peut être utilisé par ExecutionEngine pour l'exécution
+    parallèle intelligente.
+
+    Le builder peut aussi analyser les tâches non-enregistrées pour
+    détecter les dépendances manquantes.
+
+    Attributes:
+        None (classe statique, utilitaire)
     """
 
     @staticmethod
@@ -26,19 +42,32 @@ class DAGBuilder:
         external_inputs: list[str] | None = None,
     ) -> DAG:
         """
-        Build a DAG from a list of tasks.
+        Construit un DAG à partir d'une liste de tâches.
+
+        Processus:
+        1. Enregistre toutes les tâches dans un registre (créé si None)
+        2. Enregistre les entrées externes spécifiées
+        3. Construit le DAG à partir des dépendances
+        4. Valide le DAG (cycles, connexité, niveaux)
 
         Args:
-            tasks: List of decorated tasks
-            registry: Optional pre-populated registry
-            external_inputs: Optional list of external input names that will be
-                           provided at pipeline execution time
+            tasks: Liste de tâches décorées (AsyncTaskiqDecoratedTask)
+            registry: Registre optionnel pré-peuplé (si None, crée un nouveau)
+            external_inputs: Noms des données fournies à l'exécution
+                           (non produites par une tâche du pipeline)
 
         Returns:
-            A DAG representing task dependencies
+            DAG représentant les dépendances entre tâches
 
         Raises:
-            ValueError: If external inputs conflict with task outputs
+            ValueError: Si un input externe conflite avec une sortie
+                       de tâche, ou si le DAG est invalide (cycle, etc.)
+
+        Example:
+            dag = DAGBuilder.from_tasks(
+                [task_a, task_b, task_c],
+                external_inputs=["initial_data"]
+            )
         """
         if registry is None:
             registry = DataflowRegistry()
@@ -282,19 +311,21 @@ class DAGBuilder:
     @staticmethod
     def validate_dag(dag: DAG) -> None:
         """
-        Validate a DAG for common issues.
+        Valide un DAG pour détecter les problèmes courants.
 
-        Performs comprehensive validation including:
-        - Empty DAG detection
-        - Circular dependency detection
-        - Disconnected components analysis
-        - Topological sort validation
+        Effectue une série de vérifications:
+        - DAG non vide
+        - Absence de cycles (dépendances circulaires)
+        - Possibilité de calculer les niveaux topologiques
+        - Aucun composant déconnecté (toutes les tâches accessibles)
+        - Niveaux valides (non-négatifs)
 
         Args:
-            dag: The DAG to validate
+            dag: DAG à valider
 
         Raises:
-            ValueError: If the DAG has validation issues with detailed messages
+            ValueError: Si le DAG échoue à une validation, avec
+                      un message détaillé identifiant le problème
         """
         DAGBuilder._validate_not_empty(dag)
         DAGBuilder._validate_no_cycles(dag)

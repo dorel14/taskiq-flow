@@ -1,3 +1,13 @@
+"""Step séquentiel pour l'exécution linéaire de tâches.
+
+Ce module définit SequentialStep, le step le plus fondamental qui
+exécute une tâche après une autre en passant le résultat de la
+précédente comme argument à la suivante.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 from typing import Any
 
 import pydantic
@@ -17,11 +27,23 @@ from taskiq_flow.constants import (
 
 class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
     """
-    Step that's simply runs next function.
+    Step séquentiel exécutant une tâche après une autre.
 
-    It passes the result of the previous function
-    as the first argument or as the keyword argument,
-    if param_name is specified.
+    C'est le step le plus fondamental. Il exécute une tâche et peut
+    optionnellement passer le résultat de la tâche précédente comme
+    argument à la tâche courante.
+
+    Attributs:
+        task_name: Nom de la tâche à exécuter
+        labels: Labels TaskIQ à attacher à la tâche
+        param_name: Comment injecter le résultat précédent:
+                   - None: comme premier argument positionnel
+                   - str: comme argument keyword avec ce nom
+                   - -1: ne pas passer le résultat
+        additional_kwargs: Arguments fixes additionnels
+        retries: Nombre de tentatives en cas d'échec
+        timeout: Timeout en secondes
+        retry_delay: Délai entre les tentatives
     """
 
     task_name: str
@@ -44,22 +66,24 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
         result: "TaskiqResult[Any]",
     ) -> None:
         """
-        Runs next task.
+        Exécute l'étape séquentielle.
 
-        This step is simple.
+        Crée une nouvelle tâche TaskIQ et lui passe le résultat
+        de la tâche précédente selon le mode configuré.
 
-        It creates new task and passes the result of
-        the previous task as the first argument.
+        Args:
+            broker: Broker TaskIQ pour soumettre la tâche
+            step_number: Numéro de l'étape dans le pipeline (0-indexé)
+            parent_task_id: ID de la tâche parente (étape précédente)
+            task_id: ID à attribuer à cette tâche
+            pipe_data: Données sérialisées du pipeline (à passer dans les labels)
+            result: Résultat de l'étape précédente
 
-        Or it may pass it as key word argument,
-        if param_name is not None.
-
-        :param broker: current broker.
-        :param step_number: current step number.
-        :param parent_task_id: current step's task id.
-        :param task_id: new task id.
-        :param pipe_data: serialized pipeline.
-        :param result: result of the previous task.
+        Note:
+            Le résultat précédent peut être passé de trois façons:
+            - Positionnel (param_name=None): comme premier argument
+            - Keyword (param_name="nom"): comme argument nommé
+            - Omis (param_name=-1): pas d'injection du résultat
         """
         kicker: AsyncKicker[Any, Any] = (
             AsyncKicker(
@@ -91,18 +115,26 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
         **additional_kwargs: Any,
     ) -> "SequentialStep":
         """
-        Create step from given task.
+        Fabrique un step séquentiel à partir d'une tâche TaskIQ.
 
-        Also this method takes additional
-        parameters.
+        Args:
+            task: Tâche décorée ou kicker TaskIQ
+            param_name: Nom du paramètre ou constantes (EMPTY_PARAM_NAME)
+            retries: Nombre de tentatives (override)
+            timeout: Timeout en secondes
+            retry_delay: Délai entre tentatives (secondes)
+            **additional_kwargs: Arguments additionnels pour la tâche
 
-        :param task: task to call.
-        :param param_name: parameter name, defaults to None.
-        :param retries: retry count.
-        :param timeout: timeout in seconds.
-        :param retry_delay: delay between retries.
-        :param additional_kwargs: additional kwargs to task.
-        :return: new sequential step.
+        Returns:
+            Instance de SequentialStep prête pour l'exécution
+
+        Example:
+            step = SequentialStep.from_task(
+                my_task,
+                param_name="input_data",
+                retries=3,
+                timeout=60
+            )
         """
         kicker = task.kicker() if isinstance(task, AsyncTaskiqDecoratedTask) else task
         message = kicker._prepare_message()

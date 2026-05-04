@@ -1,7 +1,16 @@
-"""Broker compatibility module."""
+"""Module de compatibilité et détection des brokers.
 
-from .adapter import BrokerAdapter
-from .detector import BrokerDetector, BrokerType
+Ce module centralise les outils pour détecter et adapter
+différents types de brokers TaskIQ (Redis, RabbitMQ, Kafka, InMemory).
+Utilisé notamment par le TrackingStorageFactory pour choisir
+le stockage approprié.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
+from taskiq_flow.broker.adapter import BrokerAdapter
+from taskiq_flow.broker.detector import BrokerDetector, BrokerType
 
 __all__ = [
     "BrokerAdapter",

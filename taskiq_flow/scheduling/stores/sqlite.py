@@ -1,4 +1,11 @@
-"""SQLite job store configuration."""
+"""Configuration du job store SQLite pour APScheduler.
+
+Fournit une configuration simple utilisant SQLite comme backend
+de persistance des tâches planifiées.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 

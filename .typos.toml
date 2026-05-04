@@ -1,2 +1,17 @@
-[default.extend-words]
-reste = "reste"
+[default]
+# Allow French words in documentation and code comments
+# This project uses French for documentation and some code comments
+
+# Use regex to allow French words
+extend-ignore-words-re = [
+    "[a-zàâäéèêëïîôöùûüÿç]+$",  # Basic French word pattern
+]
+
+[files]
+extend-exclude = [
+    "*.fr.md",
+    "README.fr.md",
+    "CHANGELOG.fr.md",
+    "SECURITY.fr.md",
+    "archive/README.md",
+]

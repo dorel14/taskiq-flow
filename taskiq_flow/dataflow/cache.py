@@ -1,4 +1,12 @@
-"""Data cache for storing and retrieving task results with dependency injection."""
+"""Cache de données pour stocker et récupérer les résultats de tâches.
+
+Implémente un système de cache avec injection de dépendances,
+permettant aux tâches de consommer les sorties des tâches
+précédentes via leurs noms de flux.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 

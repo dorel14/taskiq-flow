@@ -1,4 +1,11 @@
-"""Branch step for parallel execution of multiple branches."""
+"""Step de branchement pour exécution parallèle de branches multiples.
+
+Exécute plusieurs branches de pipeline en parallèle et combine
+leurs résultats en ne retenant que le premier non-None.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import logging
@@ -14,7 +21,16 @@ logger = logging.getLogger(__name__)
 
 
 class BranchStep(pydantic.BaseModel, AbstractStep, step_name="branch"):
-    """Step that executes multiple branches in parallel."""
+    """
+    Step de branchement pour exécution parallèle de branches multiples.
+
+    Exécute plusieurs branches de pipeline en parallèle. Chaque branche
+    est une séquence d'étapes. Le résultat de la première branche
+    réussie (non-None) devient le résultat global.
+
+    Attributs:
+        branches: Liste de branches, chaque branche est une liste d'étapes sérialisées
+    """
 
     branches: list[list[Any]]  # List of lists of DumpedStep
 
