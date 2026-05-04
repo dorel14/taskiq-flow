@@ -107,12 +107,14 @@ def create_app() -> FastAPI:
     # Add a custom endpoint example: execute pipeline
     @app.post("/pipelines/{pipeline_id}/execute")
     async def execute_pipeline(
-        pipeline_id: str, parameters: dict[str, Any]
+        pipeline_id: str,
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Execute a pipeline with given parameters."""
         if pipeline_id not in viz_api.pipelines:
             raise HTTPException(
-                status_code=404, detail=f"Pipeline {pipeline_id} not found"
+                status_code=404,
+                detail=f"Pipeline {pipeline_id} not found",
             )
 
         pipeline = viz_api.pipelines[pipeline_id]
@@ -137,7 +139,8 @@ def create_app() -> FastAPI:
             result = await broker.result_backend.get_result(task_id)
             if result is None:
                 raise HTTPException(
-                    status_code=404, detail=f"No result found for task_id {task_id}"
+                    status_code=404,
+                    detail=f"No result found for task_id {task_id}",
                 )
             return {"task_id": task_id, "result": result.return_value}
         except Exception as e:
@@ -218,13 +221,13 @@ async def main() -> None:
     logger.info("  - List pipelines: http://localhost:8000/pipelines")
     logger.info("  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag")
     logger.info(
-        "  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot"
+        "  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot",
     )
     logger.info(
-        "  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize"
+        "  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize",
     )
     logger.info(
-        "  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute"
+        "  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute",
     )
     logger.info("\nExample execution request body:")
     logger.info('  {"user_id": 123}')

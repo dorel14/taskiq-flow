@@ -516,7 +516,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
     """Exécute un pipeline avec les paramètres donnés."""
     if pipeline_id not in viz_api.pipelines:
         raise HTTPException(status_code=404, detail="Pipeline non trouvé")
-    
+
     pipeline = viz_api.pipelines[pipeline_id]
     result = await pipeline.kiq_dataflow(**parameters)
     return {"task_id": result.task_id, "status": "started"}

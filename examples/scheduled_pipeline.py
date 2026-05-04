@@ -62,7 +62,7 @@ async def main() -> None:
     for sched in schedules:
         print(  # noqa: T201
             f"  - {sched['label']}: cron={sched.get('cron')}, "
-            f"enabled={sched['enabled']}"
+            f"enabled={sched['enabled']}",
         )
 
 
