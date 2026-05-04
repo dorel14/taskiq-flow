@@ -1,6 +1,14 @@
-# ruff: noqa: PLC0415
-"""Factory for creating pipeline storage with auto-detection."""
+"""Factory de création de stockage pour le tracking.
 
+Cette fabrique détecte automatiquement le type de broker et crée
+le stockage approprié (Redis ou mémoire). Elle peut également
+extraire l'URL Redis depuis le broker si disponible.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
+# ruff: noqa: PLC0415
 from taskiq import AsyncBroker
 
 from taskiq_flow.broker.detector import BrokerDetector, BrokerType

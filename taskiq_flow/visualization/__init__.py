@@ -1,4 +1,12 @@
-"""DAG visualization for pipeline monitoring."""
+"""Visualisation du DAG pour le suivi des pipelines.
+
+Ce module fournit DAGVisualizer capable de générer des représentations
+du graphe de dépendances en JSON (pour UI web), DOT (pour Graphviz)
+et ASCII (pour terminal). Utile pour le debug et le monitoring.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 
@@ -9,25 +17,37 @@ __all__ = ["DAG"]
 
 class DAGVisualizer:
     """
-    Generate DAG visualizations in various formats.
+    Générateur de visualisations du DAG en plusieurs formats.
 
-    Supports JSON for UI consumption and DOT for Graphviz.
+    Fournit des méthodes statiques pour convertir un DAG en:
+    - JSON (pour UI web)
+    - DOT (pour Graphviz -> images PNG/SVG)
+    - ASCII (pour terminal)
+    - NetworkX (pour analyse Python)
+
+    Usage:
+        json_repr = DAGVisualizer.to_json(dag)
+        dot = DAGVisualizer.to_dot(dag)
+        DAGVisualizer.print_ascii(dag)
     """
 
     @staticmethod
     def to_json(dag: DAG) -> dict[str, Any]:
         """
-        Convert DAG to JSON format.
+        Convertit le DAG en représentation JSON.
+
+        Structure:
+            {
+                "nodes": [{"id":..., "label":..., "level":...}, ...],
+                "edges": [{"source":..., "target":...}, ...],
+                "levels": [[node_name_per_level0], [level1], ...]
+            }
 
         Args:
-            dag: DAG to convert
+            dag: DAG à convertir
 
         Returns:
-            Dictionary representation of DAG
-
-        Example:
-            dag_json = DAGVisualizer.to_json(dag)
-            print(json.dumps(dag_json, indent=2))
+            Dictionnaire sérialisable en JSON
         """
         nodes = []
         for node in dag.nodes:

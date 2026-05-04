@@ -1,4 +1,14 @@
-"""Pipeline scheduler using APScheduler."""
+"""Ordonnanceur de pipelines avec APScheduler.
+
+Ce module fournit deux classes principales:
+- LabelBasedScheduler: ordonnanceur léger utilisant les labels TaskIQ
+- PipelineScheduler: ordonnanceur complet basé sur APScheduler
+
+Permet de programmer l'exécution périodique ou différée des pipelines.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import logging
 from datetime import datetime

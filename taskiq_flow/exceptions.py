@@ -1,3 +1,16 @@
+"""Exceptions spécifiques à taskiq-flow.
+
+Ce module définit la hiérarchie des exceptions utilisées dans
+taskiq-flow, including:
+- PipelineError: Erreur générique de pipeline
+- StepError: Erreur lors d'une étape
+- AbortPipeline: Interruption volontaire du pipeline
+- MappingError, FilterError: Erreurs spécifiques aux steps
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 from typing import ClassVar
 
 from taskiq import TaskiqError

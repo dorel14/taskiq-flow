@@ -1,3 +1,13 @@
+"""Constantes utilisées dans tout le projet taskiq-flow.
+
+Ce module centralise toutes les constantes de clés de labels
+TaskIQ et autres valeurs fixes utilisées par le middleware
+et les steps du pipeline.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 from typing import Literal
 
 # Existing constants

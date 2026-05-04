@@ -1,3 +1,13 @@
+"""Step mapper pour l'exécution parallèle sur une collection.
+
+Ce module définit MapperStep qui applique une tâche à chaque élément
+d'une collection en parallèle, ainsi que la tâche partagée wait_tasks
+pour la collecte des résultats.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 import asyncio
 from collections.abc import Iterable
 from typing import Any
@@ -76,7 +86,24 @@ async def wait_tasks(
 
 
 class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
-    """Step that maps iterables."""
+    """
+    Step de mapping parallèle sur une collection.
+
+    Prend le résultat de l'étape précédente (qui doit être itérable)
+    et exécute la tâche spécifiée sur chaque élément en parallèle.
+    Les résultats sont collectés dans une liste ordonnée.
+
+    Attributs:
+        task_name: Nom de la tâche à exécuter pour chaque élément
+        labels: Labels TaskIQ
+        param_name: Nom du paramètre injectant chaque élément
+        additional_kwargs: Arguments additionnels communs
+        skip_errors: Si True, les erreurs sont ignorées
+        check_interval: Fréquence de vérification de complétion (secondes)
+        retries: Nombre de tentatives (optionnel)
+        timeout: Timeout par tâche (optionnel)
+        retry_delay: Délai entre tentatives (optionnel)
+    """
 
     task_name: str
     labels: dict[str, str]
@@ -98,23 +125,23 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
         result: "TaskiqResult[Any]",
     ) -> None:
         """
-        Runs mapping.
+        Exécute l'étape de map.
 
-        This step creates many small
-        tasks and one waiter task.
+        Itère sur le résultat de l'étape précédente et crée une
+        sous-tâche pour chaque élément. Une tâche collectrice
+        (wait_tasks) attend la complétion de toutes les sous-tâches
+        et assemble le résultat final.
 
-        The waiter task awaits
-        for all small tasks to complete,
-        and then assembles the final result.
+        Args:
+            broker: Broker TaskIQ
+            step_number: Numéro de l'étape actuelle
+            parent_task_id: ID de la tâche parente
+            task_id: ID à utiliser pour la tâche collectrice
+            pipe_data: Pipeline sérialisé
+            result: Résultat de l'étape précédente (doit être itérable)
 
-        :param broker: current broker.
-        :param step_number: current step number.
-        :param task_id: waiter task_id.
-        :param parent_task_id: task_id of the previous step.
-        :param pipe_data: serialized pipeline.
-        :param result: result of the previous task.
-        :raises AbortPipeline: if the result of the
-            previous task is not iterable.
+        Raises:
+            AbortPipeline: Si le résultat précédent n'est pas itérable
         """
         sub_task_ids: list[str] = []
         return_value = result.return_value

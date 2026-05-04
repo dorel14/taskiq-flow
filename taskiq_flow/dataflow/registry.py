@@ -1,4 +1,12 @@
-"""Dataflow registry for tracking task metadata and dependencies."""
+"""Registre dataflow pour le suivi des métadonnées de tâches.
+
+Ce module contient la classe DataflowRegistry qui enregistre les tâches,
+leurs métadonnées (outputs, inputs) et construit le graphe de dépendances.
+C'est le cœur de l'analyse automatique des flux de données.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 
@@ -10,14 +18,26 @@ from taskiq_flow.dataflow.node import DataNode
 
 class DataflowRegistry:
     """
-    Registry for pipeline task metadata and data dependencies.
+    Registre central pour l'analyse des dépendances de données.
 
-    Tracks which tasks produce which data artifacts and which tasks
-    consume which data artifacts.
+    Collecte les métadonnées des tâches enregistrées (output, inputs)
+    et maintient un index data -> producteur/consommateurs.
+    Construit ensuite le DAG à partir de ces dépendances.
+
+    C'est le cœur de l'analyse dataflow automatique.
+
+    Usage interne principalement, mais peut être utilisé pour
+    inspecter les dépendances avant exécution.
+
+    Attributes:
+        tasks: Liste des tâches enregistrées
+        task_metadata: Dict {task: {output, inputs, ...}}
+        data_nodes: Dict {nom_data: DataNode}
+        data_producers: Dict {nom_data: tâche_productrice}
     """
 
     def __init__(self) -> None:
-        """Initialize the registry."""
+        """Initialise un registre vide."""
         self.tasks: list[Any] = []
         self.task_metadata: dict[Any, dict[str, Any]] = {}
         self.data_nodes: dict[str, DataNode] = {}
@@ -91,16 +111,28 @@ class DataflowRegistry:
 
     def build_dag(self) -> DAG:
         """
-        Build a DAG from registered tasks.
+        Construit le DAG à partir des tâches enregistrées.
 
-        Analyzes data dependencies and constructs a DAG where edges
-        represent data flow from producer to consumer tasks.
+        Algorithme:
+        1. Crée un DAGNode pour chaque tâche
+        2. Pour chaque tâche, regarde ses inputs declarés
+        3. Pour chaque input, trouve le producteur dans data_producers
+        4. Ajoute une arête producteur -> consommateur
+        5. Calcul les niveaux topologiques
 
         Returns:
-            A DAG representing task dependencies
+            DAG prêt pour exécution
 
         Raises:
-            ValueError: If there are circular dependencies or missing producers
+            ValueError: Si un input requis n'a aucun producteur
+                      (s'il n'est pas enregistré comme entrée externe)
+
+        Example:
+            registry = DataflowRegistry()
+            registry.register_task(task_a, output="features", inputs=[])
+            registry.register_task(task_b, output="result", inputs=["features"])
+            dag = registry.build_dag()
+            # dag contient: task_a -> task_b
         """
         dag = DAG()
         task_to_node: dict[AsyncTaskiqDecoratedTask[Any, Any], DAGNode] = {}

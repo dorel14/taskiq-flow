@@ -1,3 +1,14 @@
+"""Middleware Pipeline pour l'orchestration de workflows.
+
+Ce module contient le PipelineMiddleware qui intercepte l'exécution
+des tâches TaskIQ pour gérer le flux d'exécution des pipelines.
+Il décide quelle étape exécuter ensuite, gère le suivi (tracking)
+et les hooks d'événements.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
+
 from logging import getLogger
 from typing import Any, cast
 
@@ -20,7 +31,28 @@ logger = getLogger(__name__)
 
 
 class PipelineMiddleware(TaskiqMiddleware):
-    """Pipeline middleware."""
+    """
+    Middleware TaskIQ pour l'orchestration de pipelines.
+
+    C'est le composant cœur de taskiq-flow. Intercepte chaque
+    tâche exécutée via le broker et:
+    - Détecte si la tâche fait partie d'un pipeline (labels)
+    - Détermine l'étape suivante à exécuter
+    - Gère le tracking et les hooks
+    - Lance la tâche suivante ou termine le pipeline
+
+    Architecture:
+        post_save() est appelé après chaque tâche. Il lit
+        l'étape courante depuis les labels, exécute l'étape
+        suivante via step.act(), ou termine le pipeline.
+
+    Usage:
+        broker = InMemoryBroker().with_middlewares(PipelineMiddleware())
+
+    Attributes:
+        tracking_manager: Gestionnaire de suivi (optionnel)
+        hook_manager: Gestionnaire d'événements (optionnel)
+    """
 
     def __init__(
         self,
@@ -37,16 +69,21 @@ class PipelineMiddleware(TaskiqMiddleware):
         result: "TaskiqResult[Any]",
     ) -> None:
         """
-        Handle post-execute event.
+        Handler principal appelé après exécution d'une tâche.
 
-        This is the heart of pipelines.
-        Here we decide what to do next.
+        Détermine si la tâche fait partie d'un pipeline en vérifiant
+        la présence du label CURRENT_STEP. Si oui:
+        1. Notifie le démarrage de l'étape suivante (hook + tracking)
+        2. Si c'était la dernière étape: termine le pipeline
+        3. Sinon: exécute l'étape suivante via _execute_next_step()
 
-        If the message have pipeline
-        labels we can calculate our next step.
+        Args:
+            message: Message de la tâche qui vient de se terminer
+            result: Résultat de cette tâche
 
-        :param message: current message.
-        :param result: result of the execution.
+        Note:
+            Si result.is_err, l'étape est considérée échouée mais
+            le traitement d'erreur est délégué à on_error()
         """
         if result.is_err:
             return

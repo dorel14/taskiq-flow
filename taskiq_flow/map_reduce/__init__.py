@@ -1,4 +1,14 @@
-"""Map-reduce operations for batch processing."""
+"""Opérations map-reduce pour le traitement par lots.
+
+Ce module fournit des opérations de map et reduce en parallèle
+avec des fonctionnalités avancées: chunking intelligent, suivi
+de progression, et paramètres configurables. Ces opérations
+sont intégrées dans les pipelines dataflow via les steps
+MapperStep et ReduceStep.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import asyncio
 import inspect
@@ -83,11 +93,30 @@ class ChunkConfig:
 
 class MapReduce:
     """
-    Map-reduce operations for batch processing.
+    Opérations map-reduce pour le traitement par lots.
 
-    Provides map and reduce operations that can be integrated
-    into dataflow pipelines with advanced features like
-    intelligent chunking, progress tracking, and multi-dimensional maps.
+    Fournit des méthodes statiques pour:
+    - map: application parallèle d'une tâche à une liste
+    - reduce: agrégation cumulative d'une liste
+    - map_reduce: pipeline map+reduce complet
+    - map_sweep: balayage multi-dimensionnel de paramètres
+
+    Caractéristiques:
+    - Gestion automatique de la concurrence via asyncio
+    - Support du chunking pour grands volumes
+    - Callbacks de progression
+    - Limitation de parallélisme (max_parallel)
+    - Collecte des erreurs avec rapports de succès
+
+    Exemple map-reduce:
+        result = await MapReduce.map_reduce(
+            broker,
+            extract_features,    # map task
+            aggregate,           # reduce task
+            items,
+            max_parallel=10,
+            reduce_chunk_size=100
+        )
     """
 
     @staticmethod

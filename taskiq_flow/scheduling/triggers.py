@@ -1,4 +1,12 @@
-"""Trigger helpers for scheduling."""
+"""Aides pour la création de triggers d'ordonnancement.
+
+Fournit des fonctions factory pour créer des triggers APScheduler
+(cron, date, interval) ainsi que des helpers utilitaires comme
+every_minute, every_hour, every_day, in_seconds, etc.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from datetime import datetime
 from typing import TYPE_CHECKING

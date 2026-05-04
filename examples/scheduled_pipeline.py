@@ -61,7 +61,9 @@ async def main() -> None:
     schedules = scheduler.list_schedules()
     print(f"Active schedules: {len(schedules)}")  # noqa: T201
     for sched in schedules:
-        print(f"  - {sched['label']}: cron={sched.get('cron')}, enabled={sched['enabled']}")  # noqa: T201
+        print(
+            f"  - {sched['label']}: cron={sched.get('cron')}, enabled={sched['enabled']}"
+        )  # noqa: T201
 
 
 if __name__ == "__main__":

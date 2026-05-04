@@ -1,4 +1,14 @@
-"""Pipeline event models."""
+"""Modèles d'événements de pipeline.
+
+Ce module définit tous les événements émis pendant l'exécution
+d'un pipeline: PipelineStartEvent, StepStartEvent, StepCompleteEvent,
+PipelineCompleteEvent, ainsi que les événements d'erreur.
+Ces événements sont utilisés par le HookManager pour notifier
+les callbacks enregistrés.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from datetime import datetime, timezone
 from enum import Enum

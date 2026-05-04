@@ -1,4 +1,12 @@
-"""Broker adapter for result backend operations."""
+"""Adaptateur pour les opérations de résultat du broker.
+
+Fournit une interface unifiée pour les opérations sur le backend
+de résultats (is_result_ready, get_result, set_result) independent
+de l'implémentation concrète du broker TaskIQ.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import logging
 from typing import Any

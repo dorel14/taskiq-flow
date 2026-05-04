@@ -5,6 +5,24 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Ajouté
+
+- Docstrings de module françaises complètes sur tous les modules taskiq_flow
+- Amélioration des docstrings de classes et méthodes pour l'autocomplétion IDE
+- Documentation améliorée de Pipeline, DataflowPipeline et Steps
+- Documentation des décorateurs (@pipeline_task, @pipeline_task_multi_output)
+- Documentation des composants dataflow (DAG, DAGNode, DataNode, Registry)
+- Documentation du système de tracking (PipelineTrackingManager, modèles, storage)
+- Documentation améliorée de ExecutionEngine
+- Ajout d'exemples détaillés et sections Args/Returns partout
+
+### Changé
+
+- Standardisation des docstrings en français avec détails complets
+- Meilleure cohérence des type hints dans les APIs publiques
+
 ## [0.3.0] - 2026-05-03
 
 ### Ajouté

@@ -1,4 +1,13 @@
-"""Pipeline tracking manager."""
+"""Gestionnaire de suivi (tracking) des pipelines.
+
+PipelineTrackingManager fournit une API de haut niveau pour
+initialiser et interroger le suivi d'exécution des pipelines.
+Il encapsule la logique de stockage et fournit des méthodes
+convenientes pour marquer le début/fin des étapes.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from typing import Any
 
@@ -10,7 +19,22 @@ from taskiq_flow.tracking.storage import PipelineStorage
 
 
 class PipelineTrackingManager:
-    """Manager for pipeline tracking operations."""
+    """
+    Gestionnaire de suivi d'exécution des pipelines.
+
+    Fournit une API de haut niveau pour enregistrer et consulter
+    l'état d'avancement des pipelines. Le manager utilise un
+    backend de stockage (mémoire ou Redis) pour la persistance.
+
+    Utilisation typique:
+        tracking = PipelineTrackingManager()
+        pipeline = Pipeline(broker).with_tracking(manager=tracking)
+        await pipeline.kiq(...)
+        status = await tracking.get_status(pipeline_id)
+
+    Attributes:
+        storage: Backend de stockage (implémentation de PipelineStorage)
+    """
 
     def __init__(self, storage: PipelineStorage | None = None) -> None:
         self.storage = storage
@@ -26,12 +50,38 @@ class PipelineTrackingManager:
         redis_url: str | None = None,
         ttl_seconds: int = 3600,
     ) -> "PipelineTrackingManager":
-        """Auto-detect and set storage based on broker."""
+        """
+        Configuration automatique du stockage selon le broker.
+
+        Détecte le type de broker (Redis, RabbitMQ, etc.) et configure
+        le stockage approprié. Si le broker est Redis et qu'aucune
+        URL n'est fournie, tente d'extraire l'URL depuis le broker.
+
+        Args:
+            broker: Instance du broker TaskIQ
+            redis_url: URL de connexion Redis (optionnel)
+            ttl_seconds: Durée de vie des données en secondes (défaut: 3600)
+
+        Returns:
+            Self pour chaînage
+
+        Example:
+            tracking = PipelineTrackingManager().with_auto_storage(broker)
+        """
         self.storage = TrackingStorageFactory.create(broker, redis_url, ttl_seconds)
         return self
 
     async def initiate(self, pipeline_id: str, total_steps: int) -> None:
-        """Initiate tracking for a new pipeline."""
+        """
+        Initialise le suivi pour un nouveau pipeline.
+
+        Crée l'entrée de pipeline avec le nombre d'étapes attendu.
+        Cette méthode est appelée automatiquement par Pipeline.kiq().
+
+        Args:
+            pipeline_id: Identifiant unique du pipeline
+            total_steps: Nombre total d'étapes dans le pipeline
+        """
         if self.storage:
             await self.storage.create_pipeline(pipeline_id, total_steps)
 
@@ -77,7 +127,19 @@ class PipelineTrackingManager:
             await self.storage.fail_step(pipeline_id, step_index, error)
 
     async def get_status(self, pipeline_id: str) -> PipelineStatusInfo | None:
-        """Get pipeline status."""
+        """
+        Récupère le statut complet d'un pipeline.
+
+        Inclut l'état global, les étapes individuelles, résultats,
+        et timestamps. Peut renvoyer None si le pipeline n'existe
+        pas ou a expiré.
+
+        Args:
+            pipeline_id: Identifiant du pipeline
+
+        Returns:
+            PipelineStatusInfo ou None si non trouvé
+        """
         if self.storage:
             return await self.storage.get_pipeline_status(pipeline_id)
         return None

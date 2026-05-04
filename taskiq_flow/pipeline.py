@@ -20,17 +20,44 @@ logger = logging.getLogger(__name__)
 
 class DataflowPipeline(OriginalPipeline[Any, Any]):
     """
-    Enhanced Pipeline with dataflow-based orchestration.
+    Pipeline avec orchestration basée sur les dépendances de données.
 
-    Extends the original Pipeline class with automatic DAG construction
-    based on data dependencies, automatic parallelism, and map/reduce
-    operations.
+    Étend la classe Pipeline standard avec:
+    - Construction automatique d'un DAG (Directed Acyclic Graph) à partir
+      des dépendances déclarées via @pipeline_task
+    - Exécution parallèle automatique des tâches indépendantes
+    - Support natif des opérations map-reduce
+    - Visualisation du graphe d'exécution
 
-    This class maintains full backward compatibility with the original
-    Pipeline class while adding new dataflow capabilities.
+    Cette classe maintient une compatibilité totale avec Pipeline
+    tout en offrant des fonctionnalités avancées pour les workflows
+    complexes. L'orchestration dataflow détermine automatiquement
+    l'ordre d'exécution en analysant les flux de données entre tâches.
 
-    This class maintains full backward compatibility with the original
-    Pipeline class while adding new dataflow capabilities.
+    Example:
+        @broker.task
+        @pipeline_task(output="audio")
+        async def load_audio(paths: list[str]) -> dict:
+            return {"audio": ...}
+
+        @broker.task
+        @pipeline_task(output="features", inputs=["audio"])
+        async def extract_features(audio: dict) -> dict:
+            return {"features": ...}
+
+        # Construction automatique du DAG
+        pipeline = DataflowPipeline.from_tasks(
+            broker,
+            [load_audio, extract_features]
+        )
+
+        # Exécution pilotée par les données
+        results = await pipeline.kiq_dataflow(paths=["file1.wav"])
+
+    Note:
+        - Hérite de toutes les méthodes de Pipeline (call_next, map, filter...)
+        -with_tracking(), with_hooks() et with_options() fonctionnent également
+        - La construction du DAG est lazy (à l'appel de kiq_dataflow())
     """
 
     def __init__(self, broker: AsyncBroker, *args: Any, **kwargs: Any) -> None:
@@ -61,33 +88,34 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         tasks: list[AsyncTaskiqDecoratedTask[Any, Any]],
     ) -> "DataflowPipeline":
         """
-        Create a pipeline from decorated tasks.
+        Crée un pipeline dataflow à partir d'une liste de tâches décorées.
 
-        Automatically builds the DAG based on data dependencies
-        declared via @pipeline_task decorator.
+        C'est la méthode recommandée pour construire un pipeline dataflow.
+        Elle enregistre automatiquement toutes les tâches et construit
+        le DAG de dépendances basé sur les métadonnées @pipeline_task.
 
         Args:
-            broker: TaskIQ broker
-            tasks: List of decorated tasks
+            broker: Broker TaskIQ pour l'exécution
+            tasks: Liste de tâches préalablement décorées avec @broker.task
+                   et @pipeline_task (dans l'ordre d'ajout, non critique)
 
         Returns:
-            DataflowPipeline instance
+            DataflowPipeline prêt à être exécuté
 
         Example:
-            @broker.task
-            @pipeline_task(output="audio_features")
-            async def extract_audio(track_paths):
-                ...
-
-            @broker.task
-            @pipeline_task(output="mir_features")
-            async def compute_mir(audio_features):
-                ...
-
             pipeline = DataflowPipeline.from_tasks(
                 broker,
-                [extract_audio, compute_mir]
+                [
+                    extract_audio,    # output="audio_features"
+                    compute_mir,       # inputs=["audio_features"]
+                    generate_tags,     # inputs=["mir_features"]
+                    create_embedding   # inputs=["mir_features", "tags"]
+                ]
             )
+
+        Note:
+            L'ordre de la liste n'affecte pas l'exécution (le DAG
+            détermine l'ordre), mais un ordre logique aide la lecture.
         """
         pipeline = cls(broker)
         pipeline._dataflow_tasks = tasks
@@ -129,22 +157,38 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         **inputs: Any,
     ) -> Any:
         """
-        Execute pipeline using dataflow orchestration.
+        Exécute le pipeline avec orchestration dataflow.
 
-        Automatically determines execution order based on data
-        dependencies and executes tasks with maximum parallelism.
+        Construit le DAG (si pas déjà fait), puis utilise ExecutionEngine
+        pour exécuter les tâches dans l'ordre topologique avec parallélisme
+        maximal. Les dépendances de données sont résolues automatiquement.
 
         Args:
-            **inputs: External inputs to the pipeline
+            **inputs: Données externes fournies au pipeline.
+                      Les clés doivent correspondre aux inputs requis
+                      par les tâches sans producteur interne.
 
         Returns:
-            Dictionary of all outputs
+            Dictionnaire de toutes les sorties produites par le pipeline,
+            indexées par leur nom de flux.
 
         Example:
-            result = await pipeline.kiq_dataflow(
+            results = await pipeline.kiq_dataflow(
                 track_paths=["track1.wav", "track2.wav"]
             )
-            # result = {"audio_features": ..., "mir_features": ...}
+            # results = {
+            #   "audio_features": {...},
+            #   "mir_features": {...},
+            #   "tags": [...]
+            # }
+
+        Raises:
+            ValueError: Si aucun DAG n'est construit
+            PipelineError: Si l'exécution échoue
+
+        Note:
+            Le DAG est construit automatiquement au premier appel
+            si des tâches ont été ajoutées via from_tasks() ou add_dataflow_task().
         """
         if not self._is_dataflow_built:
             self._build_dataflow_dag()
@@ -175,18 +219,24 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         **kwargs: Any,
     ) -> "DataflowPipeline":
         """
-        Add map operation to pipeline.
+        Ajoute une opération map au pipeline dataflow.
 
-        Creates parallel execution of task for each item.
+        Contrairement à la méthode map de Pipeline qui s'applique au
+        résultat précédent, cette version prend une collection explicite
+        d'items et les traite en parallèle. Le résultat est stocké
+        sous le nom 'output' et peut être consommé par des tâches ultérieures.
 
         Args:
-            task: Task to apply
-            items: Items to process
-            output: Output name
-            **kwargs: Additional kwargs (including chunk_config, max_parallel, etc.)
+            task: Tâche à appliquer à chaque item
+            items: Liste des items à traiter
+            output: Nom du flux de données produisant les résultats
+            **kwargs: Options additionnelles:
+                     - chunk_config: ChunkConfig pour chunking intelligent
+                     - max_parallel: Limite de tâches parallèles
+                     - param_name: Nom du paramètre (défaut: premier param)
 
         Returns:
-            Self for chaining
+            Self pour chaînage fluent
 
         Example:
             pipeline.map(
@@ -237,26 +287,30 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         **kwargs: Any,
     ) -> "DataflowPipeline":
         """
-        Add reduce operation to pipeline.
+        Ajoute une opération de réduction au pipeline.
 
-        Aggregates results from previous map operation.
+        Agrège les résultats d'une opération map précédente en une
+        seule valeur. La réduction peut être effectuée avec ou
+        sans tâche de pré-traitement des items.
 
         Args:
-            task: Reduction task
-            input_name: Input data name
-            output: Output name
-            **kwargs: Additional kwargs (including chunk_size, initial, etc.)
+            task: Tâche de réduction (optionnel, ex: sum, aggregate)
+            input_name: Nom du flux de données contenant les items à réduire
+            output: Nom du flux de données produisant le résultat
+            **kwargs: Options additionnelles:
+                     - chunk_size: Taille de chunk pour réduction par lots
+                     - initial: Valeur initiale de l'accumulateur
 
         Returns:
-            Self for chaining
+            Self pour chaînage fluent
 
         Example:
             pipeline.reduce(
                 aggregate_features,
                 "track_features",
-                output="aggregated",
+                output="playlist_stats",
                 chunk_size=100,
-                initial=0,
+                initial={}
             )
         """
         # Store reduce operation for execution
@@ -294,20 +348,22 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         **inputs: Any,
     ) -> Any:
         """
-        Execute pipeline with map-reduce operations.
+        Exécute le pipeline en mode map-reduce.
 
-        Executes map operations in parallel, then reduces results.
-        Supports advanced features like chunking and progress tracking.
+        Alternative à kiq_dataflow() qui exécute explicitement les
+        opérations map et reduce enchaînées. Utile pour les pipelines
+        de traitement par lots.
 
         Args:
-            **inputs: External inputs to the pipeline
+            **inputs: Données externes pour le pipeline
 
         Returns:
-            Final reduced result
+            Résultat final de la dernière étape de réduction
 
         Example:
             result = await pipeline.kiq_map_reduce(
-                track_list=tracks
+                track_list=tracks,
+                metadata=meta
             )
         """
         logger.info(
@@ -681,14 +737,15 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
     def visualize(self) -> dict[str, Any]:
         """
-        Visualize the pipeline DAG.
+        Génère une représentation JSON du DAG du pipeline.
 
         Returns:
-            JSON representation of DAG
+            Dictionnaire avec clés 'nodes', 'edges', 'levels' pour
+            visualisation par une interface web ou outil externe.
 
         Example:
-            viz = pipeline.visualize()
-            print(json.dumps(viz, indent=2))
+            dag_json = pipeline.visualize()
+            print(json.dumps(dag_json, indent=2))
         """
         if not self._dag:
             self._build_dataflow_dag()
@@ -700,14 +757,16 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
     def visualize_dot(self) -> str:
         """
-        Generate DOT format visualization.
+        Génère une représentation DOT (Graphviz) du DAG.
 
         Returns:
-            DOT format string
+            Chaîne au format DOT pouvant être convertie en image
+            avec Graphviz: `dot -Tpng graph.dot -o graph.png`
 
         Example:
             dot = pipeline.visualize_dot()
-            print(dot)
+            with open("pipeline.dot", "w") as f:
+                f.write(dot)
         """
         if not self._dag:
             self._build_dataflow_dag()

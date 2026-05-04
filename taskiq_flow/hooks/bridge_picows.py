@@ -1,7 +1,12 @@
-"""Bridge between HookManager and WebSocket server for pipeline events.
+"""Pont entre HookManager et le serveur WebSocket pour les événements de pipeline.
 
-This module defines a WebSocketHookBridge class that listens for pipeline events
-and broadcasts them to connected WebSocket clients.
+Ce module définit WebSocketHookBridge qui écoute les événements
+du pipeline via HookManager et les diffuse aux clients WebSocket
+connectés. Gère également la reconnexion et la file d'attente
+des événements pendant la déconnexion.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
 """
 
 import asyncio

@@ -1,4 +1,12 @@
-"""Reduce operation for batch processing."""
+"""Fonction reduce pour l'agrégation de résultats.
+
+Ce module fournit la fonction `reduce` qui agrège une liste de valeurs
+en un seul résultat en appliquant une fonction de réduction.
+C'est un wrapper autour de MapReduce.reduce.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 from collections.abc import Callable
 from typing import Any

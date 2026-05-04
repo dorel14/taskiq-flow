@@ -1,4 +1,12 @@
-"""Broker type detection."""
+"""Détection du type de broker TaskIQ.
+
+Ce module permet de détecter automatiquement le type de broker
+(Redis, RabbitMQ, Kafka, InMemory) à partir d'une instance AsyncBroker.
+Utile pour l'auto-configuration des composants dépendants du broker.
+
+Auteur: SoniqueBay Team
+Version: 0.3.1
+"""
 
 import sys
 from enum import Enum

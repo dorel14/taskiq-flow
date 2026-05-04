@@ -31,7 +31,11 @@ broker = InMemoryBroker(await_inplace=True)
 async def fetch_user_data(user_id: int) -> dict[str, Any]:
     """Fetch user data from database."""
     await asyncio.sleep(0.1)
-    return {"id": user_id, "name": f"User{user_id}", "email": f"user{user_id}@example.com"}
+    return {
+        "id": user_id,
+        "name": f"User{user_id}",
+        "email": f"user{user_id}@example.com",
+    }
 
 
 @broker.task
@@ -76,6 +80,7 @@ sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
 # API Server Setup
 # ============================================================================
 
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application with visualization API."""
     # Create FastAPI app
@@ -93,10 +98,14 @@ def create_app() -> FastAPI:
 
     # Add a custom endpoint example: execute pipeline
     @app.post("/pipelines/{pipeline_id}/execute")
-    async def execute_pipeline(pipeline_id: str, parameters: dict[str, Any]) -> dict[str, Any]:
+    async def execute_pipeline(
+        pipeline_id: str, parameters: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute a pipeline with given parameters."""
         if pipeline_id not in viz_api.pipelines:
-            raise HTTPException(status_code=404, detail=f"Pipeline {pipeline_id} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Pipeline {pipeline_id} not found"
+            )
 
         pipeline = viz_api.pipelines[pipeline_id]
         try:
@@ -117,7 +126,9 @@ def create_app() -> FastAPI:
         try:
             result = await broker.get_result(task_id)
             if result is None:
-                raise HTTPException(status_code=404, detail=f"No result found for task_id {task_id}")
+                raise HTTPException(
+                    status_code=404, detail=f"No result found for task_id {task_id}"
+                )
             return {"task_id": task_id, "result": result}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
@@ -128,6 +139,7 @@ def create_app() -> FastAPI:
 # ============================================================================
 # Demonstration Functions
 # ============================================================================
+
 
 async def demo_api_usage() -> None:
     """Demonstrate programmatic usage of the PipelineVisualizationAPI."""
@@ -160,10 +172,13 @@ async def demo_api_usage() -> None:
     if dag:
         print(f"  Nodes: {[node.task.task_name for node in dag.nodes]}")  # noqa: T201
         print(f"  Edges: {dag.edges}")  # noqa: T201
-        print(f"  Levels: {[[n.task.task_name for n in level] for level in dag.levels]}")  # noqa: T201
+        print(
+            f"  Levels: {[[n.task.task_name for n in level] for level in dag.levels]}"
+        )  # noqa: T201
 
     # Get JSON representation using public visualization API
     from taskiq_flow.visualization import DAGVisualizer
+
     dag_json = DAGVisualizer.to_json(dag)
     print(f"\nDAG JSON nodes: {len(dag_json['nodes'])}")  # noqa: T201
 
@@ -191,6 +206,7 @@ async def demo_api_usage() -> None:
 # Main
 # ============================================================================
 
+
 async def main() -> None:
     """Run the API example."""
     print("TaskIQ Flow REST API Example")  # noqa: T201
@@ -201,15 +217,25 @@ async def main() -> None:
 
     # Show how to run the server (commented out for demo)
     print("\nTo start the API server, run:")  # noqa: T201
-    print("  uvicorn examples.api_example:create_app --reload --port 8000")  # noqa: T201
+    print(
+        "  uvicorn examples.api_example:create_app --reload --port 8000"
+    )  # noqa: T201
     print("\nThen access:")  # noqa: T201
     print("  - API docs: http://localhost:8000/docs")  # noqa: T201
     print("  - Health: http://localhost:8000/health")  # noqa: T201
     print("  - List pipelines: http://localhost:8000/pipelines")  # noqa: T201
-    print("  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag")  # noqa: T201
-    print("  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot")  # noqa: T201
-    print("  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize")  # noqa: T201
-    print("  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute")  # noqa: T201
+    print(
+        "  - Pipeline DAG: http://localhost:8000/pipelines/{pipeline_id}/dag"
+    )  # noqa: T201
+    print(
+        "  - Pipeline DOT: http://localhost:8000/pipelines/{pipeline_id}/dag/dot"
+    )  # noqa: T201
+    print(
+        "  - Visualize: http://localhost:8000/pipelines/{pipeline_id}/visualize"
+    )  # noqa: T201
+    print(
+        "  - Execute: POST http://localhost:8000/pipelines/{pipeline_id}/execute"
+    )  # noqa: T201
     print("\nExample execution request body:")  # noqa: T201
     print('  {"user_id": 123}')  # noqa: T201
 
