@@ -225,11 +225,18 @@ class DAGBuilder:
             params = list(sig.parameters.values())
 
             # Skip 'self' and 'cls' parameters
+            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY, and KEYWORD_ONLY parameters
             input_names = []
             for param in params:
                 if (
                     param.name not in ("self", "cls")
                     and param.default is inspect.Parameter.empty
+                    and param.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.KEYWORD_ONLY,
+                    )
                 ):
                     input_names.append(param.name)
 
@@ -251,12 +258,18 @@ class DAGBuilder:
 
             # Skip 'self' and 'cls' parameters, plus parameters with defaults
             # Also skip *args and **kwargs
+            # Include POSITIONAL_OR_KEYWORD, POSITIONAL_ONLY, and KEYWORD_ONLY parameters
             input_names = []
             for param in params:
                 if (
                     param.name not in ("self", "cls")
                     and param.default is inspect.Parameter.empty
-                    and param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                    and param.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.KEYWORD_ONLY,
+                    )
                 ):
                     input_names.append(param.name)
 

@@ -54,6 +54,7 @@ class PipelineVisualizationAPI:
                     "id": pipeline_id,
                     "has_dag": pipeline._dag is not None,
                     "task_count": len(pipeline._dataflow_tasks),
+                    "registered_tasks": len(pipeline._registered_tasks),
                 }
                 if pipeline._dag:
                     info["node_count"] = len(pipeline._dag.nodes)
@@ -66,8 +67,21 @@ class PipelineVisualizationAPI:
             pipeline_id: str,
             tasks: list[dict[str, Any]],
         ) -> dict[str, str]:
-            """Register a pipeline for visualization."""
-            logger.info("Registering pipeline %s", pipeline_id)
+            """Register a pipeline for visualization.
+
+            Note: This endpoint stores pipeline metadata for visualization.
+            For actual pipeline execution, use the add_pipeline method or
+            create DataflowPipeline instances programmatically.
+
+            Args:
+                pipeline_id: Unique pipeline identifier
+                tasks: List of task definitions with optional 'name', 'dependencies' keys
+            """
+            logger.info("Registering pipeline %s with %d tasks", pipeline_id, len(tasks))
+            pipeline = DataflowPipeline(self.broker)
+            pipeline.pipeline_id = pipeline_id
+            pipeline._registered_tasks = tasks
+            self.pipelines[pipeline_id] = pipeline
             return {"message": f"Pipeline {pipeline_id} registered"}
 
         @self.app.get("/pipelines/{pipeline_id}/status")

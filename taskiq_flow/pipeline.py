@@ -48,6 +48,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         self._registry: DataflowRegistry | None = None
         self._dag: DAG | None = None
         self._dataflow_tasks: list[AsyncTaskiqDecoratedTask[Any, Any]] = []
+        self._registered_tasks: list[dict[str, Any]] = []
         self._data_cache: dict[str, Any] = {}
         self._is_dataflow_built: bool = False
         self._map_operations: list[dict[str, Any]] = []
