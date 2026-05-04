@@ -5,7 +5,7 @@ le stockage approprié (Redis ou mémoire). Elle peut également
 extraire l'URL Redis depuis le broker si disponible.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 # ruff: noqa: PLC0415

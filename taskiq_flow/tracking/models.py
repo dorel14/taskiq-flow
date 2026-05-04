@@ -5,7 +5,7 @@ des pipelines et de leurs étapes: PipelineStatusInfo, StepStatusInfo,
 ainsi que les enums PipelineStatus et StepStatus.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from datetime import datetime, timezone

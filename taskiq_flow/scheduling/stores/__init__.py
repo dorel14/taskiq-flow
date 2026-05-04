@@ -4,5 +4,5 @@ Contient les implémentations de JobStore pour APScheduler
 (par exemple SQLite, PostgreSQL, etc.)
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """

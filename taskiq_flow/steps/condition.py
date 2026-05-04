@@ -4,7 +4,7 @@ Exécute une tâche si une condition (expression ou callable) est vraie,
 sinon exécute une tâche alternative si fournie.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import ast

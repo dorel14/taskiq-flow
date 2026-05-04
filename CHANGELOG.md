@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized all docstrings to French format with comprehensive details
 - Improved type hint consistency across public APIs
 
+## [0.3.2] - 2026-05-04
+
+### Added
+
+- Version bump to 0.3.2
+
 ## [0.3.0] - 2026-05-03
 
 ### Added
@@ -105,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple scheduling
 - Basic tracking
 
+[0.3.2]: https://github.com/dorel14/taskiq-flow/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/dorel14/taskiq-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/dorel14/taskiq-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dorel14/taskiq-flow/compare/v0.1.0...v0.2.0

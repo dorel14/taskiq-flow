@@ -5,7 +5,7 @@ de suivi d'exécution de pipelines. Les implementations concrètes
 incluent InMemoryPipelineStorage et RedisPipelineStorage.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from abc import ABC, abstractmethod

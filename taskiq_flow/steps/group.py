@@ -4,7 +4,7 @@ Exécute plusieurs tâches en parallèle sans dépendances entre elles
 et collecte leurs résultats dans une liste ordonnée.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio

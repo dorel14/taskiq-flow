@@ -5,7 +5,7 @@ produit ou consommé par les tâches du pipeline. Un DataNode suit
 les producteurs et consumers pour construire les dépendances.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from dataclasses import dataclass, field

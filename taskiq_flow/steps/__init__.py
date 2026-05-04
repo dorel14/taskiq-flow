@@ -5,7 +5,7 @@ group, branch, condition, reduce) et fournit la fonction parse_step
 pour instancier un step à partir de sa représentation sérialisée.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from logging import getLogger

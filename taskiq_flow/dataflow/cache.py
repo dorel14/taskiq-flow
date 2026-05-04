@@ -5,7 +5,7 @@ permettant aux tâches de consommer les sorties des tâches
 précédentes via leurs noms de flux.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any

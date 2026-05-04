@@ -5,7 +5,7 @@ du graphe de dépendances en JSON (pour UI web), DOT (pour Graphviz)
 et ASCII (pour terminal). Utile pour le debug et le monitoring.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any

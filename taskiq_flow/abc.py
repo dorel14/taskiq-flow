@@ -5,7 +5,7 @@ pour les implémentations concrètes, notamment AbstractStep qui
 doit être étendue par tous les steps de pipeline.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from abc import ABC, abstractmethod

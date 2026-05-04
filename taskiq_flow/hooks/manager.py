@@ -7,7 +7,7 @@ les fuites mémoire, et supporte des transports multiples (WebSocket,
 etc.) pour la diffusion des événements.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import asyncio

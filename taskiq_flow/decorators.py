@@ -5,7 +5,7 @@ les dépendances de données des tâches. Ces décorateurs enregistrent
 les métadonnées nécessaires à la construction automatique du DAG.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import inspect

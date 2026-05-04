@@ -4,7 +4,7 @@ Fournit une configuration simple utilisant SQLite comme backend
 de persistance des tâches planifiées.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from typing import Any

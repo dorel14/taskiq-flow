@@ -5,7 +5,7 @@ de résultats (is_result_ready, get_result, set_result) independent
 de l'implémentation concrète du broker TaskIQ.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import logging

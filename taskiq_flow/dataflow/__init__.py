@@ -5,7 +5,7 @@ et l'exécution de pipelines basés sur un graphe orienté acyclique
 (DAG) où les dépendances sont exprimées en termes de flux de données.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from taskiq_flow.dataflow.cache import DataCache

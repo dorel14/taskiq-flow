@@ -4,7 +4,7 @@ Fournit des classes utilitaires comme PipelineContext pour
 accéder au contexte d'exécution.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from taskiq_flow.utils.context import PipelineContext

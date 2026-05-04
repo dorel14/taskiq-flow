@@ -5,7 +5,7 @@ Ce module permet de détecter automatiquement le type de broker
 Utile pour l'auto-configuration des composants dépendants du broker.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 import sys

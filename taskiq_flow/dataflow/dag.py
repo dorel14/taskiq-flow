@@ -5,7 +5,7 @@ la structure de dépendances entre tâches. Le DAG permet de
 déterminer l'ordre d'exécution et les niveaux de parallélisme.
 
 Auteur: SoniqueBay Team
-Version: 0.3.1
+Version: 0.3.2
 """
 
 from dataclasses import dataclass, field
