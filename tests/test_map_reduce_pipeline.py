@@ -48,7 +48,8 @@ class TestMapReducePipeline:
 
     @pytest.mark.asyncio
     async def test_pipeline_map_reduce_with_chunking(
-        self, broker: InMemoryBroker
+        self,
+        broker: InMemoryBroker,
     ) -> None:
         """Test map-reduce with chunked reduction."""
 

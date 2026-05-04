@@ -30,7 +30,8 @@ class TestDAGBuilderEnhancements:
 
         # Build DAG with external input
         dag = DAGBuilder.from_tasks(
-            tasks=[process_data], external_inputs=["external_input"]
+            tasks=[process_data],
+            external_inputs=["external_input"],
         )
 
         assert isinstance(dag, DAG)
@@ -86,7 +87,8 @@ class TestDAGBuilderEnhancements:
             registry.build_dag()
 
     def test_dag_validation_detailed_error_messages(
-        self, broker: InMemoryBroker
+        self,
+        broker: InMemoryBroker,
     ) -> None:
         """Test that validation provides detailed error messages."""
 
@@ -110,7 +112,8 @@ class TestDAGBuilderEnhancements:
         assert "no nodes" in error_msg
 
     def test_dag_validation_disconnected_components(
-        self, broker: InMemoryBroker
+        self,
+        broker: InMemoryBroker,
     ) -> None:
         """Test validation of disconnected components in DAG."""
 
@@ -173,7 +176,10 @@ class TestDAGBuilderEnhancements:
         @broker.task
         @pipeline_task(output="result")
         async def func_with_defaults(
-            required_arg: str, optional_arg: str = "default", *args: Any, **kwargs: Any
+            required_arg: str,
+            optional_arg: str = "default",
+            *args: Any,
+            **kwargs: Any,
         ) -> str:
             return f"{required_arg}_{optional_arg}"
 

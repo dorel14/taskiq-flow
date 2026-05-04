@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-05-03
 
 ### Added
+
 - LabelBasedScheduler for lightweight, TaskIQ-native scheduling
 - PipelineTrackingManager for execution tracking
 - Redis storage backend for tracking
@@ -33,26 +34,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Execution engine with parallel processing
 
 ### Changed
+
 - Improved import organization
 - Fixed type annotations throughout the codebase
 - Enhanced error messages
 - Updated documentation with comprehensive examples
 
 ### Fixed
+
 - 63 ruff linting errors
 - Type checking errors in scheduler module
 - Test failures in tracking factory
 - Missing exports for PipelineTrackingManager and LabelBasedScheduler
 
 ### Deprecated
+
 - Nothing
 
 ### Removed
+
 - Nothing
 
 ## [0.2.0] - 2026-04-15
 
 ### Added
+
 - Initial release
 - Pipeline execution engine
 - DAG construction and validation
@@ -63,21 +69,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DataCache implementation
 
 ### Changed
+
 - Migrated from taskiq-pipelines
 - Improved API design
 - Better error handling
 
 ### Fixed
+
 - Various bugs from initial implementation
 
 ## [0.1.0] - 2026-03-01
 
 ### Added
+
 - Initial prototype
 - Basic pipeline functionality
 - Simple scheduling
 - Basic tracking
 
-[0.3.0]: https://github.com/username/taskiq-flow/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/username/taskiq-flow/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/username/taskiq-flow/releases/tag/v0.1.0
+[0.3.0]: https://github.com/dorel14/taskiq-flow/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/dorel14/taskiq-flow/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/dorel14/taskiq-flow/releases/tag/v0.1.0

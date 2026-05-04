@@ -194,7 +194,8 @@ class TestMapReduceAdvanced:
 
     @pytest.mark.asyncio
     async def test_pipeline_map_reduce_integration(
-        self, broker: InMemoryBroker
+        self,
+        broker: InMemoryBroker,
     ) -> None:
         """Test map-reduce integration with DataflowPipeline."""
 
@@ -317,7 +318,8 @@ class TestMapReduceAdvanced:
 
     @pytest.mark.asyncio
     async def test_pipeline_map_reduce_advanced_integration(
-        self, broker: InMemoryBroker
+        self,
+        broker: InMemoryBroker,
     ) -> None:
         """Test map-reduce integration with DataflowPipeline."""
 

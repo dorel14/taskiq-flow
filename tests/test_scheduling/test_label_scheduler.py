@@ -203,7 +203,8 @@ async def test_invalid_schedule_raises_error(
 
     # Neither cron nor interval specified
     with pytest.raises(
-        ValueError, match="Either cron or interval_seconds must be specified"
+        ValueError,
+        match="Either cron or interval_seconds must be specified",
     ):
         await scheduler.schedule_with_label(
             pipeline=pipeline,
@@ -212,7 +213,8 @@ async def test_invalid_schedule_raises_error(
 
     # Both cron and interval specified
     with pytest.raises(
-        ValueError, match="Cannot specify both cron and interval_seconds"
+        ValueError,
+        match="Cannot specify both cron and interval_seconds",
     ):
         await scheduler.schedule_with_label(
             pipeline=pipeline,

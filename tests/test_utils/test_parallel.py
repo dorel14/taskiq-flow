@@ -81,7 +81,9 @@ def test_chunked_map_auto_concurrency(
     """Test chunked_map with auto concurrency."""
     items = list(range(20))
     pipeline: Pipeline[Any, list[int]] = chunked_map(
-        mock_task, items, auto_concurrency=True
+        mock_task,
+        items,
+        auto_concurrency=True,
     )  # type: ignore[arg-type]
     # Should create multiple chunks
     assert len(pipeline.steps) > 1
@@ -97,7 +99,9 @@ def test_chunked_map_max_concurrency(
     """
     items = list(range(20))
     pipeline: Pipeline[Any, list[int]] = chunked_map(
-        mock_task, items, max_concurrency=5
+        mock_task,
+        items,
+        max_concurrency=5,
     )  # type: ignore[arg-type]
     # Currently, max_concurrency doesn't affect pipeline creation
     # This is a placeholder for future implementation

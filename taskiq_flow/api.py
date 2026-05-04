@@ -79,7 +79,9 @@ class PipelineVisualizationAPI:
                     'dependencies' keys
             """
             logger.info(
-                "Registering pipeline %s with %d tasks", pipeline_id, len(tasks)
+                "Registering pipeline %s with %d tasks",
+                pipeline_id,
+                len(tasks),
             )
             pipeline = DataflowPipeline(self.broker)
             pipeline.pipeline_id = pipeline_id
