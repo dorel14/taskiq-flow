@@ -5,7 +5,7 @@ availability. It calculates optimal parallelism per task level based on
 task resource profiles.
 
 Author: SoniqueBay Team
-Version: 0.4.0
+Version: 0.3.2
 """
 
 import psutil

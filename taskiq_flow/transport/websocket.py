@@ -1,7 +1,7 @@
 """WebSocket transport for real-time pipeline events.
 
 Author: SoniqueBay Team
-Version: 0.4.0
+Version: 0.3.2
 """
 
 import logging

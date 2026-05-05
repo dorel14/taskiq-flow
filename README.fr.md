@@ -2,7 +2,7 @@
 
 Taskiq-Flow vous permet d'enchaîner des fonctions intensives et de les exécuter sans attendre que chaque étape se termine. Pensez-y comme à un système d'orchestration pour des workflows de tâches asynchrones — vous définissez les étapes, et la bibliothèque gère automatiquement l'ordre d'exécution, le passage de données et le parallélisme.
 
-*Version : 0.3.0*
+*Version : 0.3.2*
 
 > 🌐 **Documentation Internationale** : Ce projet dispose également d'une documentation en [English](README.md).
 

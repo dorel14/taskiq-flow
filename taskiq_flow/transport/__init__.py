@@ -4,7 +4,7 @@ This module provides pluggable transport implementations for streaming
 pipeline events to clients.
 
 Author: SoniqueBay Team
-Version: 0.4.0
+Version: 0.3.2
 """
 
 from typing import Any, Protocol

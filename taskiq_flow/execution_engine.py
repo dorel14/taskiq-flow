@@ -1,11 +1,10 @@
-"""Moteur d'exécution pour pipelines basés sur un DAG.
+"""Execution engine for DAG-based pipelines.
 
-Exécute les tâches en respectant les dépendances, en parallèle
-lorsque possible. Gère les retentatives, les modes d'erreur
-(fail_fast, continue_on_error, skip_failed) et le cache de données.
+Executes tasks respecting dependencies, running in parallel when possible.
+Handles retries, error modes (fail_fast, continue_on_error, skip_failed), and data caching.
 
-Auteur: SoniqueBay Team
-Version: 0.4.0
+Author: SoniqueBay Team
+Version: 0.3.2
 """
 
 import asyncio
