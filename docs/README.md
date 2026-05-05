@@ -78,7 +78,7 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 - **Project Repository**: [GitHub - taskiq-flow](https://github.com/dorel14/taskiq-flow)
 - **PyPI Package**: [taskiq-flow](https://pypi.org/project/taskiq-flow/)
-- **Taskiq Documentation**: [ttaskiq-python.github.io](https://taskiq-python.github.io/)
+- **Taskiq Documentation**: [taskiq-python.github.io](https://taskiq-python.github.io/)
 - **Issue Tracker**: [GitHub Issues](https://github.com/dorel14/taskiq-flow/issues)
 
 ## 🤝 Contributing
