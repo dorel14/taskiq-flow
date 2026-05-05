@@ -1,4 +1,5 @@
 ---
+permalink: /en/api/tracking/
 title: API Reference: Tracking
 nav_order: 33
 ---

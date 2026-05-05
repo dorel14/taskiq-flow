@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/quickstart/
 title: Exemple: quickstart.py
 nav_order: 41
 ---

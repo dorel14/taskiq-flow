@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/api-example/
 title: Example: api_example.py
 nav_order: 47
 ---

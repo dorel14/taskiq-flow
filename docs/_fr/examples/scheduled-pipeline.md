@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/scheduled-pipeline/
 title: Exemple: scheduled_pipeline.py
 nav_order: 44
 ---

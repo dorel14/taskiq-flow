@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/tracking-demo/
 title: Exemple: tracking_demo.py
 nav_order: 45
 ---

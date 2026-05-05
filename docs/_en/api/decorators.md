@@ -1,4 +1,5 @@
 ---
+permalink: /en/api/decorators/
 title: API Reference: Decorators
 nav_order: 31
 ---

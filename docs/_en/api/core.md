@@ -1,4 +1,5 @@
 ---
+permalink: /en/api/core/
 title: API Reference: Core Components
 nav_order: 30
 ---

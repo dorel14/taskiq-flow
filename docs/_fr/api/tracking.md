@@ -1,4 +1,5 @@
 ---
+permalink: /fr/api/tracking/
 title: Référence API: Suivi
 nav_order: 33
 ---

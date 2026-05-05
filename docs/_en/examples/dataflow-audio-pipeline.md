@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/dataflow-audio-pipeline/
 title: Example: dataflow_audio_pipeline.py
 nav_order: 42
 ---

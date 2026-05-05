@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/registry-discovery/
 title: Example: registry_discovery_example.py
 nav_order: 43
 ---

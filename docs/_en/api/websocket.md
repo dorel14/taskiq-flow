@@ -1,4 +1,5 @@
 ---
+permalink: /en/api/websocket/
 title: API Reference: WebSocket
 nav_order: 34
 ---

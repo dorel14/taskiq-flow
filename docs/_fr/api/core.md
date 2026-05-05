@@ -1,4 +1,5 @@
 ---
+permalink: /fr/api/core/
 title: Référence API: Composants Principaux
 nav_order: 30
 ---

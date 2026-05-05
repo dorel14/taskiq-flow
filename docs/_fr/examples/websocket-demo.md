@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/websocket-demo/
 title: Exemple: websocket_demo.py
 nav_order: 46
 ---

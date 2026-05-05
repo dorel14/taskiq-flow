@@ -1,6 +1,7 @@
 ---
 title: Guide des Concepts Fondamentaux
 nav_order: 12
+permalink: /fr/guides/core-concepts/
 ---
 # Guide des Concepts Fondamentaux
 
