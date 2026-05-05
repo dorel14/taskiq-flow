@@ -13,8 +13,8 @@ baseurl: "/taskiq-flow"
 # Build settings
 markdown: kramdown
 highlighter: rouge
-theme: just-the-docs
-
+#theme: 
+remote_theme: pages-themes/cayman@v0.2.0
 # Just the Docs theme configuration
 just_the_docs:
   # Search
