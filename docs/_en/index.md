@@ -16,11 +16,11 @@ Welcome to the English documentation for **Taskiq-Flow**.
 
 ## 🔗 Quick Links
 
-- [Project README](https://github.com/SoniqueBay/taskiq-flow/blob/main/README.md) — Project overview and philosophy
+- [Project README](https://github.com/dorel14/taskiq-flow/blob/main/README.md) — Project overview and philosophy
 - [PyPI Package](https://pypi.org/project/taskiq-flow/) — Install with `pip install taskiq-flow`
-- [GitHub Repository](https://github.com/SoniqueBay/taskiq-flow) — Source code and issue tracker
-- [Contributing Guide](https://github.com/SoniqueBay/taskiq-flow/blob/main/CONTRIBUTING.md) — How to contribute
-- [License](https://github.com/SoniqueBay/taskiq-flow/blob/main/LICENSE) — MIT License
+- [GitHub Repository](https://github.com/dorel14/taskiq-flow) — Source code and issue tracker
+- [Contributing Guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) — How to contribute
+- [License](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) — MIT License
 
 ---
 
