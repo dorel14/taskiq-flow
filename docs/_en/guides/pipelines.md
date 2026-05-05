@@ -508,7 +508,7 @@ low_value.call_next(standard_processing)
 merged = high_value.group([premium_processing, standard_processing])
 ```
 
-See [steps/condition.py](https://github.com/SoniqueBay/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) for `IfStep`.
+See [steps/condition.py](https://github.com/dorel14/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) for `IfStep`.
 
 ---
 

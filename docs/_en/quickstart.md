@@ -362,7 +362,7 @@ await server.start_server()
 
 - **[Full API Reference]({{ '/en/api/' | relative_url }})** — Complete class and method documentation
 - **[Example Gallery]({{ '/en/examples/' | relative_url }})** — Detailed walkthroughs of each example script
-- **[Project README](https://github.com/SoniqueBay/taskiq-flow/blob/main/README.md)** — Project overview, installation, and philosophy
+- **[Project README](https://github.com/dorel14/taskiq-flow/blob/main/README.md)** — Project overview, installation, and philosophy
 
 ---
 

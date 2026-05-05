@@ -76,18 +76,18 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 ## 🔗 Quick Links
 
-- **Project Repository**: [GitHub - taskiq-flow](https://github.com/your-repo/taskiq-flow)
+- **Project Repository**: [GitHub - taskiq-flow](https://github.com/dorel14/taskiq-flow)
 - **PyPI Package**: [taskiq-flow](https://pypi.org/project/taskiq-flow/)
-- **Taskiq Documentation**: [taskiq.readthedocs.io](https://taskiq.readthedocs.io/)
-- **Issue Tracker**: [GitHub Issues](https://github.com/your-repo/taskiq-flow/issues)
+- **Taskiq Documentation**: [ttaskiq-python.github.io](https://taskiq-python.github.io/)
+- **Issue Tracker**: [GitHub Issues](https://github.com/dorel14/taskiq-flow/issues)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [contributing guide](https://github.com/SoniqueBay/taskiq-flow/blob/main/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
+Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](https://github.com/SoniqueBay/taskiq-flow/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) file for details.
 
 ---
 

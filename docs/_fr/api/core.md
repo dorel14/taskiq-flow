@@ -262,7 +262,7 @@ Stabilité API:
 - `PipelineScheduler`: Stable (v0.3+)
 - `PipelineTrackingManager`: Stable (v0.3+)
 
-Changements cassants notés dans [CHANGELOG.md](https://github.com/SoniqueBay/taskiq-flow/blob/main/CHANGELOG.md).
+Changements cassants notés dans [CHANGELOG.md](https://github.com/dorel14/taskiq-flow/blob/main/CHANGELOG.md).
 
 ---
 
