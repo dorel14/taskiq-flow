@@ -22,6 +22,9 @@ just_the_docs:
   search_enabled: true
   search_preview: true
   heading_break: 360  # include headings up to h3 in search preview
+
+  # Color scheme supports "light" (default) and "dark"
+  color_scheme: dark
   
   # Collections navigation
   nav_sort: case_insensitive
@@ -36,8 +39,7 @@ just_the_docs:
   # Footer
   footer_content: "Documentation version: 0.3.2 | Last updated: 2026-05-05"
 
-  #color_scheme: light  # or "dark" or "auto"
-  color_scheme: dark
+  
   
   # Icons (optional, uses built-in)
   # icon: ""
