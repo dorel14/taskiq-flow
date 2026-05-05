@@ -13,10 +13,11 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Amélioration des docstrings de classes et méthodes pour l'autocomplétion IDE
 - Documentation améliorée de Pipeline, DataflowPipeline et Steps
 - Documentation des décorateurs (@pipeline_task, @pipeline_task_multi_output)
-- Documentation des composants dataflow (DAG, DAGNode, DataNode, Registry)
+- Documentation complète des composants dataflow (DAG, DAGNode, DataNode, Registry)
 - Documentation du système de tracking (PipelineTrackingManager, modèles, storage)
 - Documentation améliorée de ExecutionEngine
 - Ajout d'exemples détaillés et sections Args/Returns partout
+- Nouvel exemple : `registry_discovery_example.py` montrant l'usage avancé de DataflowRegistry
 
 ### Changé
 

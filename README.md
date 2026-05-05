@@ -361,6 +361,44 @@ Tasks with no dependencies run first. Independent tasks (like `generate_tags` an
 
 *Full example: `examples/dataflow_audio_pipeline.py`*
 
+### Advanced: Manual Registry & DAG Inspection
+
+For advanced use cases (dynamic pipelines, plugin systems, debugging), you can manually construct and inspect the dataflow graph using `DataflowRegistry`:
+
+```python
+from taskiq_flow import DataflowRegistry
+
+# Create registry
+registry = DataflowRegistry()
+
+# Register tasks explicitly with their data dependencies
+registry.register_task(load_data, output="raw_data", inputs=["source"])
+registry.register_task(process, output="processed", inputs=["raw_data"])
+registry.register_task(save, output="saved", inputs=["processed"])
+
+# Inspect the dataflow graph before execution
+print(f"Tasks: {[t.task_name for t in registry.get_tasks()]}")
+print(f"Outputs: {registry.get_outputs()}")
+print(f"External inputs: {registry.get_external_inputs()}")
+
+# Find dependencies
+producer = registry.get_producer("processed")
+consumers = registry.get_consumers("raw_data")
+
+# Build DAG and examine structure
+dag = registry.build_dag()
+dag.print()  # ASCII visualization
+order = dag.topological_sort()  # execution order
+levels = dag.levels  # parallel execution groups
+
+# Execute via ExecutionEngine (low-level)
+from taskiq_flow import ExecutionEngine
+engine = ExecutionEngine(broker, dag)
+results = await engine.execute(inputs={"source": "data.csv"})
+```
+
+See `examples/registry_discovery_example.py` for a complete walkthrough of manual registry construction, DAG inspection, validation, and step-by-step execution.
+
 ## WebSocket Tracking
 
 Taskiq-Flow supports real-time tracking of pipeline execution via WebSockets. You can receive live updates about pipeline and step status as they happen.
@@ -542,6 +580,7 @@ The `examples/` directory includes:
 - `tracking_demo.py` – monitoring pipeline status with the tracking manager
 - `scheduled_pipeline.py` – cron-based recurring pipeline execution
 - `dataflow_audio_pipeline.py` – full-featured dataflow DAG, parallelism, map-reduce, and visualization
+- `registry_discovery_example.py` – **NEW** automatic task discovery, manual registry construction, DAG inspection, and low-level pipeline execution
 - `websocket_demo.py` – WebSocket server streaming live pipeline events
 - `api_example.py` – FastAPI REST API for pipeline management and visualization **(NEW)**
 
