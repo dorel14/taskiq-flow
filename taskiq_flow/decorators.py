@@ -29,6 +29,11 @@ class PipelineTaskMetadata:
     is_pipeline_task: bool = True
     multiple_outputs: bool = False
     output_types: dict[str, Any] = field(default_factory=dict)
+    resources: dict[str, Any] = field(default_factory=dict)
+    retry_delay: float = 1.0
+    retry_backoff: float = 2.0
+    retry_jitter: bool = True
+    max_retry_time: int = 300
 
     def __post_init__(self) -> None:
         """Validate metadata after initialization."""
@@ -40,6 +45,12 @@ class PipelineTaskMetadata:
 
         if self.inputs is not None and not isinstance(self.inputs, list):
             raise ValueError("Inputs must be a list of strings or None")
+
+        if self.retry_delay < 0:
+            raise ValueError("Retry delay must be non-negative")
+
+        if self.retry_backoff < 1:
+            raise ValueError("Retry backoff must be at least 1")
 
 
 class PipelineTaskRegistry:
@@ -98,6 +109,11 @@ def pipeline_task(
     output: str,
     inputs: list[str] | None = None,
     retries: int = 0,
+    retry_delay: float = 1.0,
+    retry_backoff: float = 2.0,
+    retry_jitter: bool = True,
+    max_retry_time: int = 300,
+    resources: dict[str, Any] | None = None,
 ) -> Callable[..., Any]:
     """
     Décorateur pour marquer une fonction comme tâche de pipeline.
@@ -110,6 +126,8 @@ def pipeline_task(
     - Le nom de la sortie produite (output)
     - La liste des entrées requises (inputs, optionnel, inféré si omis)
     - Le nombre de tentatives en cas d'échec (retries)
+    - Les paramètres de retry (delay, backoff, jitter, max_retry_time)
+    - Les ressources estimées (memory, cpu)
 
     Args:
         output: Nom du flux de données produit par cette tâche.
@@ -120,33 +138,15 @@ def pipeline_task(
                 les paramètres de la fonction.
                 Exemple: ["track_paths", "config"]
         retries: Nombre de tentatives en cas d'échec (défaut: 0)
+        retry_delay: Délai initial entre les retries en secondes (défaut: 1.0)
+        retry_backoff: Multiplicateur pour le délai entre les retries (défaut: 2.0)
+        retry_jitter: Ajouter un jitter aléatoire au délai (défaut: True)
+        max_retry_time: Temps maximum en secondes pour tous les retries (défaut: 300)
+        resources: Dictionnaire avec les ressources estimées:
+                   {"estimated_memory_mb": 500, "estimated_cpu_cores": 1.0}
 
     Returns:
         Décorateur qui transforme la fonction en tâche de pipeline
-
-    Example:
-        @broker.task
-        @pipeline_task(output="user_profile")
-        async def fetch_user(user_id: int) -> dict:
-            return await db.get_user(user_id)
-
-        @broker.task
-        @pipeline_task(output="user_orders", inputs=["user_profile"])
-        async def fetch_orders(user_profile: dict) -> list:
-            return await db.get_orders(user_profile["id"])
-
-        # Le pipeline détecte automatiquement que fetch_orders
-        # dépend de fetch_user via le flux "user_profile"
-
-    Raises:
-        ValueError: Si output est vide ou si retries < 0
-        PipelineError: Si le nom de sortie est déjà utilisé
-
-    Note:
-        - Peut être combiné avec @broker.task (ordre important:
-          @broker.task doit être le plus à l'extérieur)
-        - Compatible avec les fonctions async et sync
-        - Les inputs sont inférés depuis la signature si non spécifiés
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -161,6 +161,11 @@ def pipeline_task(
             inputs=inferred_inputs,
             retries=retries,
             task_name=getattr(func, "__name__", str(func)),
+            resources=resources or {},
+            retry_delay=retry_delay,
+            retry_backoff=retry_backoff,
+            retry_jitter=retry_jitter,
+            max_retry_time=max_retry_time,
         )
 
         # Choose appropriate wrapper based on function type
@@ -192,6 +197,8 @@ def pipeline_task(
                 "output": metadata.output,
                 "inputs": metadata.inputs,
                 "retries": metadata.retries,
+                "retry_delay": metadata.retry_delay,
+                "retry_backoff": metadata.retry_backoff,
                 "is_async": _is_async_function(func),
             },
         )
@@ -241,6 +248,11 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
                     "output": metadata.output,
                     "inputs": metadata.inputs,
                     "retries": metadata.retries,
+                    "retry_delay": metadata.retry_delay,
+                    "retry_backoff": metadata.retry_backoff,
+                    "retry_jitter": metadata.retry_jitter,
+                    "max_retry_time": metadata.max_retry_time,
+                    "resources": metadata.resources,
                     "is_pipeline_task": metadata.is_pipeline_task,
                     "multiple_outputs": metadata.multiple_outputs,
                     "output_types": metadata.output_types,
@@ -253,6 +265,11 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
             "output": metadata.output,
             "inputs": metadata.inputs,
             "retries": metadata.retries,
+            "retry_delay": metadata.retry_delay,
+            "retry_backoff": metadata.retry_backoff,
+            "retry_jitter": metadata.retry_jitter,
+            "max_retry_time": metadata.max_retry_time,
+            "resources": metadata.resources,
             "is_pipeline_task": metadata.is_pipeline_task,
             "multiple_outputs": metadata.multiple_outputs,
             "output_types": metadata.output_types,
@@ -265,6 +282,11 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
             "output": meta.output,
             "inputs": meta.inputs,
             "retries": meta.retries,
+            "retry_delay": getattr(meta, "retry_delay", 1.0),
+            "retry_backoff": getattr(meta, "retry_backoff", 2.0),
+            "retry_jitter": getattr(meta, "retry_jitter", True),
+            "max_retry_time": getattr(meta, "max_retry_time", 300),
+            "resources": getattr(meta, "resources", {}),
             "is_pipeline_task": meta.is_pipeline_task,
             "multiple_outputs": meta.multiple_outputs,
             "output_types": meta.output_types,
@@ -276,6 +298,11 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
             "output": getattr(func, "_pipeline_output", ""),
             "inputs": getattr(func, "_pipeline_inputs", []),
             "retries": getattr(func, "_pipeline_retries", 0),
+            "retry_delay": getattr(func, "_pipeline_retry_delay", 1.0),
+            "retry_backoff": getattr(func, "_pipeline_retry_backoff", 2.0),
+            "retry_jitter": getattr(func, "_pipeline_retry_jitter", True),
+            "max_retry_time": getattr(func, "_pipeline_max_retry_time", 300),
+            "resources": getattr(func, "_pipeline_resources", {}),
             "is_pipeline_task": True,
             "multiple_outputs": False,
             "output_types": {},
@@ -291,6 +318,11 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
                 "output": metadata.output,
                 "inputs": metadata.inputs,
                 "retries": metadata.retries,
+                "retry_delay": metadata.retry_delay,
+                "retry_backoff": metadata.retry_backoff,
+                "retry_jitter": metadata.retry_jitter,
+                "max_retry_time": metadata.max_retry_time,
+                "resources": metadata.resources,
                 "is_pipeline_task": metadata.is_pipeline_task,
                 "multiple_outputs": metadata.multiple_outputs,
                 "output_types": metadata.output_types,

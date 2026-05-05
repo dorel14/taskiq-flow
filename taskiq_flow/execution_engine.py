@@ -5,7 +5,7 @@ lorsque possible. Gère les retentatives, les modes d'erreur
 (fail_fast, continue_on_error, skip_failed) et le cache de données.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 0.4.0
 """
 
 import asyncio
@@ -21,7 +21,9 @@ from taskiq_flow.dataflow.cache import DataCache
 from taskiq_flow.dataflow.dag import DAG, DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.decorators import get_pipeline_metadata
+from taskiq_flow.errors import ErrorHandlingMode, PipelineErrorAggregator
 from taskiq_flow.exceptions import AbortPipeline
+from taskiq_flow.optimization.parallel import ResourceAwareExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class ExecutionEngine:
     - Gère les retentements selon les métadonnées de chaque tâche
     - Propage les résultats dans le cache de données
     - Gère les modes d'erreur (fail_fast, continue_on_error, skip_failed)
+    - Supporte le parallélisme basé sur les ressources
 
     Exemple d'utilisation:
         engine = ExecutionEngine(
@@ -77,6 +80,8 @@ class ExecutionEngine:
         continue_on_error: Continue malgré les erreurs
         skip_failed: Ignore les tâches échouées
         max_parallel: Limite de tâches simultanées
+        error_mode: Mode de gestion des erreurs
+        resource_aware: Utiliser le parallélisme basé sur les ressources
     """
 
     def __init__(
@@ -88,6 +93,11 @@ class ExecutionEngine:
         continue_on_error: bool = False,
         skip_failed: bool = False,
         max_parallel: int | None = None,
+        error_mode: ErrorHandlingMode | None = None,
+        error_callback: Any = None,
+        resource_aware: bool = False,
+        resource_profiles: dict[str, Any] | None = None,
+        adaptive_parallelism: bool = False,
     ) -> None:
         """
         Initialize the execution engine.
@@ -99,6 +109,12 @@ class ExecutionEngine:
             continue_on_error: If True, skip failed tasks and continue
             skip_failed: If True, skip failed tasks without retrying
             max_parallel: Maximum number of parallel tasks (None = unlimited)
+            error_mode: Error handling mode
+            (overrides fail_fast/continue_on_error/skip_failed)
+            error_callback: Optional callback for error handling
+            resource_aware: Use resource-aware parallelism
+            resource_profiles: Task resource profiles for parallelism calculation
+            adaptive_parallelism: Calculate parallelism dynamically per level
         """
         self.broker = broker
         self.dag = dag
@@ -106,6 +122,22 @@ class ExecutionEngine:
         self.continue_on_error = continue_on_error
         self.skip_failed = skip_failed
         self.max_parallel = max_parallel
+        self.error_mode = error_mode
+        self.error_callback = error_callback
+        self.resource_aware = resource_aware
+        self.resource_profiles = resource_profiles or {}
+        self.adaptive_parallelism = adaptive_parallelism
+
+        # Determine effective error mode
+        if error_mode is None:
+            if fail_fast:
+                self.error_mode = ErrorHandlingMode.FAIL_FAST
+            elif continue_on_error:
+                self.error_mode = ErrorHandlingMode.CONTINUE_ON_ERROR
+            elif skip_failed:
+                self.error_mode = ErrorHandlingMode.SKIP_FAILED
+            else:
+                self.error_mode = ErrorHandlingMode.FAIL_FAST
 
         # Execution state - use task as key since DAGNode is not hashable
         self.task_states: dict[Any, TaskExecution] = {
@@ -119,6 +151,17 @@ class ExecutionEngine:
         # Pipeline context
         self.pipeline_id: str | None = None
         self.step_counter: int = 0
+
+        # Error aggregator
+        self.error_aggregator = PipelineErrorAggregator()
+
+        # Resource executor
+        if resource_aware or adaptive_parallelism:
+            self.resource_executor = ResourceAwareExecutor(
+                max_parallel=max_parallel or 10,
+            )
+        else:
+            self.resource_executor = None  # type: ignore[assignment]
 
     def _log(
         self,
@@ -311,6 +354,36 @@ class ExecutionEngine:
             ready.append(node)
 
         return ready
+
+    async def _get_parallelism_for_level(self, level_tasks: list[DAGNode]) -> int:
+        """
+        Determine optimal parallelism for a level of tasks.
+
+        Considers resource profiles and current system load.
+        """
+        if not self.resource_aware or self.resource_executor is None:
+            return self.max_parallel or 10
+
+        # Calculate aggregate resource needs
+        total_memory = 0
+        total_cpu: float = 0.0
+
+        for task_node in level_tasks:
+            profile = self.resource_profiles.get(task_node.task.task_name, {})
+            if profile:
+                total_memory += int(profile.get("estimated_memory_mb", 100))
+                total_cpu += float(profile.get("estimated_cpu_cores", 0.5))
+            else:
+                total_memory += 100  # Default
+                total_cpu += 0.5
+
+        avg_memory = int(total_memory / len(level_tasks)) if level_tasks else 100
+        avg_cpu = float(total_cpu) / len(level_tasks) if level_tasks else 0.5
+
+        return self.resource_executor.get_optimal_parallelism(
+            task_memory_estimate=avg_memory,
+            task_cpu_estimate=avg_cpu,
+        )
 
     async def _execute_tasks(self, tasks: list[DAGNode]) -> None:
         """

@@ -17,11 +17,11 @@ from typing import Any
 from taskiq import InMemoryBroker
 
 from taskiq_flow.dataflow.cache import DataCache
-from taskiq_flow.dataflow.dag import DAG, DAGNode
-from taskiq_flow.visualization import DAGVisualizer
+from taskiq_flow.dataflow.dag import DAGNode
 from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.decorators import pipeline_task
 from taskiq_flow.execution_engine import ExecutionEngine
+from taskiq_flow.visualization import DAGVisualizer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,9 +64,11 @@ async def clean_data(raw_data: dict[str, Any]) -> dict[str, Any]:
     """
     await asyncio.sleep(0.2)
     records = [r for r in raw_data["records"] if r["value"] > 0]
-    return {"source": raw_data["source"],
-            "cleaned_count": len(records),
-            "records": records}
+    return {
+        "source": raw_data["source"],
+        "cleaned_count": len(records),
+        "records": records,
+    }
 
 
 @broker.task
@@ -133,7 +135,7 @@ async def example_manual_registry() -> None:
     logger.info(f"All tasks: {[t.task_name for t in registry.get_tasks()]}")
 
     # Query data dependencies
-    report_deps = registry.get_data_dependencies(generate_report) # type: ignore
+    report_deps = registry.get_data_dependencies(generate_report)  # type: ignore
     logger.info(f"\ngenerate_report depends on: {report_deps}")
 
     # Find producers
@@ -143,7 +145,9 @@ async def example_manual_registry() -> None:
 
     # Find consumers
     raw_data_consumers = registry.get_consumers("raw_data")
-    logger.info(f"'raw_data' is consumed by: {[c.task_name for c in raw_data_consumers]}")
+    logger.info(
+        f"'raw_data' is consumed by: {[c.task_name for c in raw_data_consumers]}"
+    )
 
     # List outputs and external inputs
     outputs = registry.get_outputs()
@@ -170,7 +174,7 @@ async def example_manual_registry() -> None:
 
     # Visualize as DOT
     viz = DAGVisualizer.to_dot(dag)
-    logger.info(f"\nDAG DOT representation (first 200 chars):")
+    logger.info("\nDAG DOT representation (first 200 chars):")
     logger.info(viz[:200] + "...")
 
 
@@ -249,6 +253,7 @@ async def example_validation() -> None:
     try:
         dag = registry.build_dag()
         logger.error("ERROR: Should have raised ValueError!")
+        logger.info(f"DAG built: {len(dag.nodes)} nodes, {len(dag.edges)} edges")
     except ValueError as e:
         logger.info(f"\n✓ Expected error caught: {e}")
         logger.info("This prevents broken pipelines from being deployed.")
@@ -279,7 +284,9 @@ async def example_execution_with_engine() -> None:
     logger.info("Registry built with tasks:")
     for task in registry.get_tasks():
         meta = registry.get_task_metadata(task)
-        logger.info(f"  - {task.task_name}: output={meta['output']}, inputs={meta['inputs']}")
+        logger.info(
+            f"  - {task.task_name}: output={meta['output']}, inputs={meta['inputs']}"
+        )
 
     # Step 2: Build DAG
     dag = registry.build_dag()
@@ -406,7 +413,7 @@ async def example_integration_with_pipeline() -> None:
     logger.info("EXAMPLE 6: Integration with DAGBuilder")
     logger.info("=" * 70)
 
-    from taskiq_flow.dag_builder import DAGBuilder
+    from taskiq_flow.dag_builder import DAGBuilder  # noqa: PLC0415
 
     # Build registry manually
     registry = DataflowRegistry()
@@ -426,7 +433,7 @@ async def example_integration_with_pipeline() -> None:
     logger.info("DAG validation passed (no cycles, proper connectivity)")
 
     # Show pipeline statistics
-    logger.info(f"\nPipeline statistics:")
+    logger.info("\nPipeline statistics:")
     logger.info(f"  - Tasks: {len(registry)}")
     logger.info(f"  - Data nodes: {len(registry.data_nodes)}")
     logger.info(f"  - External inputs: {registry.get_external_inputs()}")

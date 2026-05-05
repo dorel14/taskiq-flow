@@ -365,7 +365,8 @@ class DataflowRegistry:
                     if input_name not in self.data_nodes:
                         raise ValueError(
                             f"No producer found for '{input_name}' "
-                            f"required by task '{getattr(task, 'task_name', str(task))}'",
+                            f"required by task "
+                            f"'{getattr(task, 'task_name', str(task))}'",
                         )
                     # External input - no edge needed
                     continue
