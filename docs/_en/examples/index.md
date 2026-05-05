@@ -1,6 +1,7 @@
 ---
 title: Example Gallery
 nav_order: 40
+permalink: /en/examples/
 ---
 # Example Gallery
 

@@ -1,6 +1,7 @@
 ---
 title: English Documentation
 nav_order: 5
+permalink: /en/
 ---
 # Taskiq-Flow Documentation (English)
 

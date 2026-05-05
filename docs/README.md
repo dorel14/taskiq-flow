@@ -23,9 +23,9 @@ Both versions are kept synchronized, with code examples remaining in English for
 The documentation is organized into the following sections:
 
 ### Getting Started
+- **[Installation]({{ '/en/guides/installation/' | relative_url }})** — Setup instructions and configuration
 - **[Quick Start]({{ '/en/quickstart/' | relative_url }})** — 5-minute tutorial to run your first pipeline
-- **Installation** — Setup instructions and configuration
-- **Core Concepts** — Understanding pipeline types and patterns
+- **[Core Concepts]({{ '/en/guides/core-concepts/' | relative_url }})** — Understanding pipeline types and patterns
 
 ### User Guides
 - **[Pipelines]({{ '/en/guides/pipelines/' | relative_url }})** — Sequential and dataflow pipeline patterns
@@ -83,7 +83,7 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
+Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/master/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
 
 ## 📄 License
 

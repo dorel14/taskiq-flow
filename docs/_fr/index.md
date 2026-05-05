@@ -1,6 +1,7 @@
 ---
 title: Documentation Française
 nav_order: 5
+permalink: /fr/
 ---
 # Taskiq-Flow Documentation (Français)
 
