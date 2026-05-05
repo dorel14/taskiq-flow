@@ -6,7 +6,7 @@ nav_order: 20
 
 **Motifs de pipelines séquentiels et dataflow, configurations et bonnes pratiques**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
 
 ---
 

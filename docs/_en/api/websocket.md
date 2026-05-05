@@ -7,7 +7,7 @@ nav_order: 34
 
 **HookManager, event system, transport layer, and WebSocket server**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version**: 0.4.0 | **Module**: `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
 
 ---
 

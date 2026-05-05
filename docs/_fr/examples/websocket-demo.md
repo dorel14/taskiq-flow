@@ -7,7 +7,7 @@ nav_order: 46
 
 **Streaming d'événements de pipeline en temps réel via WebSocket**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/websocket_demo.py`
+> **Version** : 0.4.0 | **Fichier** : `examples/websocket_demo.py`
 
 ---
 

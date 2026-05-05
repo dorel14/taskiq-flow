@@ -6,7 +6,7 @@ nav_order: 21
 
 **Définition des tâches, décorateurs, métadonnées et gestion des ressources**
 
-> **Version** : 0.3.2 | **Lié** : [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}), [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}), [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})
 
 ---
 

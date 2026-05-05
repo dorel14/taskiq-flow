@@ -6,7 +6,7 @@ nav_order: 10
 
 **Getting up and running with Taskiq-Flow in 5 minutes**
 
-> **Version**: 0.3.2 | **Prerequisites**: Python 3.9+, asyncio basics
+> **Version**: 0.4.0 | **Prerequisites**: Python 3.9+, asyncio basics
 
 ---
 

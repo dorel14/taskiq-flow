@@ -7,7 +7,7 @@ nav_order: 42
 
 **DAG dataflow complet avec exécution parallèle, map-reduce et visualisation**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/dataflow_audio_pipeline.py`
+> **Version** : 0.4.0 | **Fichier** : `examples/dataflow_audio_pipeline.py`
 
 ---
 

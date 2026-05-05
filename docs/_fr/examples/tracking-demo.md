@@ -7,7 +7,7 @@ nav_order: 45
 
 **Suivi d'exécution de pipeline avec PipelineTrackingManager**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/tracking_demo.py`
+> **Version** : 0.4.0 | **Fichier** : `examples/tracking_demo.py`
 
 ---
 

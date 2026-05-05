@@ -7,7 +7,7 @@ nav_order: 32
 
 **ExecutionEngine, DAG, DAGNode, DAGBuilder et MapReduce**
 
-> **Version** : 0.3.2 | **Module** : `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
+> **Version** : 0.4.0 | **Module** : `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
 
 ---
 

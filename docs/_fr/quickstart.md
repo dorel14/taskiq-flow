@@ -6,7 +6,7 @@ nav_order: 10
 
 **Se familiariser avec Taskiq-Flow en 5 minutes**
 
-> **Version** : 0.3.2 | **Prérequis** : Python 3.9+, bases d'asyncio
+> **Version** : 0.4.0 | **Prérequis** : Python 3.9+, bases d'asyncio
 
 ---
 

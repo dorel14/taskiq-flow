@@ -7,7 +7,7 @@ permalink: /fr/examples/
 
 **Exemples fonctionnels démontrant les fonctionnalités et motifs clés de Taskiq-Flow**
 
-> **Version** : 0.3.2 | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})
 
 ---
 

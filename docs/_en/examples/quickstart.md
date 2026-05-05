@@ -7,7 +7,7 @@ nav_order: 41
 
 **Basic sequential pipeline with map, filter, and group operations**
 
-> **Version**: 0.3.2 | **File**: `examples/quickstart.py`
+> **Version**: 0.4.0 | **File**: `examples/quickstart.py`
 
 ---
 

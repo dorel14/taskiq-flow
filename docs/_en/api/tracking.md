@@ -7,7 +7,7 @@ nav_order: 33
 
 **PipelineTrackingManager, storage backends, and status models**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version**: 0.4.0 | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

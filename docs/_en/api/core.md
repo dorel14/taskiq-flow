@@ -7,7 +7,7 @@ nav_order: 30
 
 **Pipeline, DataflowPipeline, PipelineMiddleware, PipelineContext, and core exceptions**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
+> **Version**: 0.4.0 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
 
 ---
 

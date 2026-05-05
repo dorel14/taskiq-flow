@@ -6,7 +6,7 @@ nav_order: 27
 
 **Parallélisme conscient des ressources, optimisation mémoire et stratégies de mise à l'échelle**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
 
 ---
 

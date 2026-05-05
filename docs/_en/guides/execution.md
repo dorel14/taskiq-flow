@@ -6,7 +6,7 @@ nav_order: 22
 
 **Understanding execution models, modes, and result handling**
 
-> **Version**: 0.3.2 | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce
+> **Version**: 0.4.0 | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce
 
 ---
 

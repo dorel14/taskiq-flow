@@ -7,7 +7,7 @@ nav_order: 47
 
 **REST API for pipeline management, visualization, and remote execution with FastAPI**
 
-> **Version**: 0.3.2 | **File**: `examples/api_example.py`
+> **Version**: 0.4.0 | **File**: `examples/api_example.py`
 
 ---
 

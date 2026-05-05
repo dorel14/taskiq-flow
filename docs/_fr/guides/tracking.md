@@ -6,7 +6,7 @@ nav_order: 23
 
 **Suivi en temps réel et historique des exécutions avec PipelineTrackingManager**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 

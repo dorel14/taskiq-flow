@@ -7,7 +7,7 @@ nav_order: 44
 
 **Scheduling pipelines with cron and interval triggers**
 
-> **Version**: 0.3.2 | **File**: `examples/scheduled_pipeline.py`
+> **Version**: 0.4.0 | **File**: `examples/scheduled_pipeline.py`
 
 ---
 
