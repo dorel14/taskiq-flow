@@ -6,7 +6,7 @@ nav_order: 25
 
 **Planification cron, intervalles et exécutions uniques avec PipelineScheduler**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
 
 ---
 
@@ -734,9 +734,9 @@ await scheduler.start()
 
 ## Prochaines Étapes
 
-- **[Guide de Retry]({{ '/fr/guides/retry.md' | relative_url }})** — Récupération d'erreur et politiques de retry
-- **[Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }})** — Optimiser performance pipelines planifiés
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Monitorer l'historique des jobs planifiés
+- **[Guide de Retry]({{ '/fr/guides/retry/' | relative_url }})** — Récupération d'erreur et politiques de retry
+- **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Optimiser performance pipelines planifiés
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Monitorer l'historique des jobs planifiés
 
 ---
 

@@ -6,7 +6,7 @@ nav_order: 20
 
 **Motifs de pipelines séquentiels et dataflow, configurations et bonnes pratiques**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
 
 ---
 
@@ -208,7 +208,7 @@ suivi = PipelineTrackingManager().with_auto_storage(broker)
 pipeline = Pipeline(broker).with_tracking(suivi)
 ```
 
-Voir [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}) pour plus de détails.
+Voir [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour plus de détails.
 
 ### 3.2. Définition d'un ID de Pipeline Personnalisé
 
@@ -228,7 +228,7 @@ crochets = HookManager()
 pipeline = Pipeline(broker).with_hooks(crochets)
 ```
 
-Voir [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }}).
+Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}).
 
 ### 3.4. Retry & Politiques d'Erreur
 
@@ -241,7 +241,7 @@ pipeline.with_retry(
 pipeline.on_error("continue")  # ou "stop"
 ```
 
-Voir [Guide de Retry]({{ '/fr/guides/retry.md' | relative_url }}).
+Voir [Guide de Retry]({{ '/fr/guides/retry/' | relative_url }}).
 
 ### 3.5. Timeouts
 
@@ -531,10 +531,10 @@ Avant d'exécuter un pipeline, vérifier :
 
 ## Lectures Complémentaires
 
-- **[Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }})** — Comment les pipelines s'exécutent, gestion d'erreurs, timeouts
-- **[Guide des Tâches]({{ '/fr/guides/tasks.md' | relative_url }})** — Écriture des fonctions de tâche et décorateurs
+- **[Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})** — Comment les pipelines s'exécutent, gestion d'erreurs, timeouts
+- **[Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})** — Écriture des fonctions de tâche et décorateurs
 - **[Exemples]({{ '/fr/examples/' | relative_url }})** — Démonstrations complètes de pipelines
 
 ---
 
-*Maîtriser les pipelines pour orchestrer n'importe quel workflow. Ensuite, apprendre sur la [Définition des Tâches]({{ '/fr/guides/tasks.md' | relative_url }}).*
+*Maîtriser les pipelines pour orchestrer n'importe quel workflow. Ensuite, apprendre sur la [Définition des Tâches]({{ '/fr/guides/tasks/' | relative_url }}).*

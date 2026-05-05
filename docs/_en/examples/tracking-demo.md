@@ -172,9 +172,9 @@ for s in all_statuses:
 
 After this example:
 
-1. **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Full tracking features (storage backends, metrics)
-2. **[WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})** — Real-time streaming of tracking events
-3. **[API Guide]({{ '/en/guides/api.md' | relative_url }})** — Expose tracking data via REST API
+1. **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Full tracking features (storage backends, metrics)
+2. **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Real-time streaming of tracking events
+3. **[API Guide]({{ '/en/guides/api/' | relative_url }})** — Expose tracking data via REST API
 
 ---
 

@@ -245,9 +245,9 @@ WebSocket delivers messages in order; if you see out-of-order, check for network
 
 After this example:
 
-1. **[WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})** — Complete WebSocket setup, filtering, production deployment
-2. **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Historical data storage alongside real-time events
-3. **[API Guide]({{ '/en/guides/api.md' | relative_url }})** — Expose via REST for non-WebSocket clients
+1. **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Complete WebSocket setup, filtering, production deployment
+2. **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Historical data storage alongside real-time events
+3. **[API Guide]({{ '/en/guides/api/' | relative_url }})** — Expose via REST for non-WebSocket clients
 
 ---
 

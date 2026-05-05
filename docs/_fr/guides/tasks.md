@@ -6,7 +6,7 @@ nav_order: 21
 
 **Définition des tâches, décorateurs, métadonnées et gestion des ressources**
 
-> **Version** : 0.3.2 | **Lié** : [Guide des Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }}), [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}), [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})
 
 ---
 
@@ -334,7 +334,7 @@ async def task_with_conditional_retry():
         raise  # Échec immédiat, pas de réessai
 ```
 
-Les stratégies de retry détaillées sont couvertes dans le [Guide des Retentatives]({{ '/fr/guides/retry.md' | relative_url }}).
+Les stratégies de retry détaillées sont couvertes dans le [Guide des Retentatives]({{ '/fr/guides/retry/' | relative_url }}).
 
 ---
 
@@ -487,10 +487,10 @@ Les tâches Taskiq-Flow sont :
 
 ## Prochaines Étapes
 
-- **[Types de Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }})** — Construire des workflows avec des tâches
-- **[Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }})** — Exécuter les pipelines et gérer les résultats
-- **[Guide des Retentatives]({{ '/fr/guides/retry.md' | relative_url }})** — Stratégies robustes de récupération d'erreurs
+- **[Types de Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Construire des workflows avec des tâches
+- **[Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})** — Exécuter les pipelines et gérer les résultats
+- **[Guide des Retentatives]({{ '/fr/guides/retry/' | relative_url }})** — Stratégies robustes de récupération d'erreurs
 
 ---
 
-*Les tâches sont vos atomes de workflow. Apprenez à les composer dans [Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }}).*
+*Les tâches sont vos atomes de workflow. Apprenez à les composer dans [Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*

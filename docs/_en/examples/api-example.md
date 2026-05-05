@@ -311,9 +311,9 @@ gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
 
 After this example:
 
-1. **[API Guide]({{ '/en/guides/api.md' | relative_url }})** — Full REST API documentation and best practices
-2. **[WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})** — Add real-time updates to your API
-3. **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Store execution history for analytics
+1. **[API Guide]({{ '/en/guides/api/' | relative_url }})** — Full REST API documentation and best practices
+2. **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Add real-time updates to your API
+3. **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Store execution history for analytics
 
 ---
 

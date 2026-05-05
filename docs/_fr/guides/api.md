@@ -6,7 +6,7 @@ nav_order: 28
 
 **Gestion de pipelines via FastAPI : exécution distante, visualisation, tableaux de bord**
 
-> **Version** : 0.3.2 | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 
@@ -655,9 +655,9 @@ résultat = await client.execute("mon_pipeline", {"données": "test"}, wait=True
 
 ## Prochaines Étapes
 
-- **[Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }})** — Streaming d'événements en temps réel pour mises à jour live
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Données historiques d'exécution pour analytics
-- **[Exemple: Serveur API]({{ '/fr/examples/api-example.md' | relative_url }})** — App FastAPI complète fonctionnelle
+- **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Streaming d'événements en temps réel pour mises à jour live
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Données historiques d'exécution pour analytics
+- **[Exemple: Serveur API]({{ '/fr/examples/api-example/' | relative_url }})** — App FastAPI complète fonctionnelle
 
 ---
 

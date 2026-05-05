@@ -6,7 +6,7 @@ nav_order: 27
 
 **Parallélisme conscient des ressources, optimisation mémoire et stratégies de mise à l'échelle**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
 
 ---
 
@@ -506,9 +506,9 @@ L'optimisation des performances est itérative :
 
 ## Prochaines Étapes
 
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Surveiller les métriques des pipelines
-- **[Guide API]({{ '/fr/guides/api.md' | relative_url }})** — Construire des tableaux de bord pour la performance
-- **[Exemple : Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline.md' | relative_url }})** — Voir l'optimisation en action
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveiller les métriques des pipelines
+- **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Construire des tableaux de bord pour la performance
+- **[Exemple : Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Voir l'optimisation en action
 
 ---
 

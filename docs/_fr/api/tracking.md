@@ -314,4 +314,4 @@ Toutes méthodes stockage doivent être async.
 
 ---
 
-*Combiner avec [WebSocket]({{ '/fr/api/websocket.md' | relative_url }}) pour streaming temps réel. Voir [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}) pour patterns d'utilisation.*
+*Combiner avec [WebSocket]({{ '/fr/api/websocket/' | relative_url }}) pour streaming temps réel. Voir [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour patterns d'utilisation.*

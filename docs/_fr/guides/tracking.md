@@ -6,7 +6,7 @@ nav_order: 23
 
 **Suivi en temps réel et historique des exécutions avec PipelineTrackingManager**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 
@@ -282,7 +282,7 @@ pipeline = Pipeline(broker).with_hooks(gestionnaire_crochets).with_tracking(suiv
 
 Les événements de pipeline sont maintenant diffusés via WebSocket en temps réel.
 
-Voir [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }}) pour la configuration complète。
+Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) pour la configuration complète。
 
 ---
 
@@ -381,7 +381,7 @@ print(json.dumps(statut_dict, indent=2, default=str))
 
 ### 9.3. Intégration avec Tableaux de Bord
 
-Utiliser les endpoints API REST (voir [Guide API]({{ '/fr/guides/api.md' | relative_url }})) pour construire des tableaux de bord personnalisés:
+Utiliser les endpoints API REST (voir [Guide API]({{ '/fr/guides/api/' | relative_url }})) pour construire des tableaux de bord personnalisés:
 
 ```javascript
 // Frontend fetch
@@ -528,10 +528,10 @@ pipeline = Pipeline(broker).with_tracking(suivi)
 
 ## Prochaines Étapes
 
-- **[Streaming WebSocket]({{ '/fr/guides/websocket.md' | relative_url }})** — Livraison d'événements en direct pour tableaux de bord
-- **[Planification]({{ '/fr/guides/scheduling.md' | relative_url }})** — Exécution périodique automatique de pipelines
-- **[Performance]({{ '/fr/guides/performance.md' | relative_url }})** — Optimiser la surcharge de suivi
+- **[Streaming WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Livraison d'événements en direct pour tableaux de bord
+- **[Planification]({{ '/fr/guides/scheduling/' | relative_url }})** — Exécution périodique automatique de pipelines
+- **[Performance]({{ '/fr/guides/performance/' | relative_url }})** — Optimiser la surcharge de suivi
 
 ---
 
-*Tout suivre. Visualiser avec [WebSocket]({{ '/fr/guides/websocket.md' | relative_url }}).*
+*Tout suivre. Visualiser avec [WebSocket]({{ '/fr/guides/websocket/' | relative_url }}).*

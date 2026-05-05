@@ -261,9 +261,9 @@ results = await engine.execute(inputs={"audio_files": files})
 
 ## Prochaines Étapes
 
-- **[API Suivi]({{ '/fr/api/tracking.md' | relative_url }})** — Surveiller l'exécution avec PipelineTrackingManager
-- **[API WebSocket]({{ '/fr/api/websocket.md' | relative_url }})** — HookManager et système d'événements
-- **[API Core]({{ '/fr/api/core.md' | relative_url }})** — Référence Pipeline et middleware
+- **[API Suivi]({{ '/fr/api/tracking/' | relative_url }})** — Surveiller l'exécution avec PipelineTrackingManager
+- **[API WebSocket]({{ '/fr/api/websocket/' | relative_url }})** — HookManager et système d'événements
+- **[API Core]({{ '/fr/api/core/' | relative_url }})** — Référence Pipeline et middleware
 
 ---
 

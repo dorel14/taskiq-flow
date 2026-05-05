@@ -13,8 +13,9 @@ baseurl: "/taskiq-flow"
 # Build settings
 markdown: kramdown
 highlighter: rouge
-#theme: 
-remote_theme: pages-themes/cayman@v0.2.0
+# Use remote theme for Just the Docs (GitHub Pages compatible)
+remote_theme: just-the-docs/just-the-docs
+
 # Just the Docs theme configuration
 just_the_docs:
   # Search
@@ -49,22 +50,25 @@ collections:
 
 # Default front matter for markdown files
 defaults:
+  # Root pages (README.md, etc.)
   - scope:
       path: ""
       type: pages
     values:
       layout: default
+  # Collection: English
   - scope:
-      path: "en"
-      type: pages
+      path: "_en"
+      type: en
     values:
-      layout: page
+      layout: default
       lang: en
+  # Collection: French
   - scope:
-      path: "fr"
-      type: pages
+      path: "_fr"
+      type: fr
     values:
-      layout: page
+      layout: default
       lang: fr
 
 # Include additional files

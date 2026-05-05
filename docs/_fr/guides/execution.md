@@ -388,7 +388,7 @@ for étape in statut.étapes:
 | `ÉCHOUÉ` | Terminé avec erreur |
 | `ANNULÉ` | Annulé manuellement |
 
-Voir [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}) pour le monitoring avancé.
+Voir [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour le monitoring avancé.
 
 ---
 
@@ -472,7 +472,7 @@ for morceau in morceaux:
     # traiter les résultats avant le morceau suivant
 ```
 
-Voir [Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }}) pour des stratégies d'optimisation détaillées.
+Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour des stratégies d'optimisation détaillées.
 
 ---
 
@@ -501,10 +501,10 @@ Voir [Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }}) po
 
 ## Prochaines Étapes
 
-- **[Guide des Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }})** — Choisir entre types de pipelines et motifs
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Surveillance du statut et historique des pipelines
-- **[Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }})** — Réglage pour vitesse et ressources
+- **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Choisir entre types de pipelines et motifs
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveillance du statut et historique des pipelines
+- **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Réglage pour vitesse et ressources
 
 ---
 
-*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Ensuite, apprenez sur les [Types de Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }}).*
+*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Ensuite, apprenez sur les [Types de Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*

@@ -6,7 +6,7 @@ nav_order: 28
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: 0.3.2 | **Related**: [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
 
 ---
 
@@ -654,9 +654,9 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 ## Next Steps
 
-- **[WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})** — Real-time event streaming for live updates
-- **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Historical execution data for analytics
-- **[Example: API Server]({{ '/en/examples/api-example.md' | relative_url }})** — Complete working FastAPI app
+- **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event streaming for live updates
+- **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Historical execution data for analytics
+- **[Example: API Server]({{ '/en/examples/api-example/' | relative_url }})** — Complete working FastAPI app
 
 ---
 

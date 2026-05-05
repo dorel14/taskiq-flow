@@ -6,7 +6,7 @@ nav_order: 26
 
 **Exécution de pipeline résiliente avec politiques de retry, backoff et files de lettres mortes**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}), [Guide d'Ordonnancement]({{ '/fr/guides/scheduling.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide d'Ordonnancement]({{ '/fr/guides/scheduling/' | relative_url }})
 
 ---
 
@@ -476,9 +476,9 @@ broker.add_middlewares(RetryMiddleware(max_retries=3, dlq_queue="failed_tasks"))
 
 ## Prochaines Étapes
 
-- **[Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }})** — Optimiser l'exécution et l'usage des ressources
-- **[Guide d'Ordonnancement]({{ '/fr/guides/scheduling.md' | relative_url }})** — Ordonnancement automatique des pipelines
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Surveiller les métriques de retry en production
+- **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Optimiser l'exécution et l'usage des ressources
+- **[Guide d'Ordonnancement]({{ '/fr/guides/scheduling/' | relative_url }})** — Ordonnancement automatique des pipelines
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveiller les métriques de retry en production
 
 ---
 

@@ -8,7 +8,7 @@ Bienvenue dans la documentation française de **Taskiq-Flow**.
 
 ## 📖 Commencer
 
-- **[Guide de Démarrage Rapide]({{ '/fr/quickstart.md' | relative_url }})** — Prenez en main en 5 minutes
+- **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Prenez en main en 5 minutes
 - **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Guides détaillés sur les pipelines, tâches, exécution, suivi, WebSocket, planification, retry, performance et API REST
 - **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules et classes
 - **[Exemples]({{ '/fr/examples/' | relative_url }})** — Scripts d'exemple fonctionnels pour toutes les fonctionnalités

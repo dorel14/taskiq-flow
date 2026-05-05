@@ -23,27 +23,27 @@ Both versions are kept synchronized, with code examples remaining in English for
 The documentation is organized into the following sections:
 
 ### Getting Started
-- **[Quick Start]({{ '/en/quickstart.md' | relative_url }})** — 5-minute tutorial to run your first pipeline
+- **[Quick Start]({{ '/en/quickstart/' | relative_url }})** — 5-minute tutorial to run your first pipeline
 - **Installation** — Setup instructions and configuration
 - **Core Concepts** — Understanding pipeline types and patterns
 
 ### User Guides
-- **[Pipelines]({{ '/en/guides/pipelines.md' | relative_url }})** — Sequential and dataflow pipeline patterns
-- **[Tasks]({{ '/en/guides/tasks.md' | relative_url }})** — Task definition, decorators, and metadata
-- **[Execution]({{ '/en/guides/execution.md' | relative_url }})** — Execution models and error handling
-- **[Tracking & Monitoring]({{ '/en/guides/tracking.md' | relative_url }})** — Real-time progress and status
-- **[WebSocket]({{ '/en/guides/websocket.md' | relative_url }})** — Live event streaming
-- **[Scheduling]({{ '/en/guides/scheduling.md' | relative_url }})** — Cron-based pipeline scheduling
-- **[Retry]({{ '/en/guides/retry.md' | relative_url }})** — Error recovery and retry strategies
-- **[Performance]({{ '/en/guides/performance.md' | relative_url }})** — Optimization and scaling
-- **[API (REST)]({{ '/en/guides/api.md' | relative_url }})** — FastAPI integration and endpoints
+- **[Pipelines]({{ '/en/guides/pipelines/' | relative_url }})** — Sequential and dataflow pipeline patterns
+- **[Tasks]({{ '/en/guides/tasks/' | relative_url }})** — Task definition, decorators, and metadata
+- **[Execution]({{ '/en/guides/execution/' | relative_url }})** — Execution models and error handling
+- **[Tracking & Monitoring]({{ '/en/guides/tracking/' | relative_url }})** — Real-time progress and status
+- **[WebSocket]({{ '/en/guides/websocket/' | relative_url }})** — Live event streaming
+- **[Scheduling]({{ '/en/guides/scheduling/' | relative_url }})** — Cron-based pipeline scheduling
+- **[Retry]({{ '/en/guides/retry/' | relative_url }})** — Error recovery and retry strategies
+- **[Performance]({{ '/en/guides/performance/' | relative_url }})** — Optimization and scaling
+- **[API (REST)]({{ '/en/guides/api/' | relative_url }})** — FastAPI integration and endpoints
 
 ### API Reference
-- **[Core API]({{ '/en/api/core.md' | relative_url }})** — Pipeline, DataflowPipeline, middleware
-- **[Decorators]({{ '/en/api/decorators.md' | relative_url }})** — @pipeline_task and utilities
-- **[Execution]({{ '/en/api/execution.md' | relative_url }})** — ExecutionEngine, DAG, DAGBuilder
-- **[Tracking]({{ '/en/api/tracking.md' | relative_url }})** — TrackingManager and storage backends
-- **[WebSocket]({{ '/en/api/websocket.md' | relative_url }})** — HookManager and event system
+- **[Core API]({{ '/en/api/core/' | relative_url }})** — Pipeline, DataflowPipeline, middleware
+- **[Decorators]({{ '/en/api/decorators/' | relative_url }})** — @pipeline_task and utilities
+- **[Execution]({{ '/en/api/execution/' | relative_url }})** — ExecutionEngine, DAG, DAGBuilder
+- **[Tracking]({{ '/en/api/tracking/' | relative_url }})** — TrackingManager and storage backends
+- **[WebSocket]({{ '/en/api/websocket/' | relative_url }})** — HookManager and event system
 
 ### Examples
 - **[Example Gallery]({{ '/en/examples/' | relative_url }})** — Walkthroughs of all example scripts
@@ -70,9 +70,9 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 ## 📖 Read the Guides
 
-**[→ Getting Started (English)]({{ '/en/quickstart.md' | relative_url }})**
+**[→ Getting Started (English)]({{ '/en/quickstart/' | relative_url }})**
 
-**[→ Commencer (Français)]({{ '/fr/quickstart.md' | relative_url }})**
+**[→ Commencer (Français)]({{ '/fr/quickstart/' | relative_url }})**
 
 ## 🔗 Quick Links
 

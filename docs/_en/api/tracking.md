@@ -313,4 +313,4 @@ All storage methods must be async.
 
 ---
 
-*Combine with [WebSocket]({{ '/en/api/websocket.md' | relative_url }}) for real-time streaming. See [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }}) for usage patterns.*
+*Combine with [WebSocket]({{ '/en/api/websocket/' | relative_url }}) for real-time streaming. See [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}) for usage patterns.*

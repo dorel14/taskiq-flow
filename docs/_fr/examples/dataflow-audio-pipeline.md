@@ -253,8 +253,8 @@ Sortie attendue inclut:
 Après cet exemple:
 
 1. **[Guide DataflowPipeline]({{ '/fr/guides/pipelines.md#2-pipeline-dataflow' | relative_url }})** — Plongée profonde fonctionnalités dataflow
-2. **[Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }})** — Parallélisme, timeouts, gestion erreurs
-3. **[Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }})** — Réglage `max_parallel`, profils ressources
+2. **[Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})** — Parallélisme, timeouts, gestion erreurs
+3. **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Réglage `max_parallel`, profils ressources
 
 ---
 

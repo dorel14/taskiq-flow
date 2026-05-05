@@ -279,7 +279,7 @@ Understanding `DataflowRegistry` helps you:
 After this example:
 
 1. **[Dataflow Guide]({{ '/en/guides/pipelines.md#2-dataflow-pipeline' | relative_url }})** — High-level usage
-2. **[ExecutionEngine API]({{ '/en/api/execution.md' | relative_url }})** — Low-level execution control
+2. **[ExecutionEngine API]({{ '/en/api/execution/' | relative_url }})** — Low-level execution control
 3. **[DAGBuilder]({{ '/en/api/execution.md#dagbuilder' | relative_url }})** — Programmatic DAG construction
 
 ---

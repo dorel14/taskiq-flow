@@ -388,7 +388,7 @@ for step in status.steps:
 | `FAILED` | Terminated with error |
 | `CANCELLED` | Manually cancelled |
 
-See [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }}) for advanced monitoring.
+See [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}) for advanced monitoring.
 
 ---
 
@@ -472,7 +472,7 @@ for chunk in chunks:
     # process results before next chunk
 ```
 
-See [Performance Guide]({{ '/en/guides/performance.md' | relative_url }}) for detailed optimization strategies.
+See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for detailed optimization strategies.
 
 ---
 
@@ -501,10 +501,10 @@ See [Performance Guide]({{ '/en/guides/performance.md' | relative_url }}) for de
 
 ## Next Steps
 
-- **[Pipelines Guide]({{ '/en/guides/pipelines.md' | relative_url }})** — Choosing between pipeline types and patterns
-- **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Monitoring pipeline status and history
-- **[Performance Guide]({{ '/en/guides/performance.md' | relative_url }})** — Tuning for speed and resource usage
+- **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** — Choosing between pipeline types and patterns
+- **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitoring pipeline status and history
+- **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Tuning for speed and resource usage
 
 ---
 
-*Understanding execution is key to building reliable pipelines. Next, learn about [Pipeline Types]({{ '/en/guides/pipelines.md' | relative_url }}).*
+*Understanding execution is key to building reliable pipelines. Next, learn about [Pipeline Types]({{ '/en/guides/pipelines/' | relative_url }}).*

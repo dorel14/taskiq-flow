@@ -6,7 +6,7 @@ nav_order: 23
 
 **Real-time and historical execution monitoring with PipelineTrackingManager**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution.md' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
 
 ---
 
@@ -282,7 +282,7 @@ pipeline = Pipeline(broker).with_hooks(hook_manager).with_tracking(tracking)
 
 Now pipeline events are broadcast via WebSocket as they happen.
 
-See [WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }}) for complete setup.
+See [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}) for complete setup.
 
 ---
 
@@ -381,7 +381,7 @@ print(json.dumps(status_dict, indent=2, default=str))
 
 ### 9.3. Integration with Dashboards
 
-Use the REST API endpoints (see [API Guide]({{ '/en/guides/api.md' | relative_url }})) to build custom dashboards:
+Use the REST API endpoints (see [API Guide]({{ '/en/guides/api/' | relative_url }})) to build custom dashboards:
 
 ```javascript
 // Frontend fetch
@@ -528,10 +528,10 @@ pipeline = Pipeline(broker).with_tracking(tracking)
 
 ## Next Steps
 
-- **[WebSocket Streaming]({{ '/en/guides/websocket.md' | relative_url }})** — Real-time event delivery for dashboards
-- **[Scheduling]({{ '/en/guides/scheduling.md' | relative_url }})** — Automated recurring pipeline execution
-- **[Performance Tuning]({{ '/en/guides/performance.md' | relative_url }})** — Optimize tracking overhead
+- **[WebSocket Streaming]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event delivery for dashboards
+- **[Scheduling]({{ '/en/guides/scheduling/' | relative_url }})** — Automated recurring pipeline execution
+- **[Performance Tuning]({{ '/en/guides/performance/' | relative_url }})** — Optimize tracking overhead
 
 ---
 
-*Track everything. Visualize with [WebSocket]({{ '/en/guides/websocket.md' | relative_url }}).*
+*Track everything. Visualize with [WebSocket]({{ '/en/guides/websocket/' | relative_url }}).*

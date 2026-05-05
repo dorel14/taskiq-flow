@@ -162,8 +162,8 @@ pipeline.group([tache_a, tache_b, tache_c], param_names=["x"])
 Après cet exemple:
 
 1. **[Pipelines Dataflow]({{ '/fr/guides/pipelines.md#2-pipeline-dataflow' | relative_url }})** — Construction automatique de DAG
-2. **[Définition des Tâches]({{ '/fr/guides/tasks.md' | relative_url }})** — Fonctionnalités avancées de tâches
-3. **[Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Monitor exécutions de pipeline
+2. **[Définition des Tâches]({{ '/fr/guides/tasks/' | relative_url }})** — Fonctionnalités avancées de tâches
+3. **[Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Monitor exécutions de pipeline
 4. **[MapReduce]({{ '/fr/guides/execution.md#3-motif-map-reduce' | relative_url }})** — Motif de traitement par lots
 
 ---

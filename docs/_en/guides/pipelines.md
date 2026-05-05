@@ -6,7 +6,7 @@ nav_order: 20
 
 **Sequential and Dataflow pipeline patterns, configurations, and best practices**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution.md' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})
 
 ---
 
@@ -208,7 +208,7 @@ tracking = PipelineTrackingManager().with_auto_storage(broker)
 pipeline = Pipeline(broker).with_tracking(tracking)
 ```
 
-See [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }}) for details.
+See [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}) for details.
 
 ### 3.2. Setting a Custom Pipeline ID
 
@@ -228,7 +228,7 @@ hooks = HookManager()
 pipeline = Pipeline(broker).with_hooks(hooks)
 ```
 
-See [WebSocket Guide]({{ '/en/guides/websocket.md' | relative_url }}).
+See [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}).
 
 ### 3.4. Retry & Error Policies
 
@@ -241,7 +241,7 @@ pipeline.with_retry(
 pipeline.on_error("continue")  # or "stop"
 ```
 
-See [Retry Guide]({{ '/en/guides/retry.md' | relative_url }}).
+See [Retry Guide]({{ '/en/guides/retry/' | relative_url }}).
 
 ### 3.5. Timeouts
 
@@ -531,10 +531,10 @@ Before running a pipeline, verify:
 
 ## Further Reading
 
-- **[Execution Guide]({{ '/en/guides/execution.md' | relative_url }})** — How pipelines run, error handling, timeouts
-- **[Tasks Guide]({{ '/en/guides/tasks.md' | relative_url }})** — Writing task functions and decorators
+- **[Execution Guide]({{ '/en/guides/execution/' | relative_url }})** — How pipelines run, error handling, timeouts
+- **[Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})** — Writing task functions and decorators
 - **[Examples]({{ '/en/examples/' | relative_url }})** — End-to-end pipeline demonstrations
 
 ---
 
-*Master pipelines to orchestrate any workflow. Next, learn about [Task Definition]({{ '/en/guides/tasks.md' | relative_url }}).*
+*Master pipelines to orchestrate any workflow. Next, learn about [Task Definition]({{ '/en/guides/tasks/' | relative_url }}).*

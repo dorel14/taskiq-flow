@@ -245,9 +245,9 @@ WebSocket livre messages en ordre; si désordre, vérifier problèmes réseau ou
 
 Après cet exemple:
 
-1. **[Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }})** — Configuration WebSocket complète, filtrage, déploiement production
-2. **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Stockage historique données alongside événements temps réel
-3. **[Guide API]({{ '/fr/guides/api.md' | relative_url }})** — Exposer via REST pour clients non-WebSocket
+1. **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Configuration WebSocket complète, filtrage, déploiement production
+2. **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Stockage historique données alongside événements temps réel
+3. **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Exposer via REST pour clients non-WebSocket
 
 ---
 

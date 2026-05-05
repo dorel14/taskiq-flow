@@ -6,7 +6,7 @@ nav_order: 40
 
 **Working examples demonstrating key Taskiq-Flow features and patterns**
 
-> **Version**: 0.3.2 | **Related**: [Quick Start Guide]({{ '/en/quickstart.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Quick Start Guide]({{ '/en/quickstart/' | relative_url }})
 
 ---
 
@@ -80,6 +80,6 @@ Some examples require additional services (Redis, etc.). See individual example 
 
 ## Next Steps
 
-- **[Quick Start Guide]({{ '/en/quickstart.md' | relative_url }})** — Run your first pipeline
+- **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Run your first pipeline
 - **[User Guides]({{ '/en/guides/' | relative_url }})** — Deep dives into each feature
 - **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module documentation

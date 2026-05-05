@@ -6,7 +6,7 @@ nav_order: 25
 
 **Cron-based, interval, and one-off pipeline scheduling with PipelineScheduler**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution.md' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 
@@ -735,9 +735,9 @@ await scheduler.start()
 
 ## Next Steps
 
-- **[Retry Guide]({{ '/en/guides/retry.md' | relative_url }})** — Error recovery and retry policies
-- **[Performance Guide]({{ '/en/guides/performance.md' | relative_url }})** — Optimize scheduled pipeline performance
-- **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Monitor scheduled job history
+- **[Retry Guide]({{ '/en/guides/retry/' | relative_url }})** — Error recovery and retry policies
+- **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Optimize scheduled pipeline performance
+- **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitor scheduled job history
 
 ---
 

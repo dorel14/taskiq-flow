@@ -253,8 +253,8 @@ Expected output includes:
 After this example:
 
 1. **[DataflowPipeline Guide]({{ '/en/guides/pipelines.md#2-dataflow-pipeline' | relative_url }})** — Deep dive into dataflow features
-2. **[Execution Guide]({{ '/en/guides/execution.md' | relative_url }})** — Parallelism, timeouts, error handling
-3. **[Performance Guide]({{ '/en/guides/performance.md' | relative_url }})** — Tuning `max_parallel`, resource profiles
+2. **[Execution Guide]({{ '/en/guides/execution/' | relative_url }})** — Parallelism, timeouts, error handling
+3. **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Tuning `max_parallel`, resource profiles
 
 ---
 

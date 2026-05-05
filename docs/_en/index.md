@@ -8,7 +8,7 @@ Welcome to the English documentation for **Taskiq-Flow**.
 
 ## 📖 Start Here
 
-- **[Quick Start Guide]({{ '/en/quickstart.md' | relative_url }})** — Get up and running in 5 minutes
+- **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Get up and running in 5 minutes
 - **[User Guides]({{ '/en/guides/' | relative_url }})** — In-depth guides on pipelines, tasks, execution, tracking, WebSocket, scheduling, retry, performance, and REST API
 - **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module and class documentation
 - **[Examples]({{ '/en/examples/' | relative_url }})** — Working code examples for all features

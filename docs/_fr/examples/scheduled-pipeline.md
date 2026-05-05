@@ -180,7 +180,7 @@ job_id = await scheduler.schedule(
 await scheduler.start()
 ```
 
-Voir [Guide de Planification]({{ '/fr/guides/scheduling.md' | relative_url }}) pour détails complets sur `PipelineScheduler`.
+Voir [Guide de Planification]({{ '/fr/guides/scheduling/' | relative_url }}) pour détails complets sur `PipelineScheduler`.
 
 ---
 
@@ -188,9 +188,9 @@ Voir [Guide de Planification]({{ '/fr/guides/scheduling.md' | relative_url }}) p
 
 Après cet exemple:
 
-1. **[Guide de Planification]({{ '/fr/guides/scheduling.md' | relative_url }})** — Planification cron et intervalle complète
+1. **[Guide de Planification]({{ '/fr/guides/scheduling/' | relative_url }})** — Planification cron et intervalle complète
 2. **[PipelineScheduler API]({{ '/fr/api/core.md#pipelinescheduler' | relative_url }})** — Référence API
-3. **[Guide de Retry]({{ '/fr/guides/retry.md' | relative_url }})** — Gestion échecs pipelines planifiés
+3. **[Guide de Retry]({{ '/fr/guides/retry/' | relative_url }})** — Gestion échecs pipelines planifiés
 
 ---
 

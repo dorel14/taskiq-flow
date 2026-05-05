@@ -440,4 +440,4 @@ await serveur.start_server()
 
 ---
 
-*Pour détails implémentation client, voir [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }}). Pour stratégies filtrage, section 7 de ce guide.*
+*Pour détails implémentation client, voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}). Pour stratégies filtrage, section 7 de ce guide.*

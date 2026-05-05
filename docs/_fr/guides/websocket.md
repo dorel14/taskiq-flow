@@ -6,7 +6,7 @@ nav_order: 24
 
 **Streaming d'événements en temps réel pour tableaux de bord et monitoring**
 
-> **Version**: 1.0.0 | **Lié**: [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}), [Guide API]({{ '/fr/guides/api.md' | relative_url }})
+> **Version**: 1.0.0 | **Lié**: [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide API]({{ '/fr/guides/api/' | relative_url }})
 
 ---
 
@@ -563,7 +563,7 @@ app = web.Application()
 app.router.add_get('/health', health)
 ```
 
-Ou utiliser l'endpoint health intégré (/health) depuis le [Guide API]({{ '/fr/guides/api.md' | relative_url }}).
+Ou utiliser l'endpoint health intégré (/health) depuis le [Guide API]({{ '/fr/guides/api/' | relative_url }}).
 
 ### 9.4. Scalabilité
 
@@ -699,10 +699,10 @@ await serveur.start_server()
 
 ## Prochaines Étapes
 
-- **[Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }})** — Backend de stockage et requêtes historiques
-- **[Guide API]({{ '/fr/guides/api.md' | relative_url }})** — Endpoints REST pour backends de tableau de bord
-- **[Exemples: Démo WebSocket]({{ '/fr/examples/websocket-demo.md' | relative_url }})** — Code complet fonctionnel
+- **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Backend de stockage et requêtes historiques
+- **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Endpoints REST pour backends de tableau de bord
+- **[Exemples: Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }})** — Code complet fonctionnel
 
 ---
 
-*Streamer les événements de pipeline en direct. Combiner avec [Stockage de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}) pour historique persistant.*
+*Streamer les événements de pipeline en direct. Combiner avec [Stockage de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour historique persistant.*

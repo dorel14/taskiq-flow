@@ -6,7 +6,7 @@ nav_order: 21
 
 **Defining tasks, decorators, metadata, and resource management**
 
-> **Version**: 0.3.2 | **Related**: [Pipelines Guide]({{ '/en/guides/pipelines.md' | relative_url }}), [Execution Guide]({{ '/en/guides/execution.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}), [Execution Guide]({{ '/en/guides/execution/' | relative_url }})
 
 ---
 
@@ -329,7 +329,7 @@ async def task_with_conditional_retry():
         raise  # No retry, fail immediately
 ```
 
-Detailed retry strategies covered in [Retry Guide]({{ '/en/guides/retry.md' | relative_url }}).
+Detailed retry strategies covered in [Retry Guide]({{ '/en/guides/retry/' | relative_url }}).
 
 ---
 
@@ -482,10 +482,10 @@ Taskiq-Flow tasks are:
 
 ## Next Steps
 
-- **[Pipeline Types]({{ '/en/guides/pipelines.md' | relative_url }})** — Building workflows with tasks
-- **[Execution Guide]({{ '/en/guides/execution.md' | relative_url }})** — Running pipelines and handling results
-- **[Retry Guide]({{ '/en/guides/retry.md' | relative_url }})** — Robust error recovery strategies
+- **[Pipeline Types]({{ '/en/guides/pipelines/' | relative_url }})** — Building workflows with tasks
+- **[Execution Guide]({{ '/en/guides/execution/' | relative_url }})** — Running pipelines and handling results
+- **[Retry Guide]({{ '/en/guides/retry/' | relative_url }})** — Robust error recovery strategies
 
 ---
 
-*Tasks are your workflow atoms. Learn to compose them in [Pipelines]({{ '/en/guides/pipelines.md' | relative_url }}).*
+*Tasks are your workflow atoms. Learn to compose them in [Pipelines]({{ '/en/guides/pipelines/' | relative_url }}).*

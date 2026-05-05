@@ -307,15 +307,15 @@ Avec les bases acquises, explorez les guides approfondis :
 
 | Sujet | Guide |
 |-------|-------|
-| Pipelines séquentiels et dataflow | [Guide des Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }}) |
-| Définitions de tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks.md' | relative_url }}) |
-| Modes d'exécution et gestion d'erreurs | [Guide d'Exécution]({{ '/fr/guides/execution.md' | relative_url }}) |
-| Monitoring en temps réel | [Guide de Suivi]({{ '/fr/guides/tracking.md' | relative_url }}) |
-| Tableaux de bord en direct | [Guide WebSocket]({{ '/fr/guides/websocket.md' | relative_url }}) |
-| Planification cron | [Guide de Planification]({{ '/fr/guides/scheduling.md' | relative_url }}) |
-| Récupération d'erreurs | [Guide de Retry]({{ '/fr/guides/retry.md' | relative_url }}) |
-| Optimisation des performances | [Guide de Performance]({{ '/fr/guides/performance.md' | relative_url }}) |
-| Intégration API REST | [Guide API]({{ '/fr/guides/api.md' | relative_url }}) |
+| Pipelines séquentiels et dataflow | [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}) |
+| Définitions de tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}) |
+| Modes d'exécution et gestion d'erreurs | [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}) |
+| Monitoring en temps réel | [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) |
+| Tableaux de bord en direct | [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) |
+| Planification cron | [Guide de Planification]({{ '/fr/guides/scheduling/' | relative_url }}) |
+| Récupération d'erreurs | [Guide de Retry]({{ '/fr/guides/retry/' | relative_url }}) |
+| Optimisation des performances | [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) |
+| Intégration API REST | [Guide API]({{ '/fr/guides/api/' | relative_url }}) |
 | Référence API complète | [Référence API]({{ '/fr/api/' | relative_url }}) |
 
 ---
@@ -366,4 +366,4 @@ await server.start_server()
 
 ---
 
-*Prêt à approfondir ? Continuez avec le [Guide des Pipelines]({{ '/fr/guides/pipelines.md' | relative_url }}).*
+*Prêt à approfondir ? Continuez avec le [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*

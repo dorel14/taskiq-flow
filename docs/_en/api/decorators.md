@@ -246,4 +246,4 @@ results = await pipeline.kiq_dataflow(source="data.csv")
 
 ---
 
-*For the full task API, see [Tasks Guide]({{ '/en/guides/tasks.md' | relative_url }}). For writing custom decorators, extend `BaseTaskDecorator` from `taskiq_flow.decorators`.*
+*For the full task API, see [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }}). For writing custom decorators, extend `BaseTaskDecorator` from `taskiq_flow.decorators`.*

@@ -6,7 +6,7 @@ nav_order: 40
 
 **Exemples fonctionnels démontrant les fonctionnalités et motifs clés de Taskiq-Flow**
 
-> **Version** : 0.3.2 | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart.md' | relative_url }})
+> **Version** : 0.3.2 | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})
 
 ---
 
@@ -80,6 +80,6 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 
 ## Prochaines Étapes
 
-- **[Guide de Démarrage Rapide]({{ '/fr/quickstart.md' | relative_url }})** — Lancez votre premier pipeline
+- **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Lancez votre premier pipeline
 - **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Approfondissements par fonctionnalité
 - **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules

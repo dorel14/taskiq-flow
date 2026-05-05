@@ -6,7 +6,7 @@ nav_order: 26
 
 **Resilient pipeline execution with retry policies, backoff, and dead-letter queues**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution.md' | relative_url }}), [Scheduling Guide]({{ '/en/guides/scheduling.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})
 
 ---
 
@@ -476,9 +476,9 @@ broker.add_middlewares(RetryMiddleware(max_retries=3, dlq_queue="failed_tasks"))
 
 ## Next Steps
 
-- **[Performance Guide]({{ '/en/guides/performance.md' | relative_url }})** — Optimize task execution and resource usage
-- **[Scheduling Guide]({{ '/en/guides/scheduling.md' | relative_url }})** — Automated pipeline retries at scheduled intervals
-- **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Monitor retry metrics in production
+- **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Optimize task execution and resource usage
+- **[Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})** — Automated pipeline retries at scheduled intervals
+- **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitor retry metrics in production
 
 ---
 

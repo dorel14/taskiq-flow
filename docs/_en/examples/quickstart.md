@@ -162,8 +162,8 @@ pipeline.group([task_a, task_b, task_c], param_names=["x"])
 After this example:
 
 1. **[Dataflow Pipelines]({{ '/en/guides/pipelines.md#2-dataflow-pipeline' | relative_url }})** — Automatic DAG construction
-2. **[Task Definition]({{ '/en/guides/tasks.md' | relative_url }})** — Advanced task features
-3. **[Tracking]({{ '/en/guides/tracking.md' | relative_url }})** — Monitor pipeline execution
+2. **[Task Definition]({{ '/en/guides/tasks/' | relative_url }})** — Advanced task features
+3. **[Tracking]({{ '/en/guides/tracking/' | relative_url }})** — Monitor pipeline execution
 4. **[MapReduce]({{ '/en/guides/execution.md#3-map-reduce-pattern' | relative_url }})** — Batch processing pattern
 
 ---

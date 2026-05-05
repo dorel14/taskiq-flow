@@ -6,7 +6,7 @@ nav_order: 27
 
 **Resource-aware parallelism, memory optimization, and scaling strategies**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution.md' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})
+> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 
@@ -506,9 +506,9 @@ Performance optimization is iterative:
 
 ## Next Steps
 
-- **[Tracking Guide]({{ '/en/guides/tracking.md' | relative_url }})** — Monitor pipeline metrics
-- **[API Guide]({{ '/en/guides/api.md' | relative_url }})** — Build custom dashboards for performance
-- **[Example: Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline.md' | relative_url }})** — See optimization in action
+- **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitor pipeline metrics
+- **[API Guide]({{ '/en/guides/api/' | relative_url }})** — Build custom dashboards for performance
+- **[Example: Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})** — See optimization in action
 
 ---
 
