@@ -1,13 +1,14 @@
 ---
 permalink: /fr/api/execution/
-title: Référence API : Moteur d'Exécution
+title: Référence API: Moteur d'Exécution
 nav_order: 32
+color_scheme: dark
 ---
-# Référence API : Moteur d'Exécution
+# Référence API: Moteur d'Exécution
 
-**ExecutionEngine, DAG, DAGNode, DAGBuilder et MapReduce**
+**ExecutionEngine, DAG, utilitaires map-reduce, et gestion d'erreurs**
 
-> **Version** : 0.4.0 | **Module** : `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
+> **Version** : 0.4.5 | **Module** : `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
 
 ---
 

@@ -1,12 +1,13 @@
 ---
 title: Guide d'Optimisation des Performances
 nav_order: 27
+color_scheme: dark
 ---
 # Guide d'Optimisation des Performances
 
 **Parallélisme conscient des ressources, optimisation mémoire et stratégies de mise à l'échelle**
 
-> **Version** : 0.4.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
+> **Version** : 0.4.5 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
 
 ---
 

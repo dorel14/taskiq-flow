@@ -2,12 +2,13 @@
 permalink: /en/api/core/
 title: API Reference: Core Components
 nav_order: 30
+color_scheme: dark
 ---
 # API Reference: Core Components
 
 **Pipeline, DataflowPipeline, PipelineMiddleware, PipelineContext, and core exceptions**
 
-> **Version**: 0.4.0 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
+> **Version**: 0.4.5 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
 
 ---
 

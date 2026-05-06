@@ -2,12 +2,13 @@
 permalink: /en/api/execution/
 title: API Reference: Execution Engine
 nav_order: 32
+color_scheme: dark
 ---
 # API Reference: Execution Engine
 
-**ExecutionEngine, DAG, DAGNode, DAGBuilder, and MapReduce**
+**ExecutionEngine, DAG, map-reduce utilities, and error handling**
 
-> **Version**: 0.4.0 | **Module**: `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
+> **Version**: 0.4.5 | **Module**: `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
 
 ---
 

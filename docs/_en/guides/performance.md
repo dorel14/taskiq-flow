@@ -1,6 +1,7 @@
 ---
 title: Performance Optimization Guide
 nav_order: 27
+color_scheme: dark
 ---
 # Performance Optimization Guide
 
