@@ -8,7 +8,7 @@ color_scheme: dark
 
 **NetworkX DAG analysis: critical path, parallel groups, exports**
 
-> **Version**: 0.4.5 | **File**: `examples/dag_visualization_demo.py`
+> **Version**: {VERSION} | **File**: `examples/dag_visualization_demo.py`
 
 ---
 

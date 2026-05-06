@@ -6,7 +6,7 @@ nav_order: 28
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: 0.4.0 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
 
 ---
 
@@ -45,7 +45,7 @@ pipeline = DataflowPipeline.from_tasks(broker, [process])
 pipeline.pipeline_id = "my_pipeline"
 
 # 3. Create FastAPI app with visualization API
-app = FastAPI(title="Taskiq-Flow API", version="0.3.0")
+app = FastAPI(title="Taskiq-Flow API", version="{VERSION}")
 viz_api = create_visualization_api(broker, app)
 viz_api.add_pipeline("my_pipeline", pipeline)
 

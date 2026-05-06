@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Analyse DAG NetworkX : chemin critique, groupes parallèles, export**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/dag_visualization_demo.py`
+> **Version** : {VERSION} | **Fichier** : `examples/dag_visualization_demo.py`
 
 ---
 

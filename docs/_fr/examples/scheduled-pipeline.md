@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Planification de pipelines avec déclencheurs cron et intervalles**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/scheduled_pipeline.py`
+> **Version** : {VERSION} | **Fichier** : `examples/scheduled_pipeline.py`
 
 ---
 

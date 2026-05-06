@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Surveillance en temps réel avec PipelineTrackingManager**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/tracking_demo.py`
+> **Version** : {VERSION} | **Fichier** : `examples/tracking_demo.py`
 
 ---
 

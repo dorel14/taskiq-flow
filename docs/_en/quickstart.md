@@ -7,7 +7,7 @@ color_scheme: dark
 
 **Getting up and running with Taskiq-Flow in 5 minutes**
 
-> **Version**: 0.4.5 | **Prerequisites**: Python 3.9+, asyncio basics
+> **Version**: {VERSION} | **Prerequisites**: Python 3.9+, asyncio basics
 
 ---
 

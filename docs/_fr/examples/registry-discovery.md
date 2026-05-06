@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/registry_discovery_example.py`
+> **Version** : {VERSION} | **Fichier** : `examples/registry_discovery_example.py`
 
 ---
 

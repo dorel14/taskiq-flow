@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Real-time event streaming via WebSockets**
 
-> **Version**: 0.4.5 | **File**: `examples/websocket_demo.py`
+> **Version**: {VERSION} | **File**: `examples/websocket_demo.py`
 
 ---
 

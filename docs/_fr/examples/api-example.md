@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Intégration FastAPI pour gestion distante de pipelines**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/api_example.py`
+> **Version** : {VERSION} | **Fichier** : `examples/api_example.py`
 
 ---
 

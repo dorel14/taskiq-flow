@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Understanding fundamental Taskiq-Flow concepts and architecture**
 
-> **Version**: 0.4.5
+> **Version**: {VERSION}
 
 ## Overview
 

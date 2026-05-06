@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Scheduling pipelines with cron and interval triggers**
 
-> **Version**: 0.4.5 | **File**: `examples/scheduled_pipeline.py`
+> **Version**: {VERSION} | **File**: `examples/scheduled_pipeline.py`
 
 ---
 

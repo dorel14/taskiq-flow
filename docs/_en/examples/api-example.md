@@ -8,7 +8,7 @@ color_scheme: dark
 
 **FastAPI integration for remote pipeline management**
 
-> **Version**: 0.4.5 | **File**: `examples/api_example.py`
+> **Version**: {VERSION} | **File**: `examples/api_example.py`
 
 ---
 

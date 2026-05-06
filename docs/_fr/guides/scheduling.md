@@ -6,7 +6,7 @@ nav_order: 25
 
 **Planification cron, intervalles et exécutions uniques avec PipelineScheduler**
 
-> **Version** : 0.4.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})
 
 ---
 

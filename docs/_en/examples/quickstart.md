@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Basic sequential pipeline with map, filter, and group operations**
 
-> **Version**: 0.4.5 | **File**: `examples/quickstart.py`
+> **Version**: {VERSION} | **File**: `examples/quickstart.py`
 
 ---
 

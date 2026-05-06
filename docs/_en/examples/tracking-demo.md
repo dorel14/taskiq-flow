@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Pipeline execution tracking with PipelineTrackingManager**
 
-> **Version**: 0.4.5 | **File**: `examples/tracking_demo.py`
+> **Version**: {VERSION} | **File**: `examples/tracking_demo.py`
 
 ---
 

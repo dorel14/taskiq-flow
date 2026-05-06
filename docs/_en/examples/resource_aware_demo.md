@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Dynamic parallelism based on CPU/memory**
 
-> **Version**: 0.4.5 | **File**: `examples/resource_aware_demo.py`
+> **Version**: {VERSION} | **File**: `examples/resource_aware_demo.py`
 
 ---
 

@@ -8,7 +8,7 @@ color_scheme: dark
 
 **ExecutionEngine, DAG, map-reduce utilities, and error handling**
 
-> **Version**: 0.4.5 | **Module**: `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.execution_engine`, `taskiq_flow.dataflow.dag`, `taskiq_flow.map_reduce`
 
 ---
 

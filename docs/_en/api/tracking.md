@@ -8,7 +8,7 @@ color_scheme: dark
 
 **PipelineTrackingManager, storage backends, and status models**
 
-> **Version**: 0.4.5 | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

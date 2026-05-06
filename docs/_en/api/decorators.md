@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Task decorators, pipeline_task, and utility decorators**
 
-> **Version**: 0.4.5 | **Module**: `taskiq_flow.decorators`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.decorators`
 
 ---
 

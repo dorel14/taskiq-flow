@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Complete dataflow DAG with parallel execution, map-reduce, and visualization**
 
-> **Version**: 0.4.5 | **File**: `examples/dataflow_audio_pipeline.py`
+> **Version**: {VERSION} | **File**: `examples/dataflow_audio_pipeline.py`
 
 ---
 

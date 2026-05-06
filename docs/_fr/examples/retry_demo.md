@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Middleware retry et modes de gestion d'erreurs**
 
-> **Version** : 0.4.5 | **Fichier** : `examples/retry_demo.py`
+> **Version** : {VERSION} | **Fichier** : `examples/retry_demo.py`
 
 ---
 

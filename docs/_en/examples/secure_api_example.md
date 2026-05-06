@@ -8,7 +8,7 @@ color_scheme: dark
 
 **API security with authentication, rate limiting, and audit logging**
 
-> **Version**: 0.4.5 | **File**: `examples/secure_api_example.py`
+> **Version**: {VERSION} | **File**: `examples/secure_api_example.py`
 
 ---
 
@@ -101,7 +101,7 @@ config = TaskiqFlowConfig(
 from fastapi import FastAPI
 from taskiq_flow import create_visualization_api
 
-app = FastAPI(title="Secure Taskiq-Flow API", version="0.4.5")
+app = FastAPI(title="Secure Taskiq-Flow API", version="{VERSION}")
 viz_api = create_visualization_api(broker, app, config=config)
 viz_api.add_pipeline("secure_demo_pipeline", pipeline)
 ```

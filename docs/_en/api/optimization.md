@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Resource-aware parallelism and execution optimization**
 
-> **Version**: 0.4.5 | **Module**: `taskiq_flow.optimization`, `taskiq_flow.optimization.parallel`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.optimization`, `taskiq_flow.optimization.parallel`
 
 ---
 

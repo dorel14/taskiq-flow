@@ -8,7 +8,7 @@ color_scheme: dark
 
 **HookManager, pont WebSocket, et transport d'événements temps réel**
 
-> **Version** : 0.4.5 | **Module** : `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version** : {VERSION} | **Module** : `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
 
 ---
 

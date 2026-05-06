@@ -6,7 +6,7 @@ nav_order: 24
 
 **Real-time event streaming for live dashboards and monitoring**
 
-> **Version**: 0.4.0 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [API Guide]({{ '/en/guides/api/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [API Guide]({{ '/en/guides/api/' | relative_url }})
 
 ---
 

@@ -8,7 +8,7 @@ color_scheme: dark
 
 **Pipeline, DataflowPipeline, PipelineMiddleware, PipelineContext, and core exceptions**
 
-> **Version**: 0.4.5 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
 
 ---
 
