@@ -1,4 +1,4 @@
-"""DAG Visualization Demo
+"""DAG Visualization Demo.
 
 This example demonstrates the advanced DAG visualization capabilities
 using NetworkX, Mermaid, and NiceGUI integration.
@@ -8,12 +8,16 @@ Version: 0.4.5
 """
 
 import asyncio
+import logging
+
 from taskiq import InMemoryBroker
+
 from taskiq_flow import DataflowPipeline, pipeline_task
 from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 from taskiq_flow.visualization.mermaid import MermaidGenerator
-from taskiq_flow.dataflow.dag import DAG
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True)
@@ -44,9 +48,7 @@ def compute_embedding(audio_features: dict) -> list[float]:
 @broker.task
 @pipeline_task(output="metadata")
 def create_metadata(
-    audio_features: dict,
-    tags: list[str],
-    embedding: list[float]
+    audio_features: dict, tags: list[str], embedding: list[float]
 ) -> dict:
     """Combine all results into final metadata."""
     return {
@@ -58,70 +60,70 @@ def create_metadata(
 
 # Build pipeline
 pipeline = DataflowPipeline.from_tasks(
-    broker,
-    [extract_features, generate_tags, compute_embedding, create_metadata]
+    broker, [extract_features, generate_tags, compute_embedding, create_metadata]
 )
 pipeline.pipeline_id = "audio_analysis_demo"
 
 
-async def main():
-    print("=== Taskiq-Flow DAG Visualization Demo ===\n")
+async def main() -> None:
+    """Run the DAG visualization demo."""
+    logger.info("=== Taskiq-Flow DAG Visualization Demo ===\n")
 
-    # Build DAG (without executing)
-    dag = pipeline.build_dag()
+    # Build DAG (without executing) - internal method
+    pipeline._build_dataflow_dag()
 
-    print(f"DAG has {len(dag.nodes)} nodes and {len(dag.edges)} edges\n")
+    # Get the DAG
+    dag = pipeline._dag
+    if dag is None:
+        logger.warning("No DAG built")
+        return
+
+    logger.info(f"DAG has {len(dag.nodes)} nodes and {len(dag.edges)} edges\n")
 
     # 1. NetworkX-based visualization
-    print("1. NetworkX DAG Analysis")
-    print("-" * 40)
-    visualizer = DAGVisualizer(dag)
+    logger.info("1. NetworkX DAG Analysis")
+    logger.info("-" * 40)
 
     # Export as JSON
-    json_data = visualizer.to_json()
-    print(f"   Nodes: {len(json_data['nodes'])}")
-    print(f"   Edges: {len(json_data['edges'])}")
-    print(f"   Is DAG: {not json_data['is_cyclic']}")
-    print(f"   Topological order: {json_data['topological_order'][:3]}...")
+    json_data = DAGVisualizer.to_json(dag)
+    logger.info(f"   Nodes: {len(json_data['nodes'])}")
+    logger.info(f"   Edges: {len(json_data['edges'])}")
+    logger.info(f"   Topological order: {json_data['levels'][:3]}...")
 
     # Critical path
-    critical_path = visualizer.detect_critical_path()
-    print(f"   Critical path: {' -> '.join(critical_path)}")
+    critical_path = DAGVisualizer.detect_critical_path(dag)
+    logger.info(f"   Critical path: {' -> '.join(critical_path)}")
 
     # Parallel groups
-    parallel_groups = visualizer.find_parallelizable_groups()
-    print(f"   Parallel groups: {len(parallel_groups)} levels")
+    parallel_groups = DAGVisualizer.find_parallelizable_groups(dag)
+    logger.info(f"   Parallel groups: {len(parallel_groups)} levels")
     for i, group in enumerate(parallel_groups):
-        print(f"     Level {i}: {group}")
+        logger.info(f"     Level {i}: {group}")
 
     # 2. Mermaid generation
-    print("\n2. Mermaid Diagram")
-    print("-" * 40)
+    logger.info("\n2. Mermaid Diagram")
+    logger.info("-" * 40)
     mermaid_gen = MermaidGenerator(dag)
     mermaid_code = mermaid_gen.to_mermaid_with_styling(orientation="LR")
-    print(mermaid_code)
+    logger.info(mermaid_code)
 
-    # 3. ASCII art
-    print("\n3. ASCII Art")
-    print("-" * 40)
-    ascii_art = visualizer.visualize_ascii()
-    print(ascii_art)
+    # 3. Graphviz DOT
+    logger.info("\n3. Graphviz DOT")
+    logger.info("-" * 40)
+    dot = DAGVisualizer.to_dot(dag)
+    logger.info(dot[:500] + "..." if len(dot) > 500 else dot)
 
-    # 4. Graphviz DOT
-    print("\n4. Graphviz DOT")
-    print("-" * 40)
-    dot = visualizer.to_graphviz()
-    print(dot[:500] + "..." if len(dot) > 500 else dot)
+    # 4. Cytoscape JSON (abbreviated)
+    logger.info("\n4. Cytoscape JSON (for web visualization)")
+    logger.info("-" * 40)
+    cytoscape = DAGVisualizer.to_cytoscape_json(dag)
+    logger.info(
+        f"   Elements: {len(cytoscape['nodes'])} nodes, {len(cytoscape['edges'])} edges"
+    )
 
-    # 5. Cytoscape JSON (abbreviated)
-    print("\n5. Cytoscape JSON (for web visualization)")
-    print("-" * 40)
-    cytoscape = visualizer.to_cytoscape_json()
-    print(f"   Elements: {len(cytoscape['nodes'])} nodes, {len(cytoscape['edges'])} edges")
-
-    print("\n=== Demo Complete ===")
-    print("\nAll visualization formats generated successfully!")
-    print("Check the output above for Mermaid, ASCII, DOT, and JSON formats.")
+    logger.info("\n=== Demo Complete ===")
+    logger.info("\nAll visualization formats generated successfully!")
+    logger.info("Check the output above for Mermaid, DOT, and JSON formats.")
 
 
 if __name__ == "__main__":

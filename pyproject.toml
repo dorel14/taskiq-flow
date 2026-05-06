@@ -37,6 +37,7 @@ dependencies = [
   "taskiq-aio-pika>=0.6.0",
   "taskiq-redis>=1.0.9",
   "typos>=1.46.0",
+  "uvicorn>=0.46.0",
 ]
 
 [project.optional-dependencies]

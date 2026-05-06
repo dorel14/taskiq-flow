@@ -1,4 +1,4 @@
-"""Retry Demo
+"""Retry Demo.
 
 This example demonstrates the retry middleware and error handling modes
 in Taskiq-Flow v0.4.5.
@@ -8,15 +8,19 @@ Version: 0.4.5
 """
 
 import asyncio
+import logging
 import random
+
 from taskiq import InMemoryBroker
-from taskiq_flow import Pipeline, PipelineMiddleware
-from taskiq_flow.middlewares.retry import PipelineRetryMiddleware
+
+from taskiq_flow import Pipeline
+from taskiq_flow.dataflow.registry import DataflowRegistry
 from taskiq_flow.errors import ErrorHandlingMode, PipelineErrorAggregator
 from taskiq_flow.execution_engine import ExecutionEngine
-from taskiq_flow.dataflow.dag import DAG
-from taskiq_flow.dataflow.registry import DataflowRegistry
+from taskiq_flow.middlewares.retry import PipelineRetryMiddleware
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True)
@@ -27,7 +31,7 @@ broker = InMemoryBroker(await_inplace=True)
 async def flaky_task(attempt: int = 0) -> str:
     """A task that fails randomly, then succeeds."""
     attempt += 1
-    if random.random() < 0.7 and attempt < 3:  # 70% chance of failure, max 3 attempts
+    if random.random() < 0.7 and attempt < 3:  # noqa: S311  # Demo purposes
         raise RuntimeError(f"Task failed on attempt {attempt}")
     return f"Success on attempt {attempt}"
 
@@ -46,9 +50,9 @@ async def process_result(result: str) -> dict:
     return {"processed": result.upper()}
 
 
-async def demo_retry_middleware():
+async def demo_retry_middleware() -> None:
     """Demonstrate the PipelineRetryMiddleware."""
-    print("=== Demo 1: Retry Middleware ===\n")
+    logger.info("=== Demo 1: Retry Middleware ===\n")
 
     # Add retry middleware to broker
     retry_mw = PipelineRetryMiddleware(
@@ -62,22 +66,22 @@ async def demo_retry_middleware():
     # Create simple sequential pipeline
     pipeline = Pipeline(broker).call_next(flaky_task)
 
-    print("Executing flaky task with retry middleware...")
-    print("(Task may fail 1-2 times before succeeding)\n")
+    logger.info("Executing flaky task with retry middleware...")
+    logger.info("(Task may fail 1-2 times before succeeding)\n")
 
     try:
         task = await pipeline.kiq(0)
         result = await task.wait_result(timeout=10)
-        print(f"✅ Pipeline succeeded! Result: {result.return_value}")
+        logger.info(f"Pipeline succeeded! Result: {result.return_value}")
     except Exception as e:
-        print(f"❌ Pipeline failed after retries: {e}")
+        logger.info(f"Pipeline failed after retries: {e}")
 
-    print(f"\nRetry count stored in middleware: {retry_mw.retry_counts}")
+    logger.info(f"\nRetry count stored in middleware: {retry_mw.retry_counts}")
 
 
-async def demo_error_handling_modes():
+async def demo_error_handling_modes() -> None:
     """Demonstrate different error handling modes."""
-    print("\n\n=== Demo 2: Error Handling Modes ===\n")
+    logger.info("\n\n=== Demo 2: Error Handling Modes ===\n")
 
     # Build a small DAG with two tasks, one failing
     registry = DataflowRegistry()
@@ -93,7 +97,7 @@ async def demo_error_handling_modes():
     ]
 
     for mode in modes:
-        print(f"\n--- Mode: {mode.value} ---")
+        logger.info(f"\n--- Mode: {mode.value} ---")
 
         engine = ExecutionEngine(
             broker,
@@ -101,26 +105,26 @@ async def demo_error_handling_modes():
             error_mode=mode,
         )
 
-        aggregator = PipelineErrorAggregator()
-
         try:
             # Reset retry counts
-            if hasattr(broker, 'middlewares'):
+            if hasattr(broker, "middlewares"):
                 for mw in broker.middlewares:
-                    if hasattr(mw, 'retry_counts'):
+                    if hasattr(mw, "retry_counts"):
                         mw.retry_counts.clear()
 
             results = await engine.execute(inputs={})
-            print(f"  Execution completed. Results: {list(results.keys())}")
+            logger.info(f"  Execution completed. Results: {list(results.keys())}")
         except Exception as e:
-            print(f"  Execution raised: {type(e).__name__}: {e}")
+            logger.info(f"  Execution raised: {type(e).__name__}: {e}")
 
-    print("\n\nNote: ErrorHandlingMode.DEAD_LETTER would queue failures for later retry.")
+    logger.info(
+        "\n\nNote: ErrorHandlingMode.DEAD_LETTER would queue failures for later retry."
+    )
 
 
-async def demo_error_aggregation():
+async def demo_error_aggregation() -> None:
     """Demonstrate error aggregation and analysis."""
-    print("\n\n=== Demo 3: Error Aggregation ===\n")
+    logger.info("\n\n=== Demo 3: Error Aggregation ===\n")
 
     aggregator = PipelineErrorAggregator()
 
@@ -133,21 +137,24 @@ async def demo_error_aggregation():
 
     for task_name, error in tasks_failed:
         aggregator.add_error(
-            task=type('Task', (), {'task_name': task_name})(),
+            task=type("Task", (), {"task_name": task_name})(),
             error=error,
             context={"attempt": 1},
         )
 
-    print(f"Total errors collected: {len(aggregator.errors)}")
-    print(f"Failed tasks: {aggregator.failed_tasks}")
-    print("\nError details:")
+    logger.info(f"Total errors collected: {len(aggregator.errors)}")
+    logger.info(f"Failed tasks: {aggregator.failed_tasks}")
+    logger.info("\nError details:")
     for err in aggregator.errors:
-        print(f"  - {err.task_name}: {type(err.error).__name__}: {err.error}")
+        logger.info(f"  - {err.task_name}: {type(err.error).__name__}: {err.error}")
 
-    print("\nYou can use PipelineErrorAggregator to analyze failures and affected branches.")
+    logger.info(
+        "\nYou can use PipelineErrorAggregator to analyze failures and "
+        "affected branches."
+    )
 
 
-async def main():
+async def main() -> None:
     """Run all demos."""
     # Set random seed for reproducibility
     random.seed(42)
@@ -156,7 +163,7 @@ async def main():
     await demo_error_handling_modes()
     await demo_error_aggregation()
 
-    print("\n\n=== All Retry & Error Handling Demos Complete ===")
+    logger.info("\n\n=== All Retry & Error Handling Demos Complete ===")
 
 
 if __name__ == "__main__":
