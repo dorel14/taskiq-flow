@@ -2,12 +2,13 @@
 permalink: /en/examples/tracking-demo/
 title: Example: tracking_demo.py
 nav_order: 45
+color_scheme: dark
 ---
 # Example: tracking_demo.py
 
 **Pipeline execution tracking with PipelineTrackingManager**
 
-> **Version**: 0.4.0 | **File**: `examples/tracking_demo.py`
+> **Version**: 0.4.5 | **File**: `examples/tracking_demo.py`
 
 ---
 

@@ -2,12 +2,13 @@
 permalink: /fr/examples/quickstart/
 title: Exemple: quickstart.py
 nav_order: 41
+color_scheme: dark
 ---
 # Exemple: quickstart.py
 
-**Pipeline séquentiel basique avec opérations map, filter, et group**
+**Pipeline séquentiel simple avec opérations map, filter, group**
 
-> **Version** : 0.4.0 | **Fichier** : `examples/quickstart.py`
+> **Version** : 0.4.5 | **Fichier** : `examples/quickstart.py`
 
 ---
 

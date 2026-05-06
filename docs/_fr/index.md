@@ -2,6 +2,7 @@
 title: Documentation Française
 nav_order: 5
 permalink: /fr/
+color_scheme: dark
 ---
 # Taskiq-Flow Documentation (Français)
 

@@ -2,6 +2,7 @@
 title: English Documentation
 nav_order: 5
 permalink: /en/
+color_scheme: dark
 ---
 # Taskiq-Flow Documentation (English)
 

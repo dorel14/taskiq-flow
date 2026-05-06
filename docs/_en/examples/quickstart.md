@@ -1,13 +1,14 @@
 ---
 permalink: /en/examples/quickstart/
-title: Exemple: quickstart.py
+title: Example: quickstart.py
 nav_order: 41
+color_scheme: dark
 ---
-# Exemple: quickstart.py
+# Example: quickstart.py
 
 **Basic sequential pipeline with map, filter, and group operations**
 
-> **Version**: 0.4.0 | **File**: `examples/quickstart.py`
+> **Version**: 0.4.5 | **File**: `examples/quickstart.py`
 
 ---
 

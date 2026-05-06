@@ -2,12 +2,13 @@
 permalink: /en/examples/websocket-demo/
 title: Example: websocket_demo.py
 nav_order: 46
+color_scheme: dark
 ---
 # Example: websocket_demo.py
 
-**Real-time pipeline event streaming with WebSocket**
+**Real-time event streaming via WebSockets**
 
-> **Version**: 0.4.0 | **File**: `examples/websocket_demo.py`
+> **Version**: 0.4.5 | **File**: `examples/websocket_demo.py`
 
 ---
 
