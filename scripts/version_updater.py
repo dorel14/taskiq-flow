@@ -75,8 +75,10 @@ def write_uvlock_version(new_version: str) -> None:
         flags=re.DOTALL,
     )
     if new_content == content:
-        logger.info("Could not find taskiq-flow version in uv.lock,\
-                    manual update needed")
+        logger.info(
+            "Could not find taskiq-flow version in uv.lock,\
+                    manual update needed"
+        )
     else:
         uvlock.write_text(new_content, encoding="utf-8")
         logger.info(f"Updated uv.lock to version {new_version}")
@@ -100,8 +102,10 @@ def update_docs_version(old_version: str, new_version: str) -> None:
             updated_files.append(md_file)
 
     if updated_files:
-        logger.info(f" Updated {len(updated_files)} documentation files \
-            to version {new_version}")
+        logger.info(
+            f" Updated {len(updated_files)} documentation files \
+            to version {new_version}"
+        )
     else:
         logger.info("  No documentation files needed version update")
 
@@ -170,8 +174,10 @@ def check_consistency() -> bool:
 
 def main() -> None:
     """Main entry point for version updater script."""
-    parser = argparse.ArgumentParser(description="Update Taskiq-Flow version \
-                                across all files")
+    parser = argparse.ArgumentParser(
+        description="Update Taskiq-Flow version \
+                                across all files"
+    )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check version consistency")
     group.add_argument(

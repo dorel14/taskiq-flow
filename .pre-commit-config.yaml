@@ -54,11 +54,3 @@ repos:
           - "taskiq>=0.11.12,<1"
           - "typing-extensions>=4.3.0,<5"
         args: [ "--config-file=pyproject.toml", "--install-types", "--non-interactive" ]
-
-  - repo: local
-    hooks:
-      - id: black
-        name: Format with Black
-        entry: uv run black
-        language: system
-        types: [python]
