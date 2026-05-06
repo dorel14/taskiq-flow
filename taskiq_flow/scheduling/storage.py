@@ -118,11 +118,11 @@ class JobPersistenceManager:
                     Examples:
                     - "sqlite:///jobs.db" (sync)
                     - "sqlite+aiosqlite:///jobs.db" (async)
-                    - "postgresql+asyncpg://user:pass@localhost:5432/"\
-                        # pragma: allowlist secret
+                    # pragma: allowlist nextline secret
+                    - "postgresql+asyncpg://user:pass@localhost:5432/"
                     "taskiq_flow" (async)
-                    - "mysql+aiomysql://user:pass@localhost:3306/"\
-                        # pragma: allowlist secret
+                    # pragma: allowlist nextline secret
+                    - "mysql+aiomysql://user:pass@localhost:3306/"
                     "taskiq_flow" (async)
             async_mode: Use async SQLAlchemy engine (recommended for production)
         """
@@ -392,8 +392,8 @@ class JobPersistenceManager:
             ...     password="password", # pragma: allowlist secret
             ...     database="taskiq_flow",
             ... )
-            'postgresql+asyncpg://taskiq:password@localhost:5432/taskiq_flow' \
-                # pragma: allowlist secret
+            # pragma: allowlist nextline secret
+            'postgresql+asyncpg://taskiq:password@localhost:5432/taskiq_flow'
         """
         drivers = {
             "sqlite": "sqlite+aiosqlite",
