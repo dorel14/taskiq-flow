@@ -156,6 +156,7 @@ def check_consistency() -> bool:
     return consistent
 
 def main():
+    """Main entry point for version updater script."""
     parser = argparse.ArgumentParser(description="Update Taskiq-Flow version across all files")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check version consistency")
