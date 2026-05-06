@@ -136,7 +136,7 @@ class DataflowRegistry:
             if existing_output != output:
                 raise ValueError(
                     f"Task already registered with output '{existing_output}', "
-                    f"cannot re-register with different output '{output}'"
+                    f"cannot re-register with different output '{output}'",
                 )
 
         if task not in self.tasks:

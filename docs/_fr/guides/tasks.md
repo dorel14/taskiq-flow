@@ -40,6 +40,7 @@ async def my_task(value: int) -> int:
 ```
 
 **Exigences** :
+
 - Doit être une fonction `async def` (ou `def` normale pour les tâches synchrones)
 - Doit être décorée avec `@broker.task` (ou `@broker.task(...)` avec options)
 - Peut accepter n'importe quels paramètres sérialisables
@@ -102,6 +103,7 @@ def tag(features: dict) -> list[str]:
 | `description` | `str` | Description lisible de la tâche |
 
 **Sorties multiples** :
+
 ```python
 @broker.task
 @pipeline_task(outputs=["features", "metadata"])

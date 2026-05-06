@@ -100,8 +100,8 @@ class JobPersistenceManager:
 
     Supports multiple database backends via SQLAlchemy:
     - SQLite (default): sqlite:///jobs.db or sqlite+aiosqlite:///jobs.db
-    - PostgreSQL: postgresql+asyncpg://user:pass@host/db
-    - MySQL: mysql+aiomysql://user:pass@host/db
+    - PostgreSQL: postgresql+asyncpg://user:pass@host/db # pragma: allowlist secret
+    - MySQL: mysql+aiomysql://user:pass@host/db # pragma: allowlist secret
     - Any SQLAlchemy-supported database
     """
 
@@ -118,10 +118,12 @@ class JobPersistenceManager:
                     Examples:
                     - "sqlite:///jobs.db" (sync)
                     - "sqlite+aiosqlite:///jobs.db" (async)
+                    # pragma: allowlist nextline secret
                     - "postgresql+asyncpg://user:pass@localhost:5432/"
-                      "taskiq_flow" (async)
+                    "taskiq_flow" (async)
+                    # pragma: allowlist nextline secret
                     - "mysql+aiomysql://user:pass@localhost:3306/"
-                      "taskiq_flow" (async)
+                    "taskiq_flow" (async)
             async_mode: Use async SQLAlchemy engine (recommended for production)
         """
         self.db_url = db_url
@@ -130,13 +132,17 @@ class JobPersistenceManager:
         if async_mode:
             self.engine: AsyncSession | Any = create_async_engine(db_url, echo=False)
             self.async_session = async_sessionmaker(
-                self.engine, class_=AsyncSession, expire_on_commit=False
+                self.engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
             )
         else:
             sync_engine = create_engine(db_url, echo=False)
             self.engine = sync_engine  # type: ignore[assignment]
             self.session = sessionmaker(
-                bind=sync_engine, class_=sessionmaker, expire_on_commit=False
+                bind=sync_engine,
+                class_=sessionmaker,
+                expire_on_commit=False,
             )
 
         # Create tables - use sync engine for DDL
@@ -194,7 +200,7 @@ class JobPersistenceManager:
         if self.async_mode:
             async with self.async_session() as session:
                 result = await session.execute(
-                    select(SchedulerJobModel).where(SchedulerJobModel.enabled == True)  # noqa: E712
+                    select(SchedulerJobModel).where(SchedulerJobModel.enabled),
                 )
                 db_jobs = result.scalars().all()
                 return [
@@ -204,7 +210,7 @@ class JobPersistenceManager:
                         label=str(j.label),
                         cron=str(j.cron) if j.cron is not None else None,
                         interval_seconds=(
-                            int(j.interval_seconds)
+                            int(j.interval_seconds)  # type: ignore[arg-type]
                             if j.interval_seconds is not None
                             else None
                         ),
@@ -239,7 +245,7 @@ class JobPersistenceManager:
                         label=str(j.label),
                         cron=str(j.cron) if j.cron is not None else None,
                         interval_seconds=(
-                            int(j.interval_seconds)
+                            int(j.interval_seconds)  # type: ignore[arg-type]
                             if j.interval_seconds is not None
                             else None
                         ),
@@ -308,7 +314,7 @@ class JobPersistenceManager:
                     select(PipelineExecutionModel)
                     .where(PipelineExecutionModel.job_id == job_id)
                     .order_by(PipelineExecutionModel.started_at.desc())
-                    .limit(limit)
+                    .limit(limit),
                 )
                 db_executions = result.scalars().all()
                 return [
@@ -325,7 +331,7 @@ class JobPersistenceManager:
                             else None
                         ),
                         duration_seconds=(
-                            float(e.duration_seconds)
+                            float(e.duration_seconds)  # type: ignore[arg-type]
                             if e.duration_seconds is not None
                             else None
                         ),
@@ -357,7 +363,7 @@ class JobPersistenceManager:
                             else None
                         ),
                         duration_seconds=(
-                            float(e.duration_seconds)
+                            float(e.duration_seconds)  # type: ignore[arg-type]
                             if e.duration_seconds is not None
                             else None
                         ),
@@ -385,10 +391,11 @@ class JobPersistenceManager:
             ...     host="localhost",
             ...     port=5432,
             ...     user="taskiq",
-            ...     password="secret",
+            ...     password="password", # pragma: allowlist secret
             ...     database="taskiq_flow",
             ... )
-            'postgresql+asyncpg://taskiq:secret@localhost:5432/taskiq_flow'
+            # pragma: allowlist nextline secret
+            'postgresql+asyncpg://taskiq:password@localhost:5432/taskiq_flow'
         """
         drivers = {
             "sqlite": "sqlite+aiosqlite",

@@ -100,7 +100,7 @@ statut: PipelineStatus
 | Champ | Type | Description |
 |-------|------|-------------|
 | `pipeline_id` | `str` | Identifiant unique de l'instance de pipeline |
-| `statut` | `str` | `EN_ATTENTE`, `EN_COURS`, `TERMINÉ`, `ÉCHOUÉ`, `ANNULÉ` |
+| `statut` | `str` | `EN_ATTENTE`, `EN_COURSE`, `TERMINÉ`, `ÉCHOUÉ`, `ANNULÉ` |
 | `pipeline_type` | `str` | `"sequential"` ou `"dataflow"` |
 | `démarré_à` | `datetime` | Horodatage de début d'exécution |
 | `terminé_à` | `datetime` | Horodatage de fin (si terminé) |
@@ -114,7 +114,7 @@ statut: PipelineStatus
 | Champ | Type | Description |
 |-------|------|-------------|
 | `step_name` | `str` | Nom de la tâche |
-| `statut` | `str` | `EN_ATTENTE`, `EN_COURS`, `TERMINÉ`, `ÉCHOUÉ` |
+| `statut` | `str` | `EN_ATTENTE`, `EN_COURSE`, `TERMINÉ`, `ÉCHOUÉ` |
 | `démarré_à` | `datetime` | Heure de début d'étape |
 | `terminé_à` | `datetime` | Heure de fin d'étape |
 | `durée_ms` | `float` | Temps d'exécution de l'étape |
@@ -148,7 +148,7 @@ for statut in tous_statuts:
 ### 4.3. Filtrer par Statut
 
 ```python
-en_cours = await suivi.list_pipelines(filtre_statut="EN_COURS")
+en_cours = await suivi.list_pipelines(filtre_statut="EN_COURSE")
 échoués = await suivi.list_pipelines(filtre_statut="ÉCHOUÉ")
 terminés = await suivi.list_pipelines(filtre_statut="TERMINÉ")
 ```

@@ -557,7 +557,7 @@ For production HA deployments, run multiple scheduler instances with a shared jo
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db"
+    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
 )
 
 # Scheduler 2 (identical config) — only one will acquire jobs
