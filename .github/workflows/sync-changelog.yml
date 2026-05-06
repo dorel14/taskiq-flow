@@ -8,11 +8,41 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
-      - name: Sync to French changelog (stub - manual translation needed)
+      
+      - name: Translate changelog to French with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          echo "<!-- CHANGELOG FRANÇAIS - À traduire manuellement -->" > CHANGELOG.fr.md.new
-          echo "" >> CHANGELOG.fr.md.new
-          grep -A 100 "^## " CHANGELOG.md >> CHANGELOG.fr.md.new || true
-          cp CHANGELOG.fr.md.new CHANGELOG.fr.md
+          # Extraire le changelog anglais
+          CHANGELOG_EN=$(cat CHANGELOG.md)
+          
+          # Appeler l'API Gemini
+          RESPONSE=$(curl -s https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$GEMINI_API_KEY \
+            -H "Content-Type: application/json" \
+            -d '{
+              "contents": [{
+                "parts": [{
+                  "text": "Translate this English changelog to French. Don't try to translate code blocks. Maintain markdown formatting and keep the version headers (##). Output only the French translation:\n\n'"$CHANGELOG_EN"'"
+                }]
+              }]
+            }')
+          
+          # Extraire le texte traduit
+          TRANSLATED=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+          
+          # Sauvegarder
+          echo "<!-- CHANGELOG FRANÇAIS - Traduit automatiquement par Gemini -->" > CHANGELOG.fr.md
+          echo "" >> CHANGELOG.fr.md
+          echo "$TRANSLATED" >> CHANGELOG.fr.md
+
+      - name: Commit French changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.fr.md
+          git diff --quiet && git diff --staged --quiet || git commit -m "docs: update French changelog translation"
+          git push
