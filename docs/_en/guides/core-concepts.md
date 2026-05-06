@@ -1,6 +1,7 @@
 ---
 title: Core Concepts Guide
 nav_order: 12
+permalink: /en/guides/core-concepts/
 ---
 # Core Concepts Guide
 

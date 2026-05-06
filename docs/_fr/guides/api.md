@@ -6,7 +6,7 @@ nav_order: 28
 
 **Gestion de pipelines via FastAPI : exécution distante, visualisation, tableaux de bord**
 
-> **Version** : 0.3.2 | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
+> **Version** : 0.4.0 | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 

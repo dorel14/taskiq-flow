@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/tracking-demo/
 title: Example: tracking_demo.py
 nav_order: 45
 ---
@@ -6,7 +7,7 @@ nav_order: 45
 
 **Pipeline execution tracking with PipelineTrackingManager**
 
-> **Version**: 0.3.2 | **File**: `examples/tracking_demo.py`
+> **Version**: 0.4.0 | **File**: `examples/tracking_demo.py`
 
 ---
 

@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/registry-discovery/
 title: Example: registry_discovery_example.py
 nav_order: 43
 ---
@@ -6,7 +7,7 @@ nav_order: 43
 
 **Manual DataflowRegistry construction, DAG inspection, and step-by-step execution**
 
-> **Version**: 0.3.2 | **File**: `examples/registry_discovery_example.py`
+> **Version**: 0.4.0 | **File**: `examples/registry_discovery_example.py`
 
 ---
 
