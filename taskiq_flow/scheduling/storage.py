@@ -194,7 +194,9 @@ class JobPersistenceManager:
         if self.async_mode:
             async with self.async_session() as session:
                 result = await session.execute(
-                    select(SchedulerJobModel).where(SchedulerJobModel.enabled == True)  # noqa: E712
+                    select(SchedulerJobModel).where(
+                        SchedulerJobModel.enabled == True
+                    )  # noqa: E712
                 )
                 db_jobs = result.scalars().all()
                 return [

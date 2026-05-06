@@ -1,7 +1,7 @@
 """Execution engine for DAG-based pipelines.
 
 Executes tasks respecting dependencies, running in parallel when possible.
-Handles retries, error modes (fail_fast, continue_on_error, skip_failed), 
+Handles retries, error modes (fail_fast, continue_on_error, skip_failed),
 and data caching.
 
 Author: SoniqueBay Team
