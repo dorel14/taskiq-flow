@@ -25,7 +25,7 @@ just_the_docs:
 
   # Color scheme supports "light" (default) and "dark"
   color_scheme: dark
-  
+
   # Collections navigation
   nav_sort: case_insensitive
   collections:
@@ -35,12 +35,12 @@ just_the_docs:
     fr:
       name: Français
       nav_fold: true
-  
+
   # Footer
   footer_content: "Documentation version: 0.4.0 | Last updated: 2026-05-05"
 
-  
-  
+
+
   # Icons (optional, uses built-in)
   # icon: ""
 

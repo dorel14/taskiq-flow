@@ -37,7 +37,9 @@ def write_pyproject_version(new_version: str) -> None:
     pyproject = PROJECT_ROOT / "pyproject.toml"
     content = pyproject.read_text(encoding="utf-8")
     new_content = re.sub(
-        r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', content
+        r'version\s*=\s*"[^"]+"',
+        f'version = "{new_version}"',
+        content,
     )
     pyproject.write_text(new_content, encoding="utf-8")
     logger.info(f"✅ Updated pyproject.toml to version {new_version}")
@@ -75,7 +77,7 @@ def write_uvlock_version(new_version: str) -> None:
     if new_content == content:
         logger.info(
             "⚠️  Could not find taskiq-flow version in uv.lock,\
-                    manual update needed"
+                    manual update needed",
         )
     else:
         uvlock.write_text(new_content, encoding="utf-8")
@@ -102,7 +104,7 @@ def update_docs_version(old_version: str, new_version: str) -> None:
     if updated_files:
         logger.info(
             f" Updated {len(updated_files)} documentation files \
-            to version {new_version}"
+            to version {new_version}",
         )
     else:
         logger.info("  No documentation files needed version update")
@@ -174,12 +176,14 @@ def main() -> None:
     """Main entry point for version updater script."""
     parser = argparse.ArgumentParser(
         description="Update Taskiq-Flow version \
-                                across all files"
+                                across all files",
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check version consistency")
     group.add_argument(
-        "--bump", choices=["major", "minor", "patch"], help="Bump version part"
+        "--bump",
+        choices=["major", "minor", "patch"],
+        help="Bump version part",
     )
     group.add_argument("--set", metavar="VERSION", help="Set explicit version (X.Y.Z)")
 
