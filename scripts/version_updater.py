@@ -73,20 +73,18 @@ def write_uvlock_version(new_version: str) -> None:
         flags=re.DOTALL,
     )
     if new_content == content:
-        logger.info(
-            "⚠️  Could not find taskiq-flow version in uv.lock,\
-                    manual update needed"
-        )
+        logger.info("Could not find taskiq-flow version in uv.lock,\
+                    manual update needed")
     else:
         uvlock.write_text(new_content, encoding="utf-8")
-        logger.info(f"✅ Updated uv.lock to version {new_version}")
+        logger.info(f"Updated uv.lock to version {new_version}")
 
 
 def update_docs_version(old_version: str, new_version: str) -> None:
     """Update version strings in all documentation files."""
     docs_dir = PROJECT_ROOT / "docs"
     if not docs_dir.exists():
-        logger.info("⚠️  docs/ directory not found, skipping")
+        logger.info("docs/ directory not found, skipping")
         return
 
     updated_files = []
@@ -100,10 +98,8 @@ def update_docs_version(old_version: str, new_version: str) -> None:
             updated_files.append(md_file)
 
     if updated_files:
-        logger.info(
-            f" Updated {len(updated_files)} documentation files \
-            to version {new_version}"
-        )
+        logger.info(f" Updated {len(updated_files)} documentation files \
+            to version {new_version}")
     else:
         logger.info("  No documentation files needed version update")
 
@@ -112,7 +108,7 @@ def update_config_footer(new_version: str) -> None:
     """Update version in docs/_config.yml footer."""
     config_path = PROJECT_ROOT / "docs" / "_config.yml"
     if not config_path.exists():
-        logger.info("⚠️  docs/_config.yml not found, skipping footer update")
+        logger.info("docs/_config.yml not found, skipping footer update")
         return
     content = config_path.read_text(encoding="utf-8")
     # Update footer_content line
@@ -123,7 +119,7 @@ def update_config_footer(new_version: str) -> None:
     )
     if new_content != content:
         config_path.write_text(new_content, encoding="utf-8")
-        logger.info(f"✅ Updated _config.yml footer to version {new_version}")
+        logger.info(f"Updated _config.yml footer to version {new_version}")
 
 
 def bump_version(version: str, bump_type: str) -> str:
@@ -172,10 +168,8 @@ def check_consistency() -> bool:
 
 def main() -> None:
     """Main entry point for version updater script."""
-    parser = argparse.ArgumentParser(
-        description="Update Taskiq-Flow version \
-                                across all files"
-    )
+    parser = argparse.ArgumentParser(description="Update Taskiq-Flow version \
+                                across all files")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check version consistency")
     group.add_argument(
