@@ -6,7 +6,7 @@ nav_order: 28
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: 0.3.2 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
+> **Version**: 0.4.0 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
 
 ---
 

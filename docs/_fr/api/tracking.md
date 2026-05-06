@@ -1,4 +1,5 @@
 ---
+permalink: /fr/api/tracking/
 title: Référence API: Suivi
 nav_order: 33
 ---
@@ -6,7 +7,7 @@ nav_order: 33
 
 **PipelineTrackingManager, backends de stockage, et modèles de statut**
 
-> **Version** : 0.3.2 | **Module** : `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version** : 0.4.0 | **Module** : `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

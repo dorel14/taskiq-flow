@@ -1,4 +1,5 @@
 ---
+permalink: /en/examples/websocket-demo/
 title: Example: websocket_demo.py
 nav_order: 46
 ---
@@ -6,7 +7,7 @@ nav_order: 46
 
 **Real-time pipeline event streaming with WebSocket**
 
-> **Version**: 0.3.2 | **File**: `examples/websocket_demo.py`
+> **Version**: 0.4.0 | **File**: `examples/websocket_demo.py`
 
 ---
 

@@ -1,0 +1,124 @@
+# Jekyll configuration for GitHub Pages with Just the Docs theme
+
+# Site settings
+title: Taskiq-Flow Documentation
+description: Official documentation for Taskiq-Flow - asynchronous task workflow orchestration
+lang: en
+timezone: UTC
+
+# GitHub Pages: base URL (repo name for project pages)
+baseurl: "/taskiq-flow"
+# url: "https://SoniqueBay.github.io"  # uncomment and set if custom domain
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+# Use remote theme for Just the Docs (GitHub Pages compatible)
+remote_theme: just-the-docs/just-the-docs
+
+# Just the Docs theme configuration
+just_the_docs:
+  # Search
+  search_enabled: true
+  search_preview: true
+  heading_break: 360  # include headings up to h3 in search preview
+
+  # Color scheme supports "light" (default) and "dark"
+  color_scheme: dark
+
+  # Collections navigation
+  nav_sort: case_insensitive
+  collections:
+    en:
+      name: English
+      nav_fold: true
+    fr:
+      name: Français
+      nav_fold: true
+
+  # Footer
+  footer_content: "Documentation version: 0.4.0 | Last updated: 2026-05-05"
+
+
+
+  # Icons (optional, uses built-in)
+  # icon: ""
+
+# Collections for organized content
+collections:
+  en:
+    output: true
+    sort_by: nav_order
+  fr:
+    output: true
+    sort_by: nav_order
+
+# Default front matter for markdown files
+defaults:
+  # Root pages (README.md, etc.)
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: default
+  # Collection: English
+  - scope:
+      path: "_en"
+      type: en
+    values:
+      layout: default
+      lang: en
+  # Collection: French
+  - scope:
+      path: "_fr"
+      type: fr
+    values:
+      layout: default
+      lang: fr
+
+# Include additional files
+include:
+  - _pages
+  - README.md
+
+# Exclude from build
+exclude:
+  - archive/
+  - .kilo/
+  - .git/
+  - node_modules/
+  - vendor/
+  - "*.py"
+  - "*.json"
+  - "*.yaml"
+  - "*.yml"
+  - ".env*"
+  - "*.log"
+  - "__pycache__/"
+  - "*.egg-info/"
+  - ".venv/"
+  - "venv/"
+  - Gemfile
+  - Gemfile.lock
+
+# Plugins (GitHub Pages supported)
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-remote-theme  # if using remote theme
+
+# SEO and social
+github_username: dorel14
+repository: taskiq-flow
+
+# Permalink style (clean URLs)
+permalink: pretty
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false

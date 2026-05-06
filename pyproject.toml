@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
- version = "0.3.2"
+ version = "0.4.0"
 dependencies = [
   "apscheduler[sqlalchemy]>=3.11.2",
   "fastapi>=0.136.1",
@@ -53,7 +53,6 @@ Repository = "https://github.com/taskiq-python/taskiq-flow"
 [dependency-groups]
 dev = [
   "anyio>=4",
-  "black>=26.3.1",
   "mypy>=1.8,<2",
   "pre-commit>=4",
   "pytest>=9.0.3",
@@ -61,7 +60,6 @@ dev = [
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
   "isort>=8.0.1",
-  "mypy>=1.20.2",
 ]
 
 [build-system]
