@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/scheduled-pipeline/
 title: Exemple: scheduled_pipeline.py
 nav_order: 44
 ---
@@ -6,7 +7,7 @@ nav_order: 44
 
 **Planification de pipelines avec triggers cron et intervalle**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/scheduled_pipeline.py`
+> **Version** : 0.4.0 | **Fichier** : `examples/scheduled_pipeline.py`
 
 ---
 

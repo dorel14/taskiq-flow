@@ -29,6 +29,9 @@ class EventType(str, Enum):
     STEP_RETRY = "StepRetryEvent"
     STEP_SKIP = "StepSkipEvent"
     PIPELINE_SKIP = "PipelineSkipEvent"
+    RETRY_SCHEDULED = "RetryScheduledEvent"
+    RETRY_EXECUTED = "RetryExecutedEvent"
+    METRIC_RECORD = "MetricRecordEvent"
 
 
 class PipelineEvent(BaseModel):
@@ -126,3 +129,12 @@ class PipelineSkipEvent(PipelineEvent):
     event_type: EventType = EventType.PIPELINE_SKIP
     reason: str
     skipped_steps: list[str] = []
+
+
+class MetricRecordEvent(PipelineEvent):
+    """Event fired when a metric is recorded."""
+
+    event_type: EventType = EventType.METRIC_RECORD
+    metric_name: str
+    metric_value: float
+    tags: dict[str, Any] = {}

@@ -6,7 +6,7 @@ nav_order: 27
 
 **Resource-aware parallelism, memory optimization, and scaling strategies**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
+> **Version**: 0.4.0 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 

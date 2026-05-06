@@ -1,4 +1,5 @@
 ---
+permalink: /en/api/core/
 title: API Reference: Core Components
 nav_order: 30
 ---
@@ -6,7 +7,7 @@ nav_order: 30
 
 **Pipeline, DataflowPipeline, PipelineMiddleware, PipelineContext, and core exceptions**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
+> **Version**: 0.4.0 | **Module**: `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
 
 ---
 
@@ -262,7 +263,7 @@ API stability:
 - `PipelineScheduler`: Stable (v0.3+)
 - `PipelineTrackingManager`: Stable (v0.3+)
 
-Breaking changes will be noted in [CHANGELOG.md](https://github.com/SoniqueBay/taskiq-flow/blob/main/CHANGELOG.md).
+Breaking changes will be noted in [CHANGELOG.md](https://github.com/dorel14/taskiq-flow/blob/main/CHANGELOG.md).
 
 ---
 

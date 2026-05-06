@@ -1,4 +1,5 @@
 ---
+permalink: /fr/examples/api-example/
 title: Exemple: api_example.py
 nav_order: 47
 ---
@@ -6,7 +7,7 @@ nav_order: 47
 
 **API REST pour gestion et visualisation de pipelines avec FastAPI**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/api_example.py`
+> **Version** : 0.4.0 | **Fichier** : `examples/api_example.py`
 
 ---
 

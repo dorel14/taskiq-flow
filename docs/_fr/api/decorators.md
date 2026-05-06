@@ -1,4 +1,5 @@
 ---
+permalink: /fr/api/decorators/
 title: Référence API: Décorateurs
 nav_order: 31
 ---
@@ -6,7 +7,7 @@ nav_order: 31
 
 **@pipeline_task, @pipeline_task_multi_output et utilitaires**
 
-> **Version** : 0.3.2 | **Module** : `taskiq_flow.decorators`
+> **Version** : 0.4.0 | **Module** : `taskiq_flow.decorators`
 
 ---
 

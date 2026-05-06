@@ -6,7 +6,7 @@ nav_order: 22
 
 **Comprendre les modèles d'exécution, les modes et la gestion des résultats**
 
-> **Version** : 0.3.2 | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce
+> **Version** : 0.4.0 | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce
 
 ---
 
@@ -368,7 +368,7 @@ task = await pipeline.kiq(données)
 
 # Obtenir le statut détaillé
 statut = await tracking.get_status(pipeline.pipeline_id)
-print(f"Statut: {statut.statut}")        # EN_ATTENTE, EN_COURS, TERMINÉ, ÉCHOUÉ
+print(f"Statut: {statut.statut}")        # EN_ATTENTE, EN_COURSE, TERMINÉ, ÉCHOUÉ
 print(f"Étapes: {len(statut.étapes)}")     # Nombre d'étapes complétées
 print(f"Démarré: {statut.démarré_à}")
 print(f"Terminé: {statut.terminé_à}")
@@ -383,7 +383,7 @@ for étape in statut.étapes:
 | Statut | Signification |
 |--------|---------------|
 | `EN_ATTENTE` | Pipeline en file, pas encore démarré |
-| `EN_COURS` | En cours d'exécution |
+| `EN_COURSE` | En cours d'exécution |
 | `TERMINÉ` | Terminé avec succès |
 | `ÉCHOUÉ` | Terminé avec erreur |
 | `ANNULÉ` | Annulé manuellement |
