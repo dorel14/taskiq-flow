@@ -556,7 +556,7 @@ Pour déploiements production HA, lancer multiples instances de scheduler avec u
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db"
+    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
 )
 
 # Scheduler 2 (config identique) — seul un acquittera les jobs
