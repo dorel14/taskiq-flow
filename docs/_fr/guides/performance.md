@@ -512,4 +512,4 @@ L'optimisation des performances est itérative :
 
 ---
 
- *Allez vite, mais mesurez d'abord.* 
+ *Allez vite, mais mesurez d'abord.*

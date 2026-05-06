@@ -146,7 +146,7 @@ async def example_manual_registry() -> None:
     # Find consumers
     raw_data_consumers = registry.get_consumers("raw_data")
     logger.info(
-        f"'raw_data' is consumed by: {[c.task_name for c in raw_data_consumers]}"
+        f"'raw_data' is consumed by: {[c.task_name for c in raw_data_consumers]}",
     )
 
     # List outputs and external inputs
@@ -285,7 +285,7 @@ async def example_execution_with_engine() -> None:
     for task in registry.get_tasks():
         meta = registry.get_task_metadata(task)
         logger.info(
-            f"  - {task.task_name}: output={meta['output']}, inputs={meta['inputs']}"
+            f"  - {task.task_name}: output={meta['output']}, inputs={meta['inputs']}",
         )
 
     # Step 2: Build DAG

@@ -87,7 +87,7 @@ class ResourceAwareExecutor:
         # CPU-based limit
         if task_cpu_estimate > 0:
             cpu_parallel = int(
-                (cpu_available / 100) * self.max_parallel / task_cpu_estimate
+                (cpu_available / 100) * self.max_parallel / task_cpu_estimate,
             )
         else:
             cpu_parallel = self.max_parallel

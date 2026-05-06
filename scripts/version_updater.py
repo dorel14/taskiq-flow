@@ -37,7 +37,9 @@ def write_pyproject_version(new_version: str) -> None:
     pyproject = PROJECT_ROOT / "pyproject.toml"
     content = pyproject.read_text(encoding="utf-8")
     new_content = re.sub(
-        r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', content
+        r'version\s*=\s*"[^"]+"',
+        f'version = "{new_version}"',
+        content,
     )
     pyproject.write_text(new_content, encoding="utf-8")
     logger.info(f"✅ Updated pyproject.toml to version {new_version}")
@@ -173,7 +175,9 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--check", action="store_true", help="Check version consistency")
     group.add_argument(
-        "--bump", choices=["major", "minor", "patch"], help="Bump version part"
+        "--bump",
+        choices=["major", "minor", "patch"],
+        help="Bump version part",
     )
     group.add_argument("--set", metavar="VERSION", help="Set explicit version (X.Y.Z)")
 

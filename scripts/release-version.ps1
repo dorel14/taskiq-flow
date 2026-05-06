@@ -5,11 +5,11 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$Version,
-    
+
     [string]$Message = "Release v$Version - Documentation update",
-    
+
     [switch]$Push,
-    
+
     [string]$Branch = "develop"
 )
 
@@ -90,7 +90,7 @@ Write-Host "   Tag created: $tagName"
 # 5. Push (if requested)
 if ($Push) {
     Write-Host "`n🚀 Step 5: Pushing to remote..." -ForegroundColor Green
-    
+
     # Push branch
     Write-Host "   Pushing branch $Branch..."
     git push origin $Branch
@@ -98,7 +98,7 @@ if ($Push) {
         Write-Error "Failed to push branch $Branch"
         exit 1
     }
-    
+
     # Push tag
     Write-Host "   Pushing tag $tagName..."
     git push origin $tagName
@@ -106,7 +106,7 @@ if ($Push) {
         Write-Error "Failed to push tag"
         exit 1
     }
-    
+
     Write-Host "   ✅ Pushed branch and tag to remote"
 } else {
     Write-Host "`n📍 Step 5: Skipping push (use -Push to push to remote)" -ForegroundColor Yellow

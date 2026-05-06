@@ -132,13 +132,17 @@ class JobPersistenceManager:
         if async_mode:
             self.engine: AsyncSession | Any = create_async_engine(db_url, echo=False)
             self.async_session = async_sessionmaker(
-                self.engine, class_=AsyncSession, expire_on_commit=False
+                self.engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
             )
         else:
             sync_engine = create_engine(db_url, echo=False)
             self.engine = sync_engine  # type: ignore[assignment]
             self.session = sessionmaker(
-                bind=sync_engine, class_=sessionmaker, expire_on_commit=False
+                bind=sync_engine,
+                class_=sessionmaker,
+                expire_on_commit=False,
             )
 
         # Create tables - use sync engine for DDL
@@ -196,7 +200,7 @@ class JobPersistenceManager:
         if self.async_mode:
             async with self.async_session() as session:
                 result = await session.execute(
-                    select(SchedulerJobModel).where(SchedulerJobModel.enabled)
+                    select(SchedulerJobModel).where(SchedulerJobModel.enabled),
                 )
                 db_jobs = result.scalars().all()
                 return [
@@ -310,7 +314,7 @@ class JobPersistenceManager:
                     select(PipelineExecutionModel)
                     .where(PipelineExecutionModel.job_id == job_id)
                     .order_by(PipelineExecutionModel.started_at.desc())
-                    .limit(limit)
+                    .limit(limit),
                 )
                 db_executions = result.scalars().all()
                 return [
