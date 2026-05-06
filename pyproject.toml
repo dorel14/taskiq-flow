@@ -183,5 +183,5 @@ match = "main"
 
 [tool.semantic_release.branches.develop]
 match = "develop"
-prerelease = true
+prerelease = false
 prerelease_tag = "dev"

@@ -4,7 +4,7 @@ Taskiq-Flow lets you chain intensive functions together and fire them off withou
 
 *Version: 0.3.2*
 
-> 🌐 **International Documentation**: This project also provides documentation in [Français](README.fr.md).
+>  **International Documentation**: This project also provides documentation in [Français](README.fr.md).
 
 ## Inspiration & Design Philosophy
 

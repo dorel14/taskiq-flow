@@ -1,0 +1,50 @@
+name: Release
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install python-semantic-release uv
+
+      - name: Get version and update docs
+        id: version
+        run: |
+            VERSION=$(python -m semantic_release version --print)
+            DATE=$(date +%Y-%m-%d)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+            # Mettre à jour tous les README.md dans /docs/ ET le README.md racine
+            find docs/ -name "*.md" -name "README.md" -exec sed -i \
+                -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
+                -e "s/taskiq-flow==\{VERSION\}/taskiq-flow==$VERSION/g" {} \;
+    
+            # README.md à la racine
+            sed -i \
+                -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
+                -e "s/taskiq-flow==\{VERSION\}/taskiq-flow==$VERSION/g" README.md
+
+
+      - name: Commit updated docs
+        run: |
+          git config user.name "semantic-release"
+          git config user.email "actions@github.com"
+          git add docs/
+          git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || exit 0
+          git push

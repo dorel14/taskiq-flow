@@ -4,7 +4,7 @@ Taskiq-Flow vous permet d'enchaîner des fonctions intensives et de les exécute
 
 *Version : 0.3.2*
 
-> 🌐 **Documentation Internationale** : Ce projet dispose également d'une documentation en [English](README.md).
+>  **Documentation Internationale** : Ce projet dispose également d'une documentation en [English](README.md).
 
 ## Inspiration & Philosophie de Conception
 
