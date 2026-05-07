@@ -8,9 +8,9 @@ Version: 0.4.5
 """
 
 import time
-from typing import Self
 
 from prometheus_client import REGISTRY, generate_latest
+from typing_extensions import Self
 
 from taskiq_flow.metrics import (
     ACTIVE_PIPELINES,

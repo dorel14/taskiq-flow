@@ -8,7 +8,7 @@ Version: 0.4.5
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -51,7 +51,7 @@ class AuditLogger:
                 "action": action,
                 "pipeline_id": pipeline_id,
                 "success": success,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "ip": ip,
                 "details": details or {},
             },
@@ -81,7 +81,7 @@ class AuditLogger:
                 "user_id": user_id,
                 "method": method,
                 "success": success,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "ip": ip,
                 "details": details or {},
             },
@@ -109,7 +109,7 @@ class AuditLogger:
                 "user": user.get("sub") or user.get("key"),
                 "action": action,
                 "pipeline_id": pipeline_id,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "details": details or {},
             },
         )
@@ -136,7 +136,7 @@ class AuditLogger:
             extra={
                 "event_type": event_type,
                 "severity": severity,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "details": details or {},
             },
         )

@@ -10,7 +10,7 @@ Version: 0.4.5
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
@@ -132,11 +132,11 @@ class JWTAuthProvider(AuthProvider):
         Returns:
             Token JWT
         """
-        to_encode = {"sub": subject, "roles": roles, "iat": datetime.now(UTC)}
+        to_encode = {"sub": subject, "roles": roles, "iat": datetime.now(timezone.utc)}
         if expires_delta:
-            expire = datetime.now(UTC) + expires_delta
+            expire = datetime.now(timezone.utc) + expires_delta
         else:
-            expire = datetime.now(UTC) + timedelta(hours=24)
+            expire = datetime.now(timezone.utc) + timedelta(hours=24)
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, self.secret, algorithm=self.algorithm)
 
