@@ -31,6 +31,7 @@ class DAGViewer:
         self.mermaid_gen = MermaidGenerator(dag) if dag else None
         self._selected_node: str | None = None
         self._status_data: dict[str, Any] = {}
+        self._main_container: ui.column | None = None  # Pour le rafraîchissement
 
     def set_dag(self, dag: DAG) -> None:
         """
@@ -73,17 +74,24 @@ class DAGViewer:
         if not self.dag:
             return
 
-        with ui.row().classes("w-full"):
-            # Panneau gauche: Diagramme
-            with ui.column().classes("w-2/3"):
-                ui.label("Pipeline DAG").classes("text-h6")
-                self.render_mermaid()
+        # Créer ou réinitialiser le conteneur principal
+        if self._main_container is None:
+            self._main_container = ui.column().classes("w-full")
+        else:
+            self._main_container.clear()
 
-            # Panneau droit: Détails
-            with ui.column().classes("w-1/3"):
-                ui.label("Détails").classes("text-h6")
-                self._details_panel = ui.column()
-                self._update_details_panel()
+        with self._main_container:
+            with ui.row().classes("w-full"):
+                # Panneau gauche: Diagramme
+                with ui.column().classes("w-2/3"):
+                    ui.label("Pipeline DAG").classes("text-h6")
+                    self.render_mermaid()
+
+                # Panneau droit: Détails
+                with ui.column().classes("w-1/3"):
+                    ui.label("Détails").classes("text-h6")
+                    self._details_panel = ui.column()
+                    self._update_details_panel()
 
     def render_with_cytoscape(self) -> None:
         """Affiche le DAG avec Cytoscape.js pour une interactivité avancée."""
@@ -92,9 +100,11 @@ class DAGViewer:
 
         cytoscape_data = DAGVisualizer.to_cytoscape_json(self.dag)
 
-        # Injecter Cytoscape.js
+        # Injecter Cytoscape.js + Dagre (pour layout dagre)
         ui.add_head_html("""
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
         <style>
         #cy {
             width: 100%;
@@ -109,6 +119,12 @@ class DAGViewer:
         <div id="cy"></div>
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
+            // Register dagre layout with cytoscape
+            if (typeof dagre !== 'undefined') {{
+                cytoscape.use(dagre);
+            }} else {{
+                console.warn('dagre.js not loaded; dagre layout will not work');
+            }}
             var cy = cytoscape({{
                 container: document.getElementById('cy'),
                 elements: {json.dumps(cytoscape_data)},
@@ -155,8 +171,9 @@ class DAGViewer:
             ui.label("Sélectionnez un nœud dans le diagramme").classes("text-caption")
 
     def refresh(self) -> None:
-        """Rafraîchit l'affichage."""
-        # Cela déclenche un re-render dans NiceGUI
+        """Rafraîchit l'affichage du DAG."""
+        # Re-render la vue interactive avec le DAG actuel
+        self.render_interactive()
 
     def render_critical_path(self) -> None:
         """Affiche le chemin critique du DAG."""

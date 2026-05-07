@@ -150,7 +150,7 @@ Test with:
 curl -H "X-API-Key: sk_admin_full" http://localhost:8000/pipelines
 ```
 
-Swagger docs at: http://localhost:8000/docs (security enforced there too).
+Swagger docs at: <http://localhost:8000/docs> (security enforced there too).
 
 ---
 

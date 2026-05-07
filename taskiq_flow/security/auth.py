@@ -7,6 +7,7 @@ Auteur: SoniqueBay Team
 Version: 0.4.5
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -20,6 +21,8 @@ from fastapi.security import (
     HTTPBearer,
 )
 from starlette.requests import Request
+
+logger = logging.getLogger(__name__)
 
 
 class AuthProvider(ABC):
@@ -213,4 +216,29 @@ __all__ = [
     "bearer_auth",
     "get_api_key_user",
     "get_jwt_user",
+    "create_auth_provider",
 ]
+
+
+def create_auth_provider(config) -> AuthProvider:
+    """Factory to create an AuthProvider based on configuration.
+
+    Args:
+        config: TaskiqFlowConfig instance
+
+    Returns:
+        Configured AuthProvider instance
+
+    Raises:
+        ValueError: If auth_provider type is unknown
+    """
+    provider_type = config.auth_provider.lower()
+    if provider_type == "api_key":
+        if not config.api_keys:
+            logger.warning("No API keys configured; API key auth will reject all requests")
+        return APIKeyAuthProvider(keys=config.api_keys)
+    if provider_type == "jwt":
+        if not config.jwt_secret:
+            raise ValueError("jwt_secret must be set for JWT auth")
+        return JWTAuthProvider(secret=config.jwt_secret)
+    raise ValueError(f"Unknown auth provider: {provider_type}")

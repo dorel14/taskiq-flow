@@ -7,18 +7,20 @@ Auteur: SoniqueBay Team
 Version: 0.4.5
 """
 
-import contextlib
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import Request, Response
+from fastapi import Request, Response, HTTPException
 
 try:
     from fastapi.middleware.base import BaseHTTPMiddleware
 except ImportError:
     # Pour les anciennes versions de FastAPI
     from starlette.middleware.base import BaseHTTPMiddleware
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
@@ -61,40 +63,25 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         Returns:
             Réponse
         """
-        # Limitation de débit
-        endpoint = request.url.path
-        self.rate_limiter.get_limit(endpoint)
-        # TODO: Implémenter la vérification de la limite
-
-        # Authentification
-        user_context = None
-        with contextlib.suppress(Exception):
-            user_context = await self.auth_provider.verify(request)
-
-        # Autorisation (pour les endpoints spécifiques aux pipelines)
-        pipeline_id = request.path_params.get("pipeline_id")
-        if (
-            pipeline_id
-            and user_context
-            and not self.authorization.can_read(pipeline_id, user_context)
-        ):
-            await self.audit_logger.log_access(
-                user_context,
-                "unauthorized_access",
-                pipeline_id,
-                False,
-                request.client.host if request.client else None,
-            )
-            return Response(status_code=403, content="Accès refusé")
-
         # Traiter la requête
         start_time = time.time()
         response = await call_next(request)
         duration = time.time() - start_time
 
-        # Journalisation d'audit
-        if pipeline_id and user_context:
-            action = request.method + "_" + endpoint.replace("/", "_")
+        # Journalisation d'audit post-requête (si authentifié)
+        if user_context:
+            # pipeline_id est fourni par les dépendances de route (verify_pipeline_access)
+            # qui stocke le résultat dans request.state.pipeline_id si disponible.
+            # Sinon, on tente d'extraire depuis le chemin (fallback pour endpoints sans dépendance).
+            pipeline_id = getattr(request.state, "pipeline_id", None)
+            if pipeline_id is None:
+                # Fallback : parser l'URL (ex: /pipelines/{pipeline_id}/...)
+                # Note: le routing n'étant pas encore effectué en middleware,
+                # on parse manuellement les segments connus.
+                parts = request.url.path.strip("/").split("/")
+                if len(parts) >= 2 and parts[0] == "pipelines":
+                    pipeline_id = parts[1]
+            action = request.method + "_" + request.url.path.replace("/", "_")
             await self.audit_logger.log_access(
                 user_context,
                 action,

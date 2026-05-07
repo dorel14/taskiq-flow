@@ -77,9 +77,9 @@ async def test_e2e_error_handling(e2e_setup):
         raise ValueError("Task failed")
 
     # Build pipeline with failing task
-    pipeline: Pipeline[Any, Any] = Pipeline(broker).with_tracking(
-                                    manager=tracking).call_next(
-                                        failing_task)
+    pipeline: Pipeline[Any, Any] = (
+        Pipeline(broker).with_tracking(manager=tracking).call_next(failing_task)
+    )
 
     # Execute and expect error
     task = await pipeline.kiq(x=1)

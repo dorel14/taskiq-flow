@@ -2,6 +2,7 @@
 
 This module provides a WebSocket manager that integrates with FastAPI's
 WebSocket support, allowing unified HTTP/WebSocket API endpoints.
+Uses a channel registry for hierarchical subscriptions.
 
 Author: SoniqueBay Team
 Version: 0.4.5
@@ -10,11 +11,11 @@ Version: 0.4.5
 import asyncio
 import json
 import logging
-from collections import defaultdict
-from contextlib import suppress
 from typing import Any
 
-from fastapi import WebSocket, WebSocketDisconnect
+from taskiq_flow.integration.websocket.channel_registry import ChannelRegistry
+
+from taskiq_flow.integration.websocket.channel_registry import ChannelRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -22,113 +23,100 @@ logger = logging.getLogger(__name__)
 class FastAPIWebSocketManager:
     """Manages WebSocket connections using FastAPI's WebSocket protocol.
 
-    This manager handles client connections, subscriptions by pipeline,
-    and event broadcasting to connected clients.
+    This manager handles client connections, subscriptions by channel,
+    and event broadcasting to connected clients. Supports hierarchical
+    channel names (e.g., "pipeline.<id>.events") for compatibility
+    with tools like chanx.
     """
 
-    def __init__(self) -> None:
-        """Initialize the WebSocket manager."""
-        self._clients: dict[str, set[WebSocket]] = defaultdict(set)
-        self._lock: asyncio.Lock = asyncio.Lock()
+    def __init__(self, channel_registry: ChannelRegistry | None = None) -> None:
+        """Initialize the WebSocket manager.
+
+        Args:
+            channel_registry: Optional shared channel registry
+        """
+        self.channel_registry = channel_registry or ChannelRegistry()
         self._active: bool = True
 
-    async def connect(self, websocket: WebSocket, pipeline_id: str) -> None:
-        """Accept a WebSocket connection and subscribe to a pipeline.
+    async def connect(self, websocket: WebSocket, channel: str) -> None:
+        """Accept a WebSocket connection and subscribe to a channel.
 
         Args:
             websocket: The WebSocket connection
-            pipeline_id: The pipeline ID to subscribe to
+            channel: Channel name to subscribe to (e.g., "pipeline.my_id.events")
         """
         await websocket.accept()
-        async with self._lock:
-            self._clients[pipeline_id].add(websocket)
-        logger.info(f"Client connected to pipeline {pipeline_id}")
+        # For FastAPI, we need to store mapping from websocket->channels
+        # For simplicity, treat as single channel per connection (original model)
+        await self.channel_registry.subscribe(channel, websocket)
+        logger.info("Client connected to channel %s", channel)
 
-    async def disconnect(self, websocket: WebSocket, pipeline_id: str) -> None:
-        """Disconnect a WebSocket client.
+    async def disconnect(self, websocket: WebSocket, channel: str) -> None:
+        """Disconnect a WebSocket client from a channel.
 
         Args:
             websocket: The WebSocket connection to close
-            pipeline_id: The pipeline ID the client was subscribed to
+            channel: The channel the client was subscribed to
         """
-        async with self._lock:
-            self._clients[pipeline_id].discard(websocket)
-            if not self._clients[pipeline_id]:
-                del self._clients[pipeline_id]
-        logger.info(f"Client disconnected from pipeline {pipeline_id}")
+        await self.channel_registry.unsubscribe(channel, websocket)
+        logger.info("Client disconnected from channel %s", channel)
 
-    async def broadcast_event(self, pipeline_id: str, event: dict[str, Any]) -> None:
-        """Broadcast an event to all clients subscribed to a pipeline.
+    async def broadcast_event(self, channel: str, event: dict[str, Any]) -> None:
+        """Broadcast an event to all clients subscribed to a channel.
 
         Args:
-            pipeline_id: The pipeline ID to broadcast to
+            channel: Channel to broadcast to
             event: The event data to broadcast
         """
-        async with self._lock:
-            clients = list(self._clients.get(pipeline_id, set()))
+        await self.channel_registry.broadcast(channel, event)
 
-        if not clients:
-            return
-
-        message = json.dumps(event)
-        disconnected = []
-
-        for client in clients:
-            try:
-                await client.send_text(message)
-            except Exception as e:
-                logger.warning(f"Failed to send message to client: {e}")
-                disconnected.append(client)
-
-        # Clean up disconnected clients
-        if disconnected:
-            async with self._lock:
-                self._clients[pipeline_id] -= set(disconnected)
-
-    def get_client_count(self, pipeline_id: str) -> int:
-        """Get the number of clients subscribed to a pipeline.
+    def get_client_count(self, channel: str) -> int:
+        """Get the number of clients subscribed to a channel.
 
         Args:
-            pipeline_id: The pipeline ID
+            channel: Channel name
 
         Returns:
             Number of connected clients
         """
-        return len(self._clients.get(pipeline_id, set()))
+        return self.channel_registry.get_subscriber_count(channel)
 
-    def get_pipeline_ids(self) -> list[str]:
-        """Get all pipeline IDs with active subscriptions.
+    def get_channel_ids(self) -> list[str]:
+        """Get all channels with active subscriptions.
 
         Returns:
-            List of pipeline IDs
+            List of channel names
         """
-        return list(self._clients.keys())
+        return self.channel_registry.get_all_channels()
 
     async def close_all(self) -> None:
         """Close all WebSocket connections."""
-        async with self._lock:
-            for _pipeline_id, clients in self._clients.items():
-                for client in clients:
-                    with suppress(Exception):
-                        await client.close()
-            self._clients.clear()
+        await self.channel_registry.broadcast(
+            "system",
+            {"type": "shutdown", "message": "Server shutting down"},
+        )
         self._active = False
-        logger.info("All WebSocket connections closed")
+        logger.info("All WebSocket connections closing")
 
 
 # Global FastAPI WebSocket manager instance
 _fastapi_ws_manager: FastAPIWebSocketManager | None = None
 
 
-def get_fastapi_ws_manager() -> FastAPIWebSocketManager:
+def get_fastapi_ws_manager(
+    channel_registry: ChannelRegistry | None = None,
+) -> FastAPIWebSocketManager:
     """Get or create the global FastAPI WebSocket manager.
+
+    Args:
+        channel_registry: Optional shared channel registry
 
     Returns:
         The singleton FastAPIWebSocketManager instance
     """
     global _fastapi_ws_manager  # noqa: PLW0603
     if _fastapi_ws_manager is None:
-        _fastapi_ws_manager = FastAPIWebSocketManager()
+        _fastapi_ws_manager = FastAPIWebSocketManager(channel_registry)
     return _fastapi_ws_manager
 
 

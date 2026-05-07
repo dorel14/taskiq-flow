@@ -11,16 +11,23 @@ import io
 from contextlib import redirect_stdout
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from taskiq_flow.pipeline import DataflowPipeline
+from taskiq_flow.registry import get_pipeline
+from taskiq_flow.security.dependencies import verify_pipeline_access
 from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 
 router = APIRouter(prefix="/dag", tags=["dag"])
 
 
 @router.get("/{pipeline_id}")
-async def get_dag(pipeline_id: str, format: str = "json") -> Any:
+async def get_dag(
+    pipeline_id: str,
+    request: Request,
+    user: dict = Depends(verify_pipeline_access),
+    format: str = "json",
+) -> Any:
     """
     Obtient la visualisation du DAG pour un pipeline.
 
@@ -34,7 +41,7 @@ async def get_dag(pipeline_id: str, format: str = "json") -> Any:
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou format invalide
     """
-    pipeline = await _get_pipeline(pipeline_id)
+    pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
 
     if dag is None:
@@ -56,7 +63,11 @@ async def get_dag(pipeline_id: str, format: str = "json") -> Any:
 
 
 @router.get("/{pipeline_id}/critical-path")
-async def get_critical_path(pipeline_id: str) -> Any:
+async def get_critical_path(
+    pipeline_id: str,
+    request: Request,
+    user: dict = Depends(verify_pipeline_access),
+) -> Any:
     """
     Obtient le chemin critique du pipeline.
 
@@ -69,7 +80,7 @@ async def get_critical_path(pipeline_id: str) -> Any:
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou contient des cycles
     """
-    pipeline = await _get_pipeline(pipeline_id)
+    pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
 
     if dag is None:
@@ -87,7 +98,11 @@ async def get_critical_path(pipeline_id: str) -> Any:
 
 
 @router.get("/{pipeline_id}/parallel-groups")
-async def get_parallel_groups(pipeline_id: str) -> Any:
+async def get_parallel_groups(
+    pipeline_id: str,
+    request: Request,
+    user: dict = Depends(verify_pipeline_access),
+) -> Any:
     """
     Obtient les groupes de tâches parallélisables.
 
@@ -100,7 +115,7 @@ async def get_parallel_groups(pipeline_id: str) -> Any:
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou contient des cycles
     """
-    pipeline = await _get_pipeline(pipeline_id)
+    pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
 
     if dag is None:
@@ -118,7 +133,11 @@ async def get_parallel_groups(pipeline_id: str) -> Any:
 
 
 @router.get("/{pipeline_id}/networkx")
-async def get_networkx_graph(pipeline_id: str) -> Any:
+async def get_networkx_graph(
+    pipeline_id: str,
+    request: Request,
+    user: dict = Depends(verify_pipeline_access),
+) -> Any:
     """
     Obtient la représentation NetworkX du DAG.
 
@@ -131,7 +150,7 @@ async def get_networkx_graph(pipeline_id: str) -> Any:
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé
     """
-    pipeline = await _get_pipeline(pipeline_id)
+    pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
 
     if dag is None:
@@ -150,29 +169,7 @@ async def get_networkx_graph(pipeline_id: str) -> Any:
         raise HTTPException(400, str(e)) from e
 
 
-async def _get_pipeline(pipeline_id: str) -> DataflowPipeline:
-    """
-    Récupère un pipeline par son ID.
-
-    Args:
-        pipeline_id: Identifiant du pipeline
-
-    Returns:
-        Pipeline correspondant
-
-    Raises:
-        HTTPException: Si le pipeline n'est pas trouvé
-    """
-    # Cette fonction devrait être remplacée par une recherche réelle
-    # dans un registre de pipelines ou une base de données
-
-    # Pour l'instant, on simule avec un pipeline de test
-    # TODO: Implémenter une vraie recherche de pipeline
-    raise HTTPException(
-        501,
-        "La recherche de pipeline n'est pas encore implémentée. "
-        "Veuillez enregistrer le pipeline via l'API.",
-    )
-
+# _get_pipeline helper removed - using registry.get_pipeline directly
+# and authorization handled by verify_pipeline_access dependency.
 
 __all__ = ["router"]
