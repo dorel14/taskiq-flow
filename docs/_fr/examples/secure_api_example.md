@@ -262,6 +262,7 @@ Avec clé valide :
 ```python
 config = TaskiqFlowConfig(
     auth_provider="jwt",
+    #pragma: allowlist nextline secret
     jwt_secret="votre-secret-super-securise-très-fort",
     jwt_algorithm="HS256",
 )
