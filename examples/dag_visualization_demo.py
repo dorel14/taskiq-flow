@@ -125,7 +125,8 @@ async def main() -> None:
     logger.info("-" * 40)
     cytoscape = DAGVisualizer.to_cytoscape_json(dag)
     logger.info(
-        f"   Elements: {len(cytoscape['nodes'])} nodes, {len(cytoscape['edges'])} edges"
+        f"Elements: {len(cytoscape['nodes'])} nodes,\
+                {len(cytoscape['edges'])} edges"
     )
 
     logger.info("\n=== Demo Complete ===")
