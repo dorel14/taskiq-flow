@@ -8,14 +8,12 @@ Auteur: SoniqueBay Team
 Version: 0.4.5
 """
 
-from typing import Dict
-
 from fastapi import HTTPException
 
 from taskiq_flow.pipeline import DataflowPipeline
 
 # Registre global (single-process pour v0.4.5)
-_pipelines: Dict[str, DataflowPipeline] = {}
+_pipelines: dict[str, DataflowPipeline] = {}
 
 
 def register_pipeline(pipeline_id: str, pipeline: DataflowPipeline) -> None:
@@ -60,8 +58,8 @@ def list_pipeline_ids() -> list[str]:
 
 
 __all__ = [
-    "register_pipeline",
     "get_pipeline",
-    "unregister_pipeline",
     "list_pipeline_ids",
+    "register_pipeline",
+    "unregister_pipeline",
 ]

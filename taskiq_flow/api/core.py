@@ -3,17 +3,20 @@
 import logging
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Depends, Request
-from fastapi.middleware import Middleware
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from slowapi.middleware import SlowAPIMiddleware
 from taskiq import AsyncBroker
 
 from taskiq_flow.config import TaskiqFlowConfig
+from taskiq_flow.metrics.exporters.prometheus import get_metrics_endpoint
 from taskiq_flow.pipeline import DataflowPipeline
 from taskiq_flow.registry import register_pipeline
+from taskiq_flow.security.audit import AuditLogger
 from taskiq_flow.security.auth import create_auth_provider
 from taskiq_flow.security.authorization import PipelineAuthorization
-from taskiq_flow.security.dependencies import get_authorization, get_auth_provider
+from taskiq_flow.security.https import HTTPSEnforcementMiddleware
 from taskiq_flow.security.middleware import SecurityMiddleware
 from taskiq_flow.security.rate_limiting import RateLimiter
 from taskiq_flow.visualization import DAGVisualizer
@@ -66,9 +69,6 @@ class PipelineVisualizationAPI:
 
     def _setup_security(self) -> None:
         """Configure security middleware and components based on config."""
-        from taskiq_flow.security.audit import AuditLogger
-        from taskiq_flow.security.https import HTTPSEnforcementMiddleware
-
         # Create components
         auth_provider = create_auth_provider(self.config)
         authorization = PipelineAuthorization(self.config.pipeline_acls)
@@ -95,12 +95,15 @@ class PipelineVisualizationAPI:
         )
 
         # Add SlowAPIMiddleware for rate limiting enforcement
-        self.app.add_middleware(SlowAPIMiddleware, limiter=rate_limiter.get_limiter())
+        self.app.add_middleware(SlowAPIMiddleware)
 
         # Apply rate limit decorators to all routes
         self._apply_rate_limits()
 
-        logger.info("Security middleware configured (rate_limit=%s)", self.config.rate_limit_default)
+        logger.info(
+            "Security middleware configured (rate_limit=%s)",
+            self.config.rate_limit_default,
+        )
 
     def _apply_rate_limits(self) -> None:
         """Apply rate limits from config to all registered API routes."""
@@ -108,7 +111,11 @@ class PipelineVisualizationAPI:
 
         for route in self.app.routes:
             # Skip non-API routes (static, docs, openapi)
-            if not hasattr(route, "endpoint") or route.endpoint is None:
+            if (
+                not isinstance(route, APIRoute)
+                or not hasattr(route, "endpoint")
+                or route.endpoint is None
+            ):
                 continue
             if route.path in ("/docs", "/redoc", "/openapi.json", "/favicon.ico"):
                 continue
@@ -125,8 +132,6 @@ class PipelineVisualizationAPI:
 
     def _setup_metrics(self) -> None:
         """Configure metrics endpoint if enabled."""
-        from taskiq_flow.metrics.exporters.prometheus import get_metrics_endpoint
-
         self.app.get(self.config.metrics_path)(get_metrics_endpoint())
         logger.info("Metrics endpoint enabled at %s", self.config.metrics_path)
 
@@ -294,7 +299,9 @@ class PipelineVisualizationAPI:
             pipeline: DataflowPipeline instance
         """
         self.pipelines[pipeline_id] = pipeline
-        register_pipeline(pipeline_id, pipeline)  # Also register globally for DAG routes
+        register_pipeline(
+            pipeline_id, pipeline
+        )  # Also register globally for DAG routes
         logger.info("Added pipeline %s to visualization API", pipeline_id)
 
     def get_app(self) -> FastAPI:

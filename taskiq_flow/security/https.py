@@ -11,7 +11,7 @@ import logging
 from typing import Any
 
 from fastapi import Request, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +38,7 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.require_https = require_https
 
-    async def dispatch(
-        self, request: Request, call_next: Any
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and enforce HTTPS if configured.
 
         Args:
@@ -57,14 +55,17 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
             # Check X-Forwarded-Proto header (common when behind proxy)
             if not is_secure:
                 forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
-                # X-Forwarded-Proto can be a comma-separated list; first element is client protocol
+                # X-Forwarded-Proto can be comma-separated; first is client proto
                 first_proto = forwarded_proto.split(",")[0].strip().lower()
                 is_secure = first_proto == "https"
 
             if not is_secure:
                 logger.warning(
                     "Insecure request rejected",
-                    extra={"path": request.url.path, "client": request.client.host if request.client else None},
+                    extra={
+                        "path": request.url.path,
+                        "client": request.client.host if request.client else None,
+                    },
                 )
                 return Response(
                     status_code=403,

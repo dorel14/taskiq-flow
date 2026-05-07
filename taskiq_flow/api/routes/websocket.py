@@ -9,7 +9,7 @@ Version: 0.4.5
 
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, Depends, Request
+from fastapi import APIRouter, Depends, WebSocket
 
 from taskiq_flow.integration.websocket.fastapi_ws import (
     fastapi_websocket_endpoint,
@@ -24,8 +24,6 @@ router = APIRouter(prefix="/ws", tags=["websocket"])
 async def websocket_endpoint(
     websocket: WebSocket,
     pipeline_id: str,
-    request: Request,
-    user: dict = Depends(verify_pipeline_access),
 ) -> None:
     """WebSocket endpoint for real-time pipeline events.
 
@@ -36,7 +34,7 @@ async def websocket_endpoint(
     Args:
         websocket: The WebSocket connection
         pipeline_id: The pipeline ID to subscribe to
-        user: Authenticated and authorized user context (injected)
+        user: Authenticated and authorized user context (injected manually)
 
     Example:
         ```javascript
@@ -53,7 +51,7 @@ async def websocket_endpoint(
 @router.get("/clients/{pipeline_id}")
 async def get_clients(
     pipeline_id: str,
-    user: dict = Depends(get_current_user),
+    user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
 ) -> dict[str, Any]:
     """Get the number of clients subscribed to a pipeline.
 
@@ -73,7 +71,7 @@ async def get_clients(
 
 @router.get("/pipelines")
 async def list_pipelines(
-    user: dict = Depends(get_current_user),
+    user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
 ) -> dict[str, Any]:
     """List all pipelines with active WebSocket subscriptions.
 

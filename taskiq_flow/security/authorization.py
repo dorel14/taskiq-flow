@@ -22,10 +22,20 @@ class Permission(Enum):
 class PipelineAuthorization:
     """Gestion des autorisations pour les pipelines."""
 
-    def __init__(self) -> None:
-        """Initialise l'autorisation."""
-        # pipeline_id -> {permission: [roles]}
+    def __init__(
+        self, pipeline_acls: dict[str, dict[str, list[str]]] | None = None
+    ) -> None:
+        """Initialise l'autorisation.
+
+        Args:
+            pipeline_acls: ACL pré-configurées {pipeline_id: {permission: [roles]}}
+        """
         self.acls: dict[str, dict[str, list[str]]] = {}
+        if pipeline_acls:
+            for pipeline_id, acl in pipeline_acls.items():
+                for perm_str, roles in acl.items():
+                    permission = Permission(perm_str)
+                    self.set_acl(pipeline_id, permission, roles)
 
     def set_acl(
         self, pipeline_id: str, permission: Permission, roles: list[str]
@@ -153,4 +163,8 @@ class PipelineAuthorization:
             self.set_acl(pipeline_id, permission, roles)
 
 
-__all__ = ["Permission", "PipelineAuthorization"]
+class AuthorizationError(Exception):
+    """Exception raised when authorization check fails."""
+
+
+__all__ = ["AuthorizationError", "Permission", "PipelineAuthorization"]

@@ -10,6 +10,11 @@ import asyncio
 
 import pytest
 
+from taskiq_flow.hooks.events import (
+    PipelineCompleteEvent,
+    PipelineStartEvent,
+    StepCompleteEvent,
+)
 from taskiq_flow.metrics.collector import MetricsCollector
 from taskiq_flow.metrics.middleware import MetricsMiddleware
 
@@ -94,42 +99,32 @@ class TestMetricsMiddleware:
         """Test on_pipeline_start hook."""
         middleware = MetricsMiddleware()
 
-        class MockContext:
-            pipeline_id = "test-pipeline"
+        event = PipelineStartEvent(pipeline_id="test-pipeline")
 
-        ctx = MockContext()
-
-        # Should not raise
-        asyncio.run(middleware.on_pipeline_start(ctx))
+        asyncio.run(middleware.on_pipeline_start(event))
 
     def test_on_pipeline_complete(self) -> None:
         """Test on_pipeline_complete hook."""
         middleware = MetricsMiddleware()
 
-        class MockContext:
-            pipeline_id = "test-pipeline"
+        event = PipelineCompleteEvent(pipeline_id="test-pipeline", result=None)
 
-        ctx = MockContext()
-
-        # Should not raise
-        asyncio.run(middleware.on_pipeline_complete(ctx, True))
+        asyncio.run(middleware.on_pipeline_complete(event))
 
     def test_on_step_complete(self) -> None:
         """Test on_step_complete hook."""
         middleware = MetricsMiddleware()
 
-        class MockContext:
-            pipeline_id = "test-pipeline"
+        event = StepCompleteEvent(
+            pipeline_id="test-pipeline",
+            step_index=0,
+            task_name="test_task",
+            task_id="test-task-1",
+            result={"status": "ok"},
+            duration=0.5,
+        )
 
-        class MockResult:
-            def is_success(self) -> bool:
-                return True
-
-        ctx = MockContext()
-        result = MockResult()
-
-        # Should not raise
-        asyncio.run(middleware.on_step_complete(ctx, result))
+        asyncio.run(middleware.on_step_complete(event))
 
 
 if __name__ == "__main__":

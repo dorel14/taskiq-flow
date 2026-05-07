@@ -11,8 +11,9 @@ import logging
 import secrets
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from taskiq_flow.metrics.collector import MetricsCollector
 
+logger = logging.getLogger(__name__)
 
 
 class PipelineRetryMiddleware:
@@ -76,10 +77,9 @@ class PipelineRetryMiddleware:
 
         # Record retry metric
         try:
-            from taskiq_flow.metrics.collector import MetricsCollector
             MetricsCollector().task_retried(task_name, type(error).__name__)
         except Exception:
-            pass  # Don't break retry if metrics fail
+            logger.debug("Failed to record retry metric (non-critical)")
 
         await asyncio.sleep(wait_time)
         return True

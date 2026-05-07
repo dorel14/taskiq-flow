@@ -12,7 +12,7 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import Request, Response, HTTPException
+from fastapi import HTTPException, Request, Response
 
 try:
     from fastapi.middleware.base import BaseHTTPMiddleware
@@ -63,21 +63,34 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         Returns:
             Réponse
         """
-        # Traiter la requête
+        # Authentifier l'utilisateur via le provider
+        user_context = None
+        try:
+            user_context = await self.auth_provider.verify(request)
+            if user_context:
+                request.state.user = user_context
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("Authentication failed: %s", e)
+
+        # Rate limiting is handled by SlowAPIMiddleware (added to FastAPI app)
+        # This SecurityMiddleware handles auth + audit only
+
         start_time = time.time()
         response = await call_next(request)
         duration = time.time() - start_time
 
-        # Journalisation d'audit post-requête (si authentifié)
+        # Audit logging (if authenticated)
         if user_context:
-            # pipeline_id est fourni par les dépendances de route (verify_pipeline_access)
-            # qui stocke le résultat dans request.state.pipeline_id si disponible.
-            # Sinon, on tente d'extraire depuis le chemin (fallback pour endpoints sans dépendance).
+            # pipeline_id from route dependencies (verify_pipeline_access)
+            # stores result in request.state.pipeline_id if available.
+            # Otherwise, extract from path (fallback for non-dependent endpoints).
             pipeline_id = getattr(request.state, "pipeline_id", None)
             if pipeline_id is None:
-                # Fallback : parser l'URL (ex: /pipelines/{pipeline_id}/...)
-                # Note: le routing n'étant pas encore effectué en middleware,
-                # on parse manuellement les segments connus.
+                # Fallback: parse URL (ex: /pipelines/{pipeline_id}/...)
+                # Note: routing not yet performed in middleware,
+                # so we manually parse known segments.
                 parts = request.url.path.strip("/").split("/")
                 if len(parts) >= 2 and parts[0] == "pipelines":
                     pipeline_id = parts[1]

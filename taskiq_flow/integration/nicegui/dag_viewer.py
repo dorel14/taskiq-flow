@@ -80,18 +80,17 @@ class DAGViewer:
         else:
             self._main_container.clear()
 
-        with self._main_container:
-            with ui.row().classes("w-full"):
-                # Panneau gauche: Diagramme
-                with ui.column().classes("w-2/3"):
-                    ui.label("Pipeline DAG").classes("text-h6")
-                    self.render_mermaid()
+        with self._main_container, ui.row().classes("w-full"):
+            # Panneau gauche: Diagramme
+            with ui.column().classes("w-2/3"):
+                ui.label("Pipeline DAG").classes("text-h6")
+                self.render_mermaid()
 
-                # Panneau droit: Détails
-                with ui.column().classes("w-1/3"):
-                    ui.label("Détails").classes("text-h6")
-                    self._details_panel = ui.column()
-                    self._update_details_panel()
+            # Panneau droit: Détails
+            with ui.column().classes("w-1/3"):
+                ui.label("Détails").classes("text-h6")
+                self._details_panel = ui.column()
+                self._update_details_panel()
 
     def render_with_cytoscape(self) -> None:
         """Affiche le DAG avec Cytoscape.js pour une interactivité avancée."""

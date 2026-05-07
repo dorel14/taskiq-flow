@@ -58,7 +58,7 @@ def get_authorization(request: Request) -> PipelineAuthorization:
     return authorization
 
 
-async def get_current_user(request: Request) -> dict:
+async def get_current_user(request: Request) -> dict[str, Any]:
     """Extract authenticated user from request state (set by SecurityMiddleware).
 
     This dependency must be used after SecurityMiddleware has run.
@@ -83,9 +83,9 @@ async def get_current_user(request: Request) -> dict:
 async def verify_pipeline_access(
     pipeline_id: str,
     request: Request,
-    user: dict = Depends(get_current_user),
-    authorization: PipelineAuthorization = Depends(get_authorization),
-) -> dict:
+    user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
+    authorization: PipelineAuthorization = Depends(get_authorization),  # noqa: B008
+) -> dict[str, Any]:
     """Verify that the current user can access the requested pipeline.
 
     This dependency combines authentication (via get_current_user) and
@@ -117,8 +117,8 @@ async def verify_pipeline_access(
 
 
 __all__ = [
-    "get_current_user",
-    "verify_pipeline_access",
     "get_auth_provider",
     "get_authorization",
+    "get_current_user",
+    "verify_pipeline_access",
 ]

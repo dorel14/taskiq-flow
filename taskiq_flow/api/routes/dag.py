@@ -11,7 +11,7 @@ import io
 from contextlib import redirect_stdout
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 
 from taskiq_flow.pipeline import DataflowPipeline
 from taskiq_flow.registry import get_pipeline
@@ -21,12 +21,23 @@ from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 router = APIRouter(prefix="/dag", tags=["dag"])
 
 
+# Singleton for dependency injection
+_pipeline_store: dict[str, DataflowPipeline] = {}
+
+
+def get_pipeline_dep(pipeline_id: str = Path(...)) -> DataflowPipeline:
+    """Dependency to get pipeline by ID."""
+    if pipeline_id not in _pipeline_store:
+        raise HTTPException(404, f"Pipeline '{pipeline_id}' not found")
+    return _pipeline_store[pipeline_id]
+
+
 @router.get("/{pipeline_id}")
 async def get_dag(
     pipeline_id: str,
     request: Request,
-    user: dict = Depends(verify_pipeline_access),
     format: str = "json",
+    user: dict[str, Any] = Depends(verify_pipeline_access),  # noqa: B008
 ) -> Any:
     """
     Obtient la visualisation du DAG pour un pipeline.
@@ -66,7 +77,7 @@ async def get_dag(
 async def get_critical_path(
     pipeline_id: str,
     request: Request,
-    user: dict = Depends(verify_pipeline_access),
+    user: dict[str, Any] = Depends(verify_pipeline_access),  # noqa: B008
 ) -> Any:
     """
     Obtient le chemin critique du pipeline.
@@ -101,7 +112,7 @@ async def get_critical_path(
 async def get_parallel_groups(
     pipeline_id: str,
     request: Request,
-    user: dict = Depends(verify_pipeline_access),
+    user: dict[str, Any] = Depends(verify_pipeline_access),  # noqa: B008
 ) -> Any:
     """
     Obtient les groupes de tâches parallélisables.
@@ -136,7 +147,7 @@ async def get_parallel_groups(
 async def get_networkx_graph(
     pipeline_id: str,
     request: Request,
-    user: dict = Depends(verify_pipeline_access),
+    user: dict[str, Any] = Depends(verify_pipeline_access),  # noqa: B008
 ) -> Any:
     """
     Obtient la représentation NetworkX du DAG.

@@ -22,6 +22,8 @@ from fastapi.security import (
 )
 from starlette.requests import Request
 
+from taskiq_flow.config import TaskiqFlowConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -214,13 +216,13 @@ __all__ = [
     "JWTAuthProvider",
     "api_key_header",
     "bearer_auth",
+    "create_auth_provider",
     "get_api_key_user",
     "get_jwt_user",
-    "create_auth_provider",
 ]
 
 
-def create_auth_provider(config) -> AuthProvider:
+def create_auth_provider(config: TaskiqFlowConfig) -> AuthProvider:
     """Factory to create an AuthProvider based on configuration.
 
     Args:
@@ -235,7 +237,9 @@ def create_auth_provider(config) -> AuthProvider:
     provider_type = config.auth_provider.lower()
     if provider_type == "api_key":
         if not config.api_keys:
-            logger.warning("No API keys configured; API key auth will reject all requests")
+            logger.warning(
+                "No API keys configured; API key auth will reject all requests"
+            )
         return APIKeyAuthProvider(keys=config.api_keys)
     if provider_type == "jwt":
         if not config.jwt_secret:

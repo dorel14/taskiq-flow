@@ -10,6 +10,7 @@ Version: 0.4.5
 
 import asyncio
 import fnmatch
+import json
 import logging
 from collections import defaultdict
 from typing import Any
@@ -82,7 +83,8 @@ class ChannelRegistry:
         """
         async with self._lock:
             self._pattern_subscriptions = [
-                (p, ws) for p, ws in self._pattern_subscriptions
+                (p, ws)
+                for p, ws in self._pattern_subscriptions
                 if not (p == pattern and ws == websocket)
             ]
         logger.debug("WebSocket unsubscribed from pattern %s", pattern)
@@ -97,8 +99,7 @@ class ChannelRegistry:
                     del self._channels[channel]
             # Remove from pattern subscriptions
             self._pattern_subscriptions = [
-                (p, ws) for p, ws in self._pattern_subscriptions
-                if ws != websocket
+                (p, ws) for p, ws in self._pattern_subscriptions if ws != websocket
             ]
         logger.debug("WebSocket unsubscribed from all channels")
 
@@ -124,8 +125,6 @@ class ChannelRegistry:
             channel: Canal de diffusion
             message: Message à diffuser (sera sérialisé JSON)
         """
-        import json
-
         payload = json.dumps(message)
         disconnected: list[WebSocket] = []
 
@@ -134,7 +133,8 @@ class ChannelRegistry:
             exact_clients = list(self._channels.get(channel, []))
             # Copier les patterns et clients correspondants
             pattern_matches = [
-                ws for pattern, ws in self._pattern_subscriptions
+                ws
+                for pattern, ws in self._pattern_subscriptions
                 if self._matches(channel, pattern)
             ]
 
@@ -158,8 +158,7 @@ class ChannelRegistry:
                             del self._channels[ch]
                     # Remove from patterns
                     self._pattern_subscriptions = [
-                        (p, w) for p, w in self._pattern_subscriptions
-                        if w != ws
+                        (p, w) for p, w in self._pattern_subscriptions if w != ws
                     ]
 
     def get_subscriber_count(self, channel: str) -> int:

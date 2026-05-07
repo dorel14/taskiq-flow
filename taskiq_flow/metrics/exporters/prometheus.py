@@ -7,12 +7,15 @@ Auteur: SoniqueBay Team
 Version: 0.4.5
 """
 
+from collections.abc import Callable
+from typing import Any
+
+from fastapi import Response
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
-    generate_latest,
     CollectorRegistry,
+    generate_latest,
 )
-from fastapi import Response
 
 from taskiq_flow.metrics.collector import MetricsCollector
 
@@ -20,7 +23,7 @@ from taskiq_flow.metrics.collector import MetricsCollector
 def get_metrics_endpoint(
     registry: CollectorRegistry | None = None,
     include_defaults: bool = False,
-):
+) -> Callable[[], Any]:
     """Return an async endpoint function that serves Prometheus metrics.
 
     Usage:
@@ -36,6 +39,7 @@ def get_metrics_endpoint(
     Returns:
         Async callable that returns a Response with metrics payload.
     """
+
     async def endpoint() -> Response:
         """Generate Prometheus-format metrics response."""
         # Use provided registry or get the global collector registry

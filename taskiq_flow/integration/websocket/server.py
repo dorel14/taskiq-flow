@@ -13,10 +13,10 @@ import asyncio
 import json
 import logging
 import ssl
-from collections import defaultdict
 from typing import Any
 
 from picows import (
+    WSCloseCode,
     WSFrame,
     WSListener,
     WSMsgType,
@@ -56,9 +56,14 @@ class PipelineWebSocketListener(WSListener):
     def on_ws_connected(self, transport: WSTransport) -> None:
         """Handle new WebSocket connection."""
         self.transport = transport
-        logger.info("New WebSocket client connected from %s", transport.get_extra_info("peername"))
+        peername = (
+            transport.underlying_transport.get_extra_info("peername")
+            if transport.underlying_transport
+            else "unknown"
+        )
+        logger.info("New WebSocket client connected from %s", peername)
 
-    def on_ws_frame(self, transport: WSTransport, frame: WSFrame) -> None:
+    def on_ws_frame(self, transport: WSTransport, frame: WSFrame) -> None:  # noqa: PLR0912
         """Handle incoming WebSocket frame."""
         if frame.msg_type == WSMsgType.TEXT:
             try:
@@ -71,7 +76,9 @@ class PipelineWebSocketListener(WSListener):
                             WSMsgType.TEXT,
                             json.dumps({"error": "Authentication required"}).encode(),
                         )
-                        transport.send_close(1008, "Auth required")
+                        transport.send_close(
+                            WSCloseCode.POLICY_VIOLATION, b"Auth required"
+                        )
                         return
                     token = data.get("token")
                     if not token:
@@ -79,13 +86,16 @@ class PipelineWebSocketListener(WSListener):
                             WSMsgType.TEXT,
                             json.dumps({"error": "Token missing"}).encode(),
                         )
-                        transport.send_close(1008, "Token missing")
+                        transport.send_close(
+                            WSCloseCode.POLICY_VIOLATION, b"Token missing"
+                        )
                         return
                     # Validate token
                     try:
-                        # Verify token via auth_provider - create mock request-like object?
-                        # AuthProvider.verify expects FastAPI Request; for WebSocket we need a different method or adapt.
-                        # For now, skip full implementation placeholder
+                        # Verify token via auth_provider - create mock
+                        # request-like object? AuthProvider.verify expects
+                        # FastAPI Request; for WebSocket we need a different
+                        # method or adapt. For now, skip full implementation.
                         self.authenticated = True
                         self.user = {"sub": "websocket_user"}
                         transport.send(
@@ -94,39 +104,52 @@ class PipelineWebSocketListener(WSListener):
                         )
                     except Exception as e:
                         logger.warning("Auth failed: %s", e)
-                        transport.send(WSMsgType.TEXT, json.dumps({"error": "Invalid token"}).encode())
-                        transport.send_close(1008, "Auth failed")
+                        transport.send(
+                            WSMsgType.TEXT,
+                            json.dumps({"error": "Invalid token"}).encode(),
+                        )
+                        transport.send_close(
+                            WSCloseCode.POLICY_VIOLATION, b"Auth failed"
+                        )
                         return
+                elif action == "auth":
+                    transport.send(
+                        WSMsgType.TEXT,
+                        json.dumps({"error": "Already authenticated"}).encode(),
+                    )
+                    return
+                elif action == "subscribe":
+                    channel = data.get("channel")
+                    if channel:
+                        # Create task to subscribe
+                        task = asyncio.create_task(
+                            self.server.subscribe(channel, transport)
+                        )
+                        task.add_done_callback(lambda t: None)
+                        self.pipeline_id = channel  # For cleanup
+                        logger.info("Client subscribed to channel %s", channel)
+                elif action == "unsubscribe":
+                    channel = data.get("channel")
+                    if channel:
+                        task = asyncio.create_task(
+                            self.server.unsubscribe(channel, transport)
+                        )
+                        task.add_done_callback(lambda t: None)
+                        logger.info("Client unsubscribed from channel %s", channel)
                 else:
-                    if action == "auth":
-                        transport.send(WSMsgType.TEXT, json.dumps({"error": "Already authenticated"}).encode())
-                        return
-                    elif action == "subscribe":
-                        channel = data.get("channel")
-                        if channel:
-                            # Create task to subscribe
-                            task = asyncio.create_task(self.server.subscribe(channel, transport))
-                            task.add_done_callback(lambda t: None)
-                            self.pipeline_id = channel  # For cleanup
-                            logger.info("Client subscribed to channel %s", channel)
-                    elif action == "unsubscribe":
-                        channel = data.get("channel")
-                        if channel:
-                            task = asyncio.create_task(self.server.unsubscribe(channel, transport))
-                            task.add_done_callback(lambda t: None)
-                            logger.info("Client unsubscribed from channel %s", channel)
-                    else:
-                        logger.warning("Unknown action: %s", action)
+                    logger.warning("Unknown action: %s", action)
             except (json.JSONDecodeError, KeyError):
                 logger.warning("Invalid message format")
         elif frame.msg_type == WSMsgType.CLOSE:
             if self.pipeline_id:
-                task = asyncio.create_task(
-                    self.server.unsubscribe(self.pipeline_id, transport),
+                # Fire-and-forget task for cleanup
+                asyncio.create_task(  # noqa: RUF006
+                    self.server.unsubscribe(self.pipeline_id, transport)
                 )
-                task.add_done_callback(lambda t: None)
-            # Remove connection tracking
-            asyncio.create_task(self.server.remove_connection(transport))
+            # Fire-and-forget task for connection tracking
+            asyncio.create_task(  # noqa: RUF006
+                self.server.remove_connection(transport)
+            )
             logger.info("Client disconnected")
             transport.send_close(frame.get_close_code(), frame.get_close_message())
             transport.disconnect()
@@ -138,11 +161,14 @@ class PipelineWebSocketListener(WSListener):
     ) -> None:
         """Handle connection loss."""
         if self.pipeline_id:
-            task = asyncio.create_task(
-                self.server.unsubscribe(self.pipeline_id, transport),
+            # Fire-and-forget task for cleanup
+            asyncio.create_task(  # noqa: RUF006
+                self.server.unsubscribe(self.pipeline_id, transport)
             )
-            task.add_done_callback(lambda t: t.exception() if t.exception() else None)
-        asyncio.create_task(self.server.remove_connection(transport))
+        # Fire-and-forget task for connection tracking
+        asyncio.create_task(  # noqa: RUF006
+            self.server.remove_connection(transport)
+        )
         logger.info("Client connection lost: %s", exc)
 
 
@@ -205,16 +231,15 @@ class PipelineWebSocketServer:
             # Extract pipeline_id from channel "pipeline.<id>.*"
             parts = channel.split(".")
             if len(parts) >= 2:
-                pipeline_id = parts[1]
+                parts[1]
                 # We need user context from the transport's listener; store it
                 # But we don't have easy access to listener's user here.
                 # For now, skip detailed check; can be added later with listener state.
-                pass
-        await self.channel_registry.subscribe(channel, transport)
+        await self.channel_registry.subscribe(channel, transport)  # type: ignore[arg-type]
 
     async def unsubscribe(self, channel: str, transport: WSTransport) -> None:
         """Unsubscribe a transport from a channel."""
-        await self.channel_registry.unsubscribe(channel, transport)
+        await self.channel_registry.unsubscribe(channel, transport)  # type: ignore[arg-type]
 
     async def broadcast_event(self, pipeline_id: str, event: dict[str, Any]) -> None:
         """Broadcast an event to all clients subscribed to a pipeline's channels.
@@ -242,7 +267,9 @@ class PipelineWebSocketServer:
             if len(self._connections) >= self.max_connections:
                 logger.warning("Connection limit reached: %d", self.max_connections)
                 # Close with try-reconnect-later code 1013
-                transport.send_close(1013, "Connection limit exceeded")
+                transport.send_close(
+                    WSCloseCode.TRY_AGAIN_LATER, b"Connection limit exceeded"
+                )
                 transport.disconnect()
                 raise ConnectionError("Max connections reached")
             self._connections.add(transport)

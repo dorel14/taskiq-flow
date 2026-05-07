@@ -32,6 +32,8 @@ class EventType(str, Enum):
     RETRY_SCHEDULED = "RetryScheduledEvent"
     RETRY_EXECUTED = "RetryExecutedEvent"
     METRIC_RECORD = "MetricRecordEvent"
+    DAG_UPDATED = "DAGUpdatedEvent"
+    CRITICAL_PATH_CHANGED = "CriticalPathChangedEvent"
 
 
 class PipelineEvent(BaseModel):
@@ -138,3 +140,18 @@ class MetricRecordEvent(PipelineEvent):
     metric_name: str
     metric_value: float
     tags: dict[str, Any] = {}
+
+
+class DAGUpdatedEvent(PipelineEvent):
+    """Event fired when pipeline DAG is updated/built."""
+
+    event_type: EventType = EventType.DAG_UPDATED
+    node_count: int = 0
+    edge_count: int = 0
+
+
+class CriticalPathChangedEvent(PipelineEvent):
+    """Event fired when critical path is recalculated."""
+
+    event_type: EventType = EventType.CRITICAL_PATH_CHANGED
+    critical_path: list[str] = []

@@ -8,12 +8,10 @@ Author: SoniqueBay Team
 Version: 0.4.5
 """
 
-import asyncio
-import json
 import logging
 from typing import Any
 
-from taskiq_flow.integration.websocket.channel_registry import ChannelRegistry
+from fastapi import WebSocket, WebSocketDisconnect
 
 from taskiq_flow.integration.websocket.channel_registry import ChannelRegistry
 
@@ -88,6 +86,16 @@ class FastAPIWebSocketManager:
             List of channel names
         """
         return self.channel_registry.get_all_channels()
+
+    def get_pipeline_ids(self) -> list[str]:
+        """Get all pipeline IDs with active subscriptions.
+
+        Alias for get_channel_ids for backward compatibility.
+
+        Returns:
+            List of pipeline IDs (channel names)
+        """
+        return self.get_channel_ids()
 
     async def close_all(self) -> None:
         """Close all WebSocket connections."""

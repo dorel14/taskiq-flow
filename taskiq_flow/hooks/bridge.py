@@ -93,6 +93,8 @@ class WebSocketHookBridge:
             "StepRetryEvent",
             "StepSkipEvent",
             "PipelineSkipEvent",
+            "DAGUpdatedEvent",
+            "CriticalPathChangedEvent",
         ]
 
         for event_type in event_types:
