@@ -262,7 +262,7 @@ With valid API key:
 ```python
 config = TaskiqFlowConfig(
     auth_provider="jwt",
-    jwt_secret="your-super-secret-key-change-this",
+    jwt_secret="your-super-secret-key-change-this-in-production",
     jwt_algorithm="HS256",
 )
 ```

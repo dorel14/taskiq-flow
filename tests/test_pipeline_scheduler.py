@@ -1,6 +1,6 @@
 """Tests for pipeline scheduler."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from taskiq import InMemoryBroker
@@ -59,7 +59,7 @@ async def test_scheduler_async_methods() -> None:
     with patch(
         "taskiq_flow.scheduling.scheduler.AsyncIOScheduler",
     ) as mock_scheduler:
-        mock_instance = AsyncMock()  # Use AsyncMock for async methods
+        mock_instance = MagicMock()  # Use MagicMock since APScheduler methods are sync
         mock_scheduler.return_value = mock_instance
 
         scheduler = PipelineScheduler(broker)

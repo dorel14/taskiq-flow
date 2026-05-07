@@ -57,6 +57,7 @@ dev = [
   "mypy>=1.8,<2",
   "pre-commit>=4",
   "pytest>=9.0.3",
+  "pytest-asyncio>=0.23.0",
   "pytest-cov>=7.1.0",
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
@@ -162,7 +163,11 @@ allow-magic-value-types = ["int", "str", "float"]
 extend-immutable-calls = ["taskiq_dependencies.Depends", "taskiq.TaskiqDepends"]
 
 [tool.pytest.ini_options]
-anyio_mode = "auto"
+# anyio_mode = "auto"
+asyncio_mode = "auto"
+markers = [
+  "asyncio: mark test as async",
+]
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:project.version"

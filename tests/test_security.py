@@ -71,7 +71,7 @@ class TestAuthProvider:
 
     def test_jwt_auth_provider(self) -> None:
         """Test JWT authentication."""
-        provider = JWTAuthProvider("test-secret")
+        provider = JWTAuthProvider("test-secret-key-for-testing-purposes")
         token = provider.create_token("test-user", ["admin"])
 
         class MockRequest:
@@ -87,7 +87,7 @@ class TestAuthProvider:
 
     def test_jwt_auth_provider_invalid_token(self) -> None:
         """Test JWT authentication with invalid token."""
-        provider = JWTAuthProvider("test-secret")
+        provider = JWTAuthProvider("test-secret-key-for-testing-purposes")
 
         class MockRequest:
             def __init__(self) -> None:

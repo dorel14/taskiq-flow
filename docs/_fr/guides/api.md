@@ -515,6 +515,7 @@ location / {
 ### 9.1. Endpoint Health Check
 
 ```python
+from datetime import datetime, timezone
 from fastapi import FastAPI
 import psutil
 
@@ -524,7 +525,7 @@ app = FastAPI()
 async def health():
     return {
         "statut": "sain",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "broker_connecté": broker.is_connected(),
         "memoire_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }
