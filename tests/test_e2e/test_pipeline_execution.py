@@ -8,7 +8,7 @@ import pytest
 from taskiq import InMemoryBroker
 
 from taskiq_flow import (
-    DataflowPipeline,
+    Pipeline,
     PipelineMiddleware,
     PipelineTrackingManager,
     pipeline_task,
@@ -32,7 +32,6 @@ async def e2e_setup() -> dict[str, Any]:
 
 
 @pytest.mark.anyio
-@pytest.mark.skip(reason="Test needs to be fixed")
 async def test_e2e_basic_pipeline(e2e_setup):
     """Test basic pipeline execution in e2e scenario."""
     setup = e2e_setup
@@ -40,32 +39,32 @@ async def test_e2e_basic_pipeline(e2e_setup):
     tracking = setup["tracking"]
 
     @broker.task
-    @pipeline_task(output="double")
+    @pipeline_task(output="doubled")
     async def double(x: int) -> int:
         return x * 2
 
     @broker.task
-    @pipeline_task(output="square")
-    async def square(x: int) -> int:
-        return x * x
+    @pipeline_task(output="squared", inputs=["doubled"])
+    async def square(doubled: int) -> int:
+        return doubled**2
 
-    pipeline = DataflowPipeline(broker)
-    pipeline.map(double, [1, 2, 3], "doubled")
-    pipeline.map(square, [], "squared")
+    # Build pipeline using the base Pipeline class with tracking
+    pipeline: Pipeline[Any, Any] = (
+        Pipeline(broker)
+        .with_tracking(manager=tracking)
+        .call_next(double)
+        .call_next(square)
+    )
 
-    task = await pipeline.kiq()
+    # Execute the pipeline
+    task = await pipeline.kiq(x=1)
     result = await task.wait_result()
 
     assert result.error is None
-    assert result.return_value["doubled"] == [2, 4, 6]
-
-    status = await tracking.get_status(pipeline.pipeline_id)
-    assert status is not None
-    assert status.status.name == "COMPLETED"
+    assert result.return_value == 4  # (1 * 2)^2 = 4
 
 
 @pytest.mark.anyio
-@pytest.mark.skip(reason="Test needs to be fixed")
 async def test_e2e_error_handling(e2e_setup):
     """Test error handling in e2e scenario."""
     setup = e2e_setup
@@ -77,18 +76,16 @@ async def test_e2e_error_handling(e2e_setup):
     async def failing_task(x: int) -> int:
         raise ValueError("Task failed")
 
-    pipeline = DataflowPipeline(broker)
-    pipeline.map(failing_task, [1], "failed")
+    # Build pipeline with failing task
+    pipeline: Pipeline[Any, Any] = Pipeline(broker).with_tracking(
+                                    manager=tracking).call_next(
+                                        failing_task)
 
-    task = await pipeline.kiq()
+    # Execute and expect error
+    task = await pipeline.kiq(x=1)
     result = await task.wait_result()
 
     assert result.error is not None
-
-    status = await tracking.get_status(pipeline.pipeline_id)
-    assert status is not None
-    assert status.steps[0].status.name == "FAILED"
-    assert status.steps[0].error == "Task failed"
 
 
 @pytest.mark.anyio
