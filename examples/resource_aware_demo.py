@@ -127,10 +127,12 @@ async def demo_pipeline_with_resources() -> None:
     logger.info(f"  Heavy tasks (CPU bound): max_parallel={heavy_parallel}")
 
     logger.info(
-        "\nTaskResourceProfile allows you to annotate tasks with resource requirements."
+        "\nTaskResourceProfile allows you to annotate\
+            tasks with resource requirements."
     )
     logger.info(
-        "ResourceAwareExecutor uses these profiles to compute optimal parallelism."
+        "ResourceAwareExecutor uses these profiles\
+            to compute optimal parallelism."
     )
 
 
