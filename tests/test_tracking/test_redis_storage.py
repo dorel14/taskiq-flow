@@ -14,7 +14,7 @@ async def redis_storage() -> RedisPipelineStorage:
     storage = RedisPipelineStorage("redis://localhost:6379", ttl_seconds=3600)
     try:
         # Test connection
-        await storage.redis.ping()
+        await storage.redis.ping()  # type: ignore[misc]
     except Exception as e:
         pytest.skip(f"Redis not available for testing: {e}")
     return storage

@@ -9,6 +9,7 @@ Version: 0.4.5
 
 import asyncio
 import logging
+from typing import Any
 
 import psutil
 from taskiq import InMemoryBroker
@@ -34,9 +35,9 @@ broker = InMemoryBroker(await_inplace=True)
         estimated_memory_mb=50,
         estimated_cpu_cores=0.2,
         io_bound=True,
-    ),
+    ).model_dump(),
 )
-async def light_task(item: int) -> dict:
+async def light_task(item: int) -> dict[str, Any]:
     """Lightweight I/O-bound task."""
     await asyncio.sleep(0.1)  # Simulate I/O
     return {"item": item, "result": item * 2}
@@ -49,9 +50,9 @@ async def light_task(item: int) -> dict:
         estimated_memory_mb=200,
         estimated_cpu_cores=1.0,
         io_bound=False,
-    ),
+    ).model_dump(),
 )
-async def heavy_task(item: int) -> dict:
+async def heavy_task(item: int) -> dict[str, Any]:
     """CPU-intensive task."""
     # Simulate CPU work
     total = 0

@@ -8,6 +8,7 @@ Version: 0.4.5
 """
 
 import logging
+from typing import Any
 
 from fastapi import FastAPI
 from taskiq import InMemoryBroker
@@ -26,14 +27,14 @@ broker = InMemoryBroker(await_inplace=True)
 # 2. Define some demo tasks
 @broker.task
 @pipeline_task(output="result")
-async def process_data(data: str) -> dict:
+async def process_data(data: str) -> dict[str, Any]:
     """A simple processing task."""
     return {"processed": data.upper(), "status": "ok"}
 
 
 @broker.task
 @pipeline_task(output="validated")
-async def validate_result(result: dict) -> dict:
+async def validate_result(result: dict[str, Any]) -> dict[str, Any]:
     """Validate the processed result."""
     if result.get("status") != "ok":
         raise ValueError("Invalid result")
@@ -56,7 +57,7 @@ audit_logger = AuditLogger()
 
 
 @app.post("/execute-with-audit")
-async def execute_with_audit(data: str, user: str = "demo_user") -> dict:
+async def execute_with_audit(data: str, user: str = "demo_user") -> dict[str, Any]:
     """Execute pipeline with audit logging."""
     # Log the execution request
     await audit_logger.log_access(

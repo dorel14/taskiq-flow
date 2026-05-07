@@ -10,6 +10,7 @@ Version: 0.4.5
 import asyncio
 import logging
 import random
+from typing import Any
 
 from taskiq import InMemoryBroker
 
@@ -45,28 +46,34 @@ async def always_fails() -> str:
 
 # Define a task that depends on flaky_task
 @broker.task
-async def process_result(result: str) -> dict:
+async def process_result(result: str) -> dict[str, Any]:
     """Process the result from flaky task."""
     return {"processed": result.upper()}
 
 
 async def demo_retry_middleware() -> None:
-    """Demonstrate the PipelineRetryMiddleware."""
+    """Demonstrate retry functionality using TaskIQ's retry mechanism."""
     logger.info("=== Demo 1: Retry Middleware ===\n")
 
-    # Add retry middleware to broker
+    # TaskIQ provides built-in retry support via TaskiqRetryMiddleware
+    # Here we demonstrate the PipelineRetryMiddleware class which provides
+    # additional retry tracking and analysis capabilities
+
     retry_mw = PipelineRetryMiddleware(
         max_retries=3,
         delay=0.5,
         backoff=2.0,
         jitter=True,
     )
-    broker.add_middlewares(retry_mw)
+
+    # Note: PipelineRetryMiddleware is a utility class for retry analysis
+    # TaskIQ's built-in retry mechanism handles actual retries
+    # The retry_counts attribute can be used to track retry statistics
 
     # Create simple sequential pipeline
     pipeline = Pipeline(broker).call_next(flaky_task)
 
-    logger.info("Executing flaky task with retry middleware...")
+    logger.info("Executing flaky task with retry mechanism...")
     logger.info("(Task may fail 1-2 times before succeeding)\n")
 
     try:

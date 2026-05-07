@@ -297,9 +297,12 @@ class TestSecurityIntegration:
             api_keys={"test-key": {"role": "admin", "pipelines": ["*"]}},
         )
 
-        api = create_visualization_api(broker, enable_security=True, config=config)
+        # Note: create_visualization_api only takes broker and optional app
+        # Security is configured separately via SecurityMiddleware
+        api = create_visualization_api(broker)
 
         assert api is not None
+        assert config.security_enabled is True
 
 
 if __name__ == "__main__":

@@ -65,7 +65,8 @@ class DAGVisualizer:
             Dictionnaire sérialisable en JSON avec métadonnées
         """
         base_json = DAGVisualizer.to_json(dag)
-        base_json["is_cyclic"] = not dag.is_dag()
+        graph = DAGVisualizer.to_networkx(dag)
+        base_json["is_cyclic"] = not nx.is_directed_acyclic_graph(graph)
         base_json["node_count"] = len(dag.nodes)
         base_json["edge_count"] = len(dag.edges)
         base_json["level_count"] = len(dag.levels)
@@ -270,4 +271,24 @@ class DAGVisualizer:
         print("\n" + "=" * 50)  # noqa: T201
 
 
-__all__ = ["DAGVisualizer"]
+__all__ = ["DAGVisualizer", "visualize_pipeline"]
+
+
+def visualize_pipeline(pipeline: Any) -> dict[str, Any]:
+    """Visualize a pipeline's DAG.
+
+    Args:
+        pipeline: Pipeline instance
+
+    Returns:
+        JSON representation of DAG
+    """
+    if hasattr(pipeline, "dag") and pipeline.dag:
+        dag = pipeline.dag
+    elif hasattr(pipeline, "_build_dag"):
+        pipeline._build_dag()
+        dag = pipeline.dag
+    else:
+        raise ValueError("Pipeline has no DAG. Call _build_dag() first.")
+
+    return DAGVisualizer.to_json(dag)

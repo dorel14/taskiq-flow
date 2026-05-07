@@ -9,6 +9,7 @@ Version: 0.4.5
 
 import asyncio
 import logging
+from typing import Any
 
 from taskiq import InMemoryBroker
 
@@ -26,21 +27,21 @@ broker = InMemoryBroker(await_inplace=True)
 # Define tasks for a sample audio processing pipeline
 @broker.task
 @pipeline_task(output="audio_features")
-def extract_features(audio_path: str) -> dict:
+def extract_features(audio_path: str) -> dict[str, Any]:
     """Extract audio features."""
     return {"duration": 180.0, "tempo": 120.0, "sample_rate": 44100}
 
 
 @broker.task
 @pipeline_task(output="tags")
-def generate_tags(audio_features: dict) -> list[str]:
+def generate_tags(audio_features: dict[str, Any]) -> list[str]:
     """Generate tags based on audio features."""
     return ["electronic", "dance", "upbeat"]
 
 
 @broker.task
 @pipeline_task(output="embedding")
-def compute_embedding(audio_features: dict) -> list[float]:
+def compute_embedding(audio_features: dict[str, Any]) -> list[float]:
     """Compute vector embedding."""
     return [0.1, 0.2, 0.3, 0.4, 0.5]
 
@@ -48,8 +49,8 @@ def compute_embedding(audio_features: dict) -> list[float]:
 @broker.task
 @pipeline_task(output="metadata")
 def create_metadata(
-    audio_features: dict, tags: list[str], embedding: list[float]
-) -> dict:
+    audio_features: dict[str, Any], tags: list[str], embedding: list[float]
+) -> dict[str, Any]:
     """Combine all results into final metadata."""
     return {
         "features": audio_features,
