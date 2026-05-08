@@ -8,12 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # On garde workflows: write au cas où, mais on va surtout éviter de le modifier
       workflows: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Important : Si vous utilisez un PAT, remplacez la ligne ci-dessous
+          # token: ${{ secrets.GH_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -26,24 +29,30 @@ jobs:
       - name: Get version and update docs
         id: version
         run: |
+            # On récupère la version sans modifier de fichiers (mode print)
             VERSION=$(python -m semantic_release version --print)
             DATE=$(date +%Y-%m-%d)
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-            # Mettre à jour tous les README.md dans /docs/ ET le README.md racine
-            find docs/ -name "*.md" -name "README.md" -exec sed -i \
+            # Mise à jour des README dans /docs/
+            find docs/ -name "README.md" -exec sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-                -e "s/taskiq-flow==\{VERSION\}/taskiq-flow==$VERSION/g" {} \;
+                -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" {} \;
     
-            # README.md à la racine
+            # Mise à jour du README à la racine
             sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-                -e "s/taskiq-flow==\{VERSION\}/taskiq-flow==$VERSION/g" README.md
+                -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" README.md
 
       - name: Commit updated docs
         run: |
-          git config user.name "semantic-release"
-          git config user.email "actions@github.com"
-          git add docs/
-          git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # CRUCIAL : On ajoute spécifiquement les fichiers modifiés
+          # Cela évite d'inclure accidentellement des fichiers de workflow
+          git add docs/*.md README.md
+          
+          # On commit seulement s'il y a des changements
+          git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push origin HEAD
