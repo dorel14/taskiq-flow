@@ -175,20 +175,23 @@ markers = [
 [tool.semantic_release]
 version_variable = "pyproject.toml:project.version"
 version_toml = ["pyproject.toml:project.version"]
-branch = "main"
+branch = "master"
 upload_to_pypi = true
 upload_to_vcs_release = true
-build_command = "uv build"
+build_command = "uv build --no-sources"
+
+[[tool.semantic_release.plugins]]
+id = "git"
+assets = ["pyproject.toml", "CHANGELOG.md"]
 
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
 
-[tool.semantic_release.branches.main]
-match = "main"
+[tool.semantic_release.branches.master]
+match = "master"
 
 [tool.semantic_release.branches.develop]
 match = "develop"
 prerelease = false
-prerelease_tag = "dev"
