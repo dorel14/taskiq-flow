@@ -1,66 +1,68 @@
 name: Release
 on:
   push:
-    branches: [main]
+    branches: [main] # Se déclenche quand la PR est mergée dans main
 
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      # On garde workflows: write au cas où, mais on va surtout éviter de le modifier
       workflows: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Important : Si vous utilisez un PAT, remplacez la ligne ci-dessous
-          # token: ${{ secrets.GH_TOKEN }}
+          # CRUCIAL : C'est ici qu'on force l'utilisation de TON token
+          # Remplace RELEASE_TOKEN par le nom exact de ton secret
+          token: ${{ secrets.GH_TOKEN }} 
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: |
-          pip install python-semantic-release uv
+        run: pip install python-semantic-release uv
 
       - name: Get version and update docs
         id: version
         run: |
-            # On récupère la version sans modifier de fichiers (mode print)
             VERSION=$(python -m semantic_release version --print)
             DATE=$(date +%Y-%m-%d)
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-            # Mise à jour des README dans /docs/
+            # On limite strictement aux fichiers README.md pour éviter de toucher au YAML
+            # On utilise une regex plus sûre pour éviter les boucles
+            
             find docs/ -name "README.md" -exec sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
                 -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" {} \;
     
-            # Mise à jour du README à la racine
             sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
                 -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" README.md
 
-      - name: Commit updated docs
+      - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 1. On annule tout marquage de fichier (reset)
+          # On reset pour être sûr de ne pas avoir de fichiers fantômes
           git reset
           
-          # 2. On ajoute UNIQUEMENT les fichiers de doc et le README racine
-          git add docs/ README.md
+          # On ajoute seulement ce qui nous intéresse
+          git add README.md docs/*.md
           
-          # 3. On vérifie si on a accidentellement ajouté un workflow (sécurité)
-          if git diff --cached --name-only | grep -E ".github/workflows/"; then
-            echo "ERREUR : Un fichier de workflow a été détecté dans le commit. Annulation."
-            exit 1
+          # On vérifie si un workflow s'est glissé là par erreur
+          if git diff --cached --name-only | grep ".github/workflows/"; then
+            echo "Alerte : Tentative de modification de workflow détectée !"
+            git checkout .github/workflows/ # On annule la modif du workflow
           fi
 
-          # 4. On commit et on push
-          git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push origin HEAD
+          git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes"
+          
+          # On pousse vers main explicitement si c'est là qu'on veut la doc à jour
+          git push origin main
