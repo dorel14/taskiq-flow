@@ -98,10 +98,3 @@ def test_in_hours():
         assert trigger is not None
     except ImportError:
         pytest.skip("APScheduler not available")
-
-
-def test_triggers_import_error():
-    """Test that ImportError is raised when APScheduler not available."""
-    # This test is skipped because the module is already imported
-    # and patching sys.modules doesn't affect already imported modules
-    pytest.skip("Test not applicable when module is already imported")

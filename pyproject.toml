@@ -23,20 +23,24 @@ classifiers = [
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
- version = "0.3.2"
+version = "0.4.0"
 dependencies = [
   "apscheduler[sqlalchemy]>=3.11.2",
   "fastapi>=0.136.1",
   "mypy>=1.20.2",
   "networkx>=3.4.2",
   "picows>=1.19.0",
+  "prometheus-client>=0.25.0",
   "pydantic>=2,<3",
+  "pydantic-settings>=2.14.0",
   "redis>=5.3.1",
+  "slowapi>=0.1.9",
   "taskiq>=0.11.12,<1",
   "taskiq-aio-kafka>=0.3.0",
   "taskiq-aio-pika>=0.6.0",
   "taskiq-redis>=1.0.9",
   "typos>=1.46.0",
+  "uvicorn>=0.46.0",
 ]
 
 [project.optional-dependencies]
@@ -53,15 +57,14 @@ Repository = "https://github.com/taskiq-python/taskiq-flow"
 [dependency-groups]
 dev = [
   "anyio>=4",
-  "black>=26.3.1",
   "mypy>=1.8,<2",
   "pre-commit>=4",
   "pytest>=9.0.3",
+  "pytest-asyncio>=0.23.0",
   "pytest-cov>=7.1.0",
   "pytest-xdist[psutil]>=3",
   "ruff>=0.15.0",
   "isort>=8.0.1",
-  "mypy>=1.20.2",
 ]
 
 [build-system]
@@ -163,4 +166,29 @@ allow-magic-value-types = ["int", "str", "float"]
 extend-immutable-calls = ["taskiq_dependencies.Depends", "taskiq.TaskiqDepends"]
 
 [tool.pytest.ini_options]
-anyio_mode = "auto"
+# anyio_mode = "auto"
+asyncio_mode = "auto"
+markers = [
+  "asyncio: mark test as async",
+]
+
+[tool.semantic_release]
+version_variable = "pyproject.toml:project.version"
+version_toml = ["pyproject.toml:project.version"]
+branch = "master"
+upload_to_pypi = true
+upload_to_vcs_release = true
+build_command = "uv build"
+
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+
+[tool.semantic_release.branches.master]
+match = "master"
+
+[tool.semantic_release.branches.develop]
+match = "develop"
+prerelease = false

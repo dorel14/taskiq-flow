@@ -1,0 +1,12 @@
+source "https://rubygems.org"
+
+# Use just-the-docs theme for documentation
+gem "just-the-docs"
+
+# GitHub Pages gem (includes jekyll, etc.)
+gem "github-pages", group: :jekyll_plugins
+
+# Optional: additional plugins if needed
+# gem "jekyll-seo-tag"
+# gem "jekyll-sitemap"
+# gem "jekyll-feed"

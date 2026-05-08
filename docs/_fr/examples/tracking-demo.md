@@ -1,12 +1,14 @@
 ---
+permalink: /fr/examples/tracking-demo/
 title: Exemple: tracking_demo.py
 nav_order: 45
+color_scheme: dark
 ---
 # Exemple: tracking_demo.py
 
-**Suivi d'exécution de pipeline avec PipelineTrackingManager**
+**Surveillance en temps réel avec PipelineTrackingManager**
 
-> **Version** : 0.3.2 | **Fichier** : `examples/tracking_demo.py`
+> **Version** : {VERSION} | **Fichier** : `examples/tracking_demo.py`
 
 ---
 

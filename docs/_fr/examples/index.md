@@ -1,12 +1,13 @@
 ---
 title: Galerie d'Exemples
 nav_order: 40
+permalink: /fr/examples/
 ---
 # Galerie d'Exemples
 
 **Exemples fonctionnels démontrant les fonctionnalités et motifs clés de Taskiq-Flow**
 
-> **Version** : 0.3.2 | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})
 
 ---
 

@@ -1,11 +1,11 @@
 ---
-permalink: /
 title: Taskiq-Flow Documentation
 nav_order: 1
+permalink: /
 ---
 # Taskiq-Flow Documentation
 
-> **Version**: 0.3.2 | Last updated: 2026-05-05
+> **Version**: {VERSION} | Last updated: 2026-05-05
 
 Welcome to the official documentation for **Taskiq-Flow**, a powerful Python library for orchestrating asynchronous task workflows with pipelines, dataflow DAGs, real-time tracking, and distributed scheduling.
 
@@ -70,9 +70,7 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 ## 📖 Read the Guides
 
-**[→ Installation (English)]({{ '/en/guides/installation/' | relative_url }})**
-
-**[→ Quick Start (English)]({{ '/en/quickstart/' | relative_url }})**
+**[→ Getting Started (English)]({{ '/en/quickstart/' | relative_url }})**
 
 **[→ Commencer (Français)]({{ '/fr/quickstart/' | relative_url }})**
 
@@ -85,7 +83,7 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
+Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/master/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
 
 ## 📄 License
 

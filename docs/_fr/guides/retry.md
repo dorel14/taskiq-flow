@@ -6,7 +6,7 @@ nav_order: 26
 
 **Exécution de pipeline résiliente avec politiques de retry, backoff et files de lettres mortes**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide d'Ordonnancement]({{ '/fr/guides/scheduling/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide d'Ordonnancement]({{ '/fr/guides/scheduling/' | relative_url }})
 
 ---
 

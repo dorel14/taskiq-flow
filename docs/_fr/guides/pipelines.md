@@ -6,7 +6,7 @@ nav_order: 20
 
 **Motifs de pipelines séquentiels et dataflow, configurations et bonnes pratiques**
 
-> **Version** : 0.3.2 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
 
 ---
 
@@ -508,7 +508,7 @@ basse_valeur.call_next(traitement_standard)
 fusionné = haute_valeur.group([traitement_premium, traitement_standard])
 ```
 
-Voir [steps/condition.py](https://github.com/SoniqueBay/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) pour `IfStep`.
+Voir [steps/condition.py](https://github.com/dorel14/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) pour `IfStep`.
 
 ---
 

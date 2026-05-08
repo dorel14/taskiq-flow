@@ -62,6 +62,12 @@ with contextlib.suppress(ImportError):
     from taskiq_flow.map_reduce import MapReduce
 
 with contextlib.suppress(ImportError):
+    from taskiq_flow.api import (
+        PipelineVisualizationAPI,
+        create_visualization_api,
+    )
+
+with contextlib.suppress(ImportError):
     from taskiq_flow.visualization import (
         DAGVisualizer,
         visualize_pipeline,

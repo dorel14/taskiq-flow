@@ -1,12 +1,14 @@
 ---
-title: API Reference: Tracking
+permalink: /en/api/tracking/
+title: API Reference: Tracking & Monitoring
 nav_order: 33
+color_scheme: dark
 ---
-# API Reference: Tracking
+# API Reference: Tracking & Monitoring
 
 **PipelineTrackingManager, storage backends, and status models**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

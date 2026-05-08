@@ -2,9 +2,9 @@
 
 Taskiq-Flow vous permet d'enchaîner des fonctions intensives et de les exécuter sans attendre que chaque étape se termine. Pensez-y comme à un système d'orchestration pour des workflows de tâches asynchrones — vous définissez les étapes, et la bibliothèque gère automatiquement l'ordre d'exécution, le passage de données et le parallélisme.
 
-*Version : 0.3.0*
+*Version : {VERSION}*
 
-> 🌐 **Documentation Internationale** : Ce projet dispose également d'une documentation en [English](README.md).
+>  **Documentation Internationale** : Ce projet dispose également d'une documentation en [English](README.md).
 
 ## Inspiration & Philosophie de Conception
 
@@ -361,6 +361,44 @@ Les tâches sans dépendances s'exécutent en premier. Les tâches indépendante
 
 *Exemple complet : `examples/dataflow_audio_pipeline.py`*
 
+### Avancé: Registry & Inspection Manuelle du DAG
+
+Pour des cas avancés (pipelines dynamiques, systèmes de plugins, débogage), vous pouvez construire et inspecter manuellement le graphe de flux avec `DataflowRegistry` :
+
+```python
+from taskiq_flow import DataflowRegistry
+
+# Créer le registry
+registry = DataflowRegistry()
+
+# Enregistrer explicitement les tâches avec leurs dépendances
+registry.register_task(load_data, output="raw_data", inputs=["source"])
+registry.register_task(process, output="processed", inputs=["raw_data"])
+registry.register_task(save, output="saved", inputs=["processed"])
+
+# Inspecter le graphe avant exécution
+print(f"Tâches: {[t.task_name for t in registry.get_tasks()]}")
+print(f"Sorties: {registry.get_outputs()}")
+print(f"Entrées externes: {registry.get_external_inputs()}")
+
+# Trouver les dépendances
+producteur = registry.get_producer("processed")
+consommateurs = registry.get_consumers("raw_data")
+
+# Construire le DAG et examiner sa structure
+dag = registry.build_dag()
+dag.print()  # Visualisation ASCII
+ordre = dag.topological_sort()  # Ordre d'exécution
+niveaux = dag.levels  # Groupes d'exécution parallèle
+
+# Exécuter via ExecutionEngine (bas niveau)
+from taskiq_flow import ExecutionEngine
+engine = ExecutionEngine(broker, dag)
+resultats = await engine.execute(inputs={"source": "data.csv"})
+```
+
+Voir `examples/registry_discovery_example.py` pour une démonstration complète de la construction manuelle du registry, inspection du DAG, validation et exécution pas-à-pas.
+
 ## Suivi via WebSocket
 
 Taskiq-Flow supporte le suivi en temps réel de l'exécution de pipeline via WebSockets. Vous pouvez recevoir des mises à jour en direct sur le statut du pipeline et des étapes au fur et à mesure.
@@ -540,6 +578,7 @@ Le répertoire `examples/` inclut :
 - `tracking_demo.py` – monitoring du statut de pipeline avec le gestionnaire de suivi
 - `scheduled_pipeline.py` – exécution récurrente de pipeline basée sur cron
 - `dataflow_audio_pipeline.py` – DAG dataflow complet, parallélisme, map-reduce et visualisation
+- `registry_discovery_example.py` – **NOUVEAU** exploration manuelle du registry, construction de DAG, et exécution pas-à-pas
 - `websocket_demo.py` – serveur WebSocket diffusant des événements de pipeline en direct
 - `api_example.py` – API REST FastAPI pour la gestion et la visualisation de pipelines **(NOUVEAU)**
 

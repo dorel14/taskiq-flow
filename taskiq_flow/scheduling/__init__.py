@@ -8,6 +8,7 @@ Version: 0.3.2
 """
 
 from .scheduler import LabelBasedScheduler, PipelineScheduler
+from .storage import JobPersistenceManager, PipelineExecution, SchedulerJob
 from .triggers import (
     create_cron_trigger,
     create_date_trigger,
@@ -21,8 +22,11 @@ from .triggers import (
 )
 
 __all__ = [
+    "JobPersistenceManager",
     "LabelBasedScheduler",
+    "PipelineExecution",
     "PipelineScheduler",
+    "SchedulerJob",
     "create_cron_trigger",
     "create_date_trigger",
     "create_interval_trigger",

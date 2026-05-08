@@ -6,7 +6,7 @@ nav_order: 26
 
 **Resilient pipeline execution with retry policies, backoff, and dead-letter queues**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})
 
 ---
 

@@ -1,12 +1,14 @@
 ---
-title: Exemple: quickstart.py
+permalink: /en/examples/quickstart/
+title: Example: quickstart.py
 nav_order: 41
+color_scheme: dark
 ---
-# Exemple: quickstart.py
+# Example: quickstart.py
 
 **Basic sequential pipeline with map, filter, and group operations**
 
-> **Version**: 0.3.2 | **File**: `examples/quickstart.py`
+> **Version**: {VERSION} | **File**: `examples/quickstart.py`
 
 ---
 

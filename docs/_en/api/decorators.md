@@ -1,12 +1,14 @@
 ---
+permalink: /en/api/decorators/
 title: API Reference: Decorators
 nav_order: 31
+color_scheme: dark
 ---
 # API Reference: Decorators
 
-**@pipeline_task, @pipeline_task_multi_output, and related utilities**
+**Task decorators, pipeline_task, and utility decorators**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.decorators`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.decorators`
 
 ---
 

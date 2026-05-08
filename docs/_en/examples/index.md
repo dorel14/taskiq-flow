@@ -1,12 +1,13 @@
 ---
 title: Example Gallery
 nav_order: 40
+permalink: /en/examples/
 ---
 # Example Gallery
 
 **Working examples demonstrating key Taskiq-Flow features and patterns**
 
-> **Version**: 0.3.2 | **Related**: [Quick Start Guide]({{ '/en/quickstart/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Quick Start Guide]({{ '/en/quickstart/' | relative_url }})
 
 ---
 

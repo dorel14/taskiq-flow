@@ -6,7 +6,7 @@ nav_order: 28
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: 0.3.2 | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
 
 ---
 
@@ -45,7 +45,7 @@ pipeline = DataflowPipeline.from_tasks(broker, [process])
 pipeline.pipeline_id = "my_pipeline"
 
 # 3. Create FastAPI app with visualization API
-app = FastAPI(title="Taskiq-Flow API", version="0.3.0")
+app = FastAPI(title="Taskiq-Flow API", version="{VERSION}")
 viz_api = create_visualization_api(broker, app)
 viz_api.add_pipeline("my_pipeline", pipeline)
 
@@ -515,6 +515,7 @@ location / {
 ### 9.1. Health Check Endpoint
 
 ```python
+from datetime import datetime, timezone
 from fastapi import FastAPI
 import psutil
 
@@ -524,7 +525,7 @@ app = FastAPI()
 async def health():
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "broker_connected": broker.is_connected(),
         "memory_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }

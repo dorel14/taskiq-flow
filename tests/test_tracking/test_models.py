@@ -1,7 +1,7 @@
 # mypy: disable-error-code=no-untyped-def
 """Tests for pipeline tracking models."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from taskiq_flow.tracking.models import (
     PipelineStatus,
@@ -34,7 +34,7 @@ def test_step_status_info_creation():
         task_name="test_task",
         task_id="task_123",
         status=StepStatus.RUNNING,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
         retries=2,
         error="some error",
     )
@@ -49,7 +49,7 @@ def test_step_status_info_creation():
 
 def test_pipeline_status_info_creation():
     """Test PipelineStatusInfo creation."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     steps = [
         StepStatusInfo(
             step_index=0,

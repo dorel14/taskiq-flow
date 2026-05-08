@@ -1,12 +1,14 @@
 ---
-title: Référence API: Suivi
+permalink: /fr/api/tracking/
+title: Référence API: Suivi & Monitoring
 nav_order: 33
+color_scheme: dark
 ---
-# Référence API: Suivi
+# Référence API: Suivi & Monitoring
 
 **PipelineTrackingManager, backends de stockage, et modèles de statut**
 
-> **Version** : 0.3.2 | **Module** : `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version** : {VERSION} | **Module** : `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

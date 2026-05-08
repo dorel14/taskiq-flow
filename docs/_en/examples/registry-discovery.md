@@ -1,12 +1,14 @@
 ---
+permalink: /en/examples/registry-discovery/
 title: Example: registry_discovery_example.py
 nav_order: 43
+color_scheme: dark
 ---
 # Example: registry_discovery_example.py
 
-**Manual DataflowRegistry construction, DAG inspection, and step-by-step execution**
+**Manual DataflowRegistry construction, DAG inspection, and low-level execution**
 
-> **Version**: 0.3.2 | **File**: `examples/registry_discovery_example.py`
+> **Version**: {VERSION} | **File**: `examples/registry_discovery_example.py`
 
 ---
 

@@ -6,7 +6,7 @@ nav_order: 25
 
 **Cron-based, interval, and one-off pipeline scheduling with PipelineScheduler**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 
@@ -557,7 +557,7 @@ For production HA deployments, run multiple scheduler instances with a shared jo
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db"
+    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
 )
 
 # Scheduler 2 (identical config) — only one will acquire jobs

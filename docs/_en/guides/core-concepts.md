@@ -1,12 +1,14 @@
 ---
 title: Core Concepts Guide
 nav_order: 12
+permalink: /en/guides/core-concepts/
+color_scheme: dark
 ---
 # Core Concepts Guide
 
 **Understanding fundamental Taskiq-Flow concepts and architecture**
 
----
+> **Version**: {VERSION}
 
 ## Overview
 

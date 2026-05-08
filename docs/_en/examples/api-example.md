@@ -1,12 +1,14 @@
 ---
+permalink: /en/examples/api-example/
 title: Example: api_example.py
 nav_order: 47
+color_scheme: dark
 ---
 # Example: api_example.py
 
-**REST API for pipeline management, visualization, and remote execution with FastAPI**
+**FastAPI integration for remote pipeline management**
 
-> **Version**: 0.3.2 | **File**: `examples/api_example.py`
+> **Version**: {VERSION} | **File**: `examples/api_example.py`
 
 ---
 

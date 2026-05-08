@@ -1,12 +1,14 @@
 ---
+permalink: /fr/api/core/
 title: Référence API: Composants Principaux
 nav_order: 30
+color_scheme: dark
 ---
 # Référence API: Composants Principaux
 
 **Pipeline, DataflowPipeline, PipelineMiddleware, PipelineContext et exceptions principales**
 
-> **Version** : 0.3.2 | **Module** : `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
+> **Version** : {VERSION} | **Module** : `taskiq_flow.core`, `taskiq_flow.pipeline`, `taskiq_flow.middleware`
 
 ---
 
@@ -262,7 +264,7 @@ Stabilité API:
 - `PipelineScheduler`: Stable (v0.3+)
 - `PipelineTrackingManager`: Stable (v0.3+)
 
-Changements cassants notés dans [CHANGELOG.md](https://github.com/SoniqueBay/taskiq-flow/blob/main/CHANGELOG.md).
+Changements cassants notés dans [CHANGELOG.md](https://github.com/dorel14/taskiq-flow/blob/main/CHANGELOG.md).
 
 ---
 

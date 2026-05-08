@@ -27,7 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Version bump to 0.3.2
+- Comprehensive French documentation for DataflowRegistry with detailed examples
+- New example: `registry_discovery_example.py` demonstrating manual registry usage
+- Enhanced docstrings for DAG, DAGNode, DataNode, and DataCache classes
+- Added usage examples for all dataflow components
+- Improved module-level documentation consistency
+
+### Changed
+
+- Standardized French docstrings across all dataflow modules
+- Minor documentation formatting improvements
 
 ## [0.3.0] - 2026-05-03
 
@@ -119,4 +128,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-> 🌐 **International Documentation**: This project also provides documentation in [Français](CHANGELOG.fr.md).
+> **International Documentation**: This project also provides documentation in [Français](CHANGELOG.fr.md).

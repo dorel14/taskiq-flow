@@ -1,12 +1,13 @@
 ---
 title: Performance Optimization Guide
 nav_order: 27
+color_scheme: dark
 ---
 # Performance Optimization Guide
 
 **Resource-aware parallelism, memory optimization, and scaling strategies**
 
-> **Version**: 0.3.2 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 

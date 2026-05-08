@@ -1,12 +1,14 @@
 ---
-title: API Reference: WebSocket
+permalink: /en/api/websocket/
+title: API Reference: WebSocket Integration
 nav_order: 34
+color_scheme: dark
 ---
-# API Reference: WebSocket
+# API Reference: WebSocket Integration
 
-**HookManager, event system, transport layer, and WebSocket server**
+**HookManager, WebSocket bridge, and real-time event transport**
 
-> **Version**: 0.3.2 | **Module**: `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
 
 ---
 
