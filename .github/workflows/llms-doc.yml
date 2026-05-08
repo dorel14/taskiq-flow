@@ -33,4 +33,4 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add llms.txt llms-full.txt
           # On commit seulement s'il y a des changements
-          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update llms context files" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update llms context files" && git push origin master)
