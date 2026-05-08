@@ -1,0 +1,36 @@
+name: Update LLM Context Files
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'docs/**'
+      - 'examples/**'
+      - 'taskiq_flow/**'
+      - 'scripts/generate_llm_docs.py'
+
+jobs:
+  generate-llm-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Generator
+        run: python scripts/generate_llm_docs.py
+
+      - name: Deploy LLM files
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add llms.txt llms-full.txt
+          # On commit seulement s'il y a des changements
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update llms context files" && git push)

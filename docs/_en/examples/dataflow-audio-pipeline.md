@@ -2,12 +2,13 @@
 permalink: /en/examples/dataflow-audio-pipeline/
 title: Example: dataflow_audio_pipeline.py
 nav_order: 42
+color_scheme: dark
 ---
 # Example: dataflow_audio_pipeline.py
 
 **Complete dataflow DAG with parallel execution, map-reduce, and visualization**
 
-> **Version**: 0.4.0 | **File**: `examples/dataflow_audio_pipeline.py`
+> **Version**: {VERSION} | **File**: `examples/dataflow_audio_pipeline.py`
 
 ---
 

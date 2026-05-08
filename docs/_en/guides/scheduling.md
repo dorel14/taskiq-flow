@@ -6,7 +6,7 @@ nav_order: 25
 
 **Cron-based, interval, and one-off pipeline scheduling with PipelineScheduler**
 
-> **Version**: 0.4.0 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})
 
 ---
 

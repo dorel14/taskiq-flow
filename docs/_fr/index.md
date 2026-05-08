@@ -27,10 +27,12 @@ Bienvenue dans la documentation française de **Taskiq-Flow**.
 *Maintenu par l'équipe SoniqueBay*
 
 ---
+
 title: Documentation Française
 nav_order: 5
 permalink: /fr/
 ---
+
 # Taskiq-Flow Documentation (Français)
 
 Bienvenue dans la documentation française de **Taskiq-Flow**.

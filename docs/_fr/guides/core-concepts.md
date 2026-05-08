@@ -2,12 +2,13 @@
 title: Guide des Concepts Fondamentaux
 nav_order: 12
 permalink: /fr/guides/core-concepts/
+color_scheme: dark
 ---
 # Guide des Concepts Fondamentaux
 
 **Comprendre les concepts fondamentaux de Taskiq-Flow et son architecture**
 
----
+> **Version** : {VERSION}
 
 ## Aperçu
 

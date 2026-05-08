@@ -1,13 +1,14 @@
 ---
 permalink: /fr/api/websocket/
-title: Référence API: WebSocket
+title: Référence API: Intégration WebSocket
 nav_order: 34
+color_scheme: dark
 ---
-# Référence API: WebSocket
+# Référence API: Intégration WebSocket
 
-**HookManager, système d'événements, couche transport, et serveur WebSocket**
+**HookManager, pont WebSocket, et transport d'événements temps réel**
 
-> **Version** : 0.4.0 | **Module** : `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version** : {VERSION} | **Module** : `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
 
 ---
 

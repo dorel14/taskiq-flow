@@ -1,12 +1,14 @@
-"""Pont entre HookManager et le serveur WebSocket pour les événements de pipeline.
+"""Bridge entre HookManager et le serveur WebSocket pour les événements de pipeline.
 
 Ce module définit WebSocketHookBridge qui écoute les événements
 du pipeline via HookManager et les diffuse aux clients WebSocket
 connectés. Gère également la reconnexion et la file d'attente
 des événements pendant la déconnexion.
 
-Auteur: SoniqueBay Team
-Version: 0.3.2
+Supports both FastAPI WebSocket and picows implementations.
+
+Author: SoniqueBay Team
+Version: 0.4.5
 """
 
 import asyncio
@@ -16,7 +18,23 @@ from typing import Any
 
 from taskiq_flow.hooks.events import PipelineEvent
 from taskiq_flow.hooks.manager import HookManager
-from taskiq_flow.integration.websocket.server import get_websocket_server
+
+# Try to import both WebSocket implementations
+try:
+    from taskiq_flow.integration.websocket.fastapi_ws import (
+        get_fastapi_ws_manager,
+    )
+
+    FASTAPI_WS_AVAILABLE = True
+except ImportError:
+    FASTAPI_WS_AVAILABLE = False
+
+try:
+    from taskiq_flow.integration.websocket.server import get_websocket_server
+
+    PICOWS_AVAILABLE = True
+except ImportError:
+    PICOWS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +42,34 @@ _MISSING = object()  # Sentinel for missing attributes
 
 
 class WebSocketHookBridge:
-    """Bridge that forwards pipeline events from HookManager to WebSocket clients."""
+    """Bridge that forwards pipeline events from HookManager to WebSocket clients.
 
-    def __init__(self, hook_manager: HookManager, max_queue_size: int = 1000) -> None:
+    Supports both FastAPI WebSocket and picows implementations.
+    FastAPI WebSocket is preferred when integrated with FastAPI routes.
+    """
+
+    def __init__(
+        self,
+        hook_manager: HookManager,
+        max_queue_size: int = 1000,
+        use_fastapi: bool = True,
+    ) -> None:
         self.hook_manager = hook_manager
-        self.websocket_server = get_websocket_server()
+        self.max_queue_size = max_queue_size
+        self.use_fastapi = use_fastapi and FASTAPI_WS_AVAILABLE
+
+        # Initialize the appropriate WebSocket manager
+        self.websocket_manager: Any | None = None
+
+        if self.use_fastapi:
+            self.websocket_manager = get_fastapi_ws_manager()
+            logger.info("Using FastAPI WebSocket manager")
+        elif PICOWS_AVAILABLE:
+            self.websocket_manager = get_websocket_server()
+            logger.info("Using picows WebSocket server")
+        else:
+            logger.warning("No WebSocket implementation available")
+
         self._registered_events: set[str] = set()
         self._event_queue: deque[tuple[str, dict[str, Any]]] = deque(
             maxlen=max_queue_size,
@@ -52,6 +93,8 @@ class WebSocketHookBridge:
             "StepRetryEvent",
             "StepSkipEvent",
             "PipelineSkipEvent",
+            "DAGUpdatedEvent",
+            "CriticalPathChangedEvent",
         ]
 
         for event_type in event_types:
@@ -86,13 +129,34 @@ class WebSocketHookBridge:
     async def _send_heartbeat(self) -> None:
         """Send a heartbeat to test connection."""
         try:
-            # Send a simple heartbeat event
-            heartbeat_data = {
-                "type": "heartbeat",
-                "timestamp": PipelineEvent(pipeline_id="system").timestamp.isoformat(),
-            }
-            await self.websocket_server.broadcast_event("system", heartbeat_data)
-            self._is_connected = True
+            if self.use_fastapi and FASTAPI_WS_AVAILABLE:
+                # FastAPI WebSocket implementation
+                heartbeat_data = {
+                    "type": "heartbeat",
+                    "timestamp": PipelineEvent(
+                        pipeline_id="system"
+                    ).timestamp.isoformat(),
+                }
+                # Broadcast to a dummy pipeline to test connection
+                if self.websocket_manager is None:
+                    raise RuntimeError("WebSocket manager not initialized")
+                await self.websocket_manager.broadcast_event("system", heartbeat_data)
+                self._is_connected = True
+            elif PICOWS_AVAILABLE:
+                # picows implementation
+                heartbeat_data = {
+                    "type": "heartbeat",
+                    "timestamp": PipelineEvent(
+                        pipeline_id="system"
+                    ).timestamp.isoformat(),
+                }
+                if self.websocket_manager is None:
+                    raise RuntimeError("WebSocket manager not initialized")
+                await self.websocket_manager.broadcast_event("system", heartbeat_data)
+                self._is_connected = True
+            else:
+                self._is_connected = False
+                raise RuntimeError("No WebSocket implementation available")
         except Exception:
             self._is_connected = False
             raise
@@ -156,7 +220,9 @@ class WebSocketHookBridge:
         while self._event_queue:
             pipeline_id, event_data = self._event_queue.popleft()
             try:
-                await self.websocket_server.broadcast_event(pipeline_id, event_data)
+                if self.websocket_manager is None:
+                    raise RuntimeError("WebSocket manager not available")
+                await self.websocket_manager.broadcast_event(pipeline_id, event_data)
             except Exception as e:
                 logger.warning(
                     "Failed to send queued event %s: %s",
@@ -180,8 +246,8 @@ class WebSocketHookBridge:
         pipeline_id = event.pipeline_id
 
         try:
-            if self._is_connected:
-                await self.websocket_server.broadcast_event(pipeline_id, event_data)
+            if self._is_connected and self.websocket_manager is not None:
+                await self.websocket_manager.broadcast_event(pipeline_id, event_data)
                 logger.debug(
                     "Broadcasted %s for pipeline %s",
                     event.__class__.__name__,
@@ -246,12 +312,25 @@ class WebSocketHookBridge:
 _bridge_instances: dict[int, WebSocketHookBridge] = {}
 
 
-def get_websocket_bridge(hook_manager: HookManager) -> WebSocketHookBridge:
-    """Get or create a WebSocket bridge instance for the given hook manager."""
+def get_websocket_bridge(
+    hook_manager: HookManager,
+    use_fastapi: bool = True,
+) -> WebSocketHookBridge:
+    """Get or create a WebSocket bridge instance for the given hook manager.
+
+    Args:
+        hook_manager: The HookManager to bridge events from
+        use_fastapi: Whether to use FastAPI WebSocket implementation
+
+    Returns:
+        WebSocketHookBridge instance
+    """
     manager_id = id(hook_manager)
 
     if manager_id not in _bridge_instances:
-        _bridge_instances[manager_id] = WebSocketHookBridge(hook_manager)
+        _bridge_instances[manager_id] = WebSocketHookBridge(
+            hook_manager, use_fastapi=use_fastapi
+        )
 
     return _bridge_instances[manager_id]
 
@@ -273,8 +352,19 @@ async def start_websocket_server(host: str = "127.0.0.1", port: int = 8765) -> N
         logger.exception(f"WebSocket server stopped unexpectedly: {exc}")
 
 
-def setup_websocket_bridge(hook_manager: HookManager) -> WebSocketHookBridge:
-    """Set up the WebSocket bridge for a HookManager."""
-    bridge = get_websocket_bridge(hook_manager)
+def setup_websocket_bridge(
+    hook_manager: HookManager,
+    use_fastapi: bool = True,
+) -> WebSocketHookBridge:
+    """Set up the WebSocket bridge for a HookManager.
+
+    Args:
+        hook_manager: The HookManager to bridge events from
+        use_fastapi: Whether to use FastAPI WebSocket (default: True)
+
+    Returns:
+        Configured WebSocketHookBridge instance
+    """
+    bridge = get_websocket_bridge(hook_manager, use_fastapi)
     bridge.register_pipeline_events()
     return bridge

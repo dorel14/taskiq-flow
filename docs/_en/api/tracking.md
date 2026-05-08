@@ -1,13 +1,14 @@
 ---
 permalink: /en/api/tracking/
-title: API Reference: Tracking
+title: API Reference: Tracking & Monitoring
 nav_order: 33
+color_scheme: dark
 ---
-# API Reference: Tracking
+# API Reference: Tracking & Monitoring
 
 **PipelineTrackingManager, storage backends, and status models**
 
-> **Version**: 0.4.0 | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.tracking`, `taskiq_flow.tracking.models`
 
 ---
 

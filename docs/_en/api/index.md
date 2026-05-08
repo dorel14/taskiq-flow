@@ -2,6 +2,7 @@
 title: API Reference
 nav_order: 35
 permalink: /en/api/
+color_scheme: dark
 ---
 # API Reference
 

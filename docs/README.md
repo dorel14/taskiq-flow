@@ -5,7 +5,7 @@ permalink: /
 ---
 # Taskiq-Flow Documentation
 
-> **Version**: 0.4.0 | Last updated: 2026-05-05
+> **Version**: {VERSION} | Last updated: 2026-05-05
 
 Welcome to the official documentation for **Taskiq-Flow**, a powerful Python library for orchestrating asynchronous task workflows with pipelines, dataflow DAGs, real-time tracking, and distributed scheduling.
 

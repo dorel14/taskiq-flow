@@ -6,7 +6,7 @@ nav_order: 21
 
 **Defining tasks, decorators, metadata, and resource management**
 
-> **Version**: 0.4.0 | **Related**: [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}), [Execution Guide]({{ '/en/guides/execution/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}), [Execution Guide]({{ '/en/guides/execution/' | relative_url }})
 
 ---
 

@@ -28,6 +28,17 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+class _FastAPITransportWrapper:
+    """Wrapper to make FastAPI WebSocket manager compatible with TransportMiddleware."""
+
+    def __init__(self, manager: Any) -> None:
+        self._manager = manager
+
+    async def broadcast_event(self, pipeline_id: str, event: dict[str, Any]) -> None:
+        """Broadcast an event to clients via FastAPI WebSocket."""
+        await self._manager.broadcast_event(pipeline_id, event)
+
+
 class TransportMiddleware:
     """Pluggable transport middleware for event broadcasting.
 
@@ -60,6 +71,11 @@ class TransportMiddleware:
 
     def _create_websocket_transport(self) -> Any:
         """Create WebSocket transport."""
+        # Try FastAPI WebSocket first (preferred)
+        if self._try_fastapi_websocket():
+            return self._fastapi_manager
+
+        # Fall back to picows
         if not WEBSOCKET_AVAILABLE:
             logger.warning("picows not available, WebSocket transport disabled")
             return None
@@ -68,15 +84,26 @@ class TransportMiddleware:
             port=self.config.get("port", 8765),
         )
 
+    def _try_fastapi_websocket(self) -> bool:
+        """Try to create FastAPI WebSocket transport."""
+        try:
+            from taskiq_flow.integration.websocket.fastapi_ws import (  # noqa: PLC0415
+                get_fastapi_ws_manager,
+            )
+
+            manager = get_fastapi_ws_manager()
+            self._fastapi_manager = manager
+            return True
+        except ImportError:
+            return False
+
     def _create_http_stream_transport(self) -> Any:
         """Create HTTP stream transport."""
-        # Placeholder for HTTP streaming implementation
         logger.info("HTTP stream transport configured (not yet implemented)")
         return None
 
     def _create_redis_pubsub_transport(self) -> Any:
         """Create Redis pub/sub transport."""
-        # Placeholder for Redis pub/sub implementation
         logger.info("Redis pub/sub transport configured (not yet implemented)")
         return None
 
@@ -86,7 +113,9 @@ class TransportMiddleware:
             return
 
         try:
-            if self.transport_type == "websocket":
+            if self.transport_type == "websocket" and hasattr(
+                self._transport, "broadcast_event"
+            ):
                 await self._transport.broadcast_event(
                     event.pipeline_id,
                     event.model_dump(),

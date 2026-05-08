@@ -2,9 +2,9 @@
 
 Taskiq-Flow lets you chain intensive functions together and fire them off without waiting for each to complete. Think of it as orchestration for async task workflows—you define the steps, and the library handles the execution order, data passing, and parallelism automatically.
 
-*Version: 0.3.2*
+*Version: {VERSION}*
 
-> 🌐 **International Documentation**: This project also provides documentation in [Français](README.fr.md).
+>  **International Documentation**: This project also provides documentation in [Français](README.fr.md).
 
 ## Inspiration & Design Philosophy
 
@@ -585,3 +585,23 @@ The `examples/` directory includes:
 - `api_example.py` – FastAPI REST API for pipeline management and visualization **(NEW)**
 
 Run any example directly: `python examples/quickstart.py`
+
+## 🔗 Quick Links
+
+- **Documentation**: [dorel14.github.io/taskiq-flow](https://dorel14.github.io/taskiq-flow/)
+- **Project Repository**: [GitHub - taskiq-flow](https://github.com/dorel14/taskiq-flow)
+- **PyPI Package**: [taskiq-flow](https://pypi.org/project/taskiq-flow/)
+- **Taskiq Documentation**: [taskiq-python.github.io](https://taskiq-python.github.io/)
+- **Issue Tracker**: [GitHub Issues](https://github.com/dorel14/taskiq-flow/issues)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/master/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) file for details.
+
+---
+
+*Maintained by SoniqueBay Team · Documentation last built: 2026-05-08*

@@ -6,7 +6,7 @@ nav_order: 20
 
 **Sequential and Dataflow pipeline patterns, configurations, and best practices**
 
-> **Version**: 0.4.0 | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})
 
 ---
 

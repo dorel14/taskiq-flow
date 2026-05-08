@@ -128,4 +128,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-> 🌐 **International Documentation**: This project also provides documentation in [Français](CHANGELOG.fr.md).
+> **International Documentation**: This project also provides documentation in [Français](CHANGELOG.fr.md).

@@ -3,13 +3,15 @@
 This module provides retry functionality leveraging TaskIQ's RetryMiddleware.
 
 Author: SoniqueBay Team
-Version: 0.3.2
+Version: 0.4.5
 """
 
 import asyncio
 import logging
 import secrets
 from typing import Any
+
+from taskiq_flow.metrics.collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +74,12 @@ class PipelineRetryMiddleware:
                 "wait_time": wait_time,
             },
         )
+
+        # Record retry metric
+        try:
+            MetricsCollector().task_retried(task_name, type(error).__name__)
+        except Exception:
+            logger.debug("Failed to record retry metric (non-critical)")
 
         await asyncio.sleep(wait_time)
         return True

@@ -1,12 +1,13 @@
 ---
 title: Guide de Démarrage Rapide
 nav_order: 10
+color_scheme: dark
 ---
 # Guide de Démarrage Rapide
 
 **Se familiariser avec Taskiq-Flow en 5 minutes**
 
-> **Version** : 0.4.0 | **Prérequis** : Python 3.9+, bases d'asyncio
+> **Version** : {VERSION} | **Prérequis** : Python 3.9+, bases d'asyncio
 
 ---
 

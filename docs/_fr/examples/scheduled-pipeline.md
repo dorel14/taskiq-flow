@@ -2,12 +2,13 @@
 permalink: /fr/examples/scheduled-pipeline/
 title: Exemple: scheduled_pipeline.py
 nav_order: 44
+color_scheme: dark
 ---
 # Exemple: scheduled_pipeline.py
 
-**Planification de pipelines avec triggers cron et intervalle**
+**Planification de pipelines avec déclencheurs cron et intervalles**
 
-> **Version** : 0.4.0 | **Fichier** : `examples/scheduled_pipeline.py`
+> **Version** : {VERSION} | **Fichier** : `examples/scheduled_pipeline.py`
 
 ---
 

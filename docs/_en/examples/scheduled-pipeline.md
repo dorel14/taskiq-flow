@@ -2,12 +2,13 @@
 permalink: /en/examples/scheduled-pipeline/
 title: Example: scheduled_pipeline.py
 nav_order: 44
+color_scheme: dark
 ---
 # Example: scheduled_pipeline.py
 
 **Scheduling pipelines with cron and interval triggers**
 
-> **Version**: 0.4.0 | **File**: `examples/scheduled_pipeline.py`
+> **Version**: {VERSION} | **File**: `examples/scheduled_pipeline.py`
 
 ---
 

@@ -1,12 +1,13 @@
 ---
 title: Quick Start Guide
 nav_order: 10
+color_scheme: dark
 ---
 # Quick Start Guide
 
 **Getting up and running with Taskiq-Flow in 5 minutes**
 
-> **Version**: 0.4.0 | **Prerequisites**: Python 3.9+, asyncio basics
+> **Version**: {VERSION} | **Prerequisites**: Python 3.9+, asyncio basics
 
 ---
 
