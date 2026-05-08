@@ -1,7 +1,7 @@
 name: Release
 on:
   push:
-    branches: [main] # Se déclenche quand la PR est mergée dans main
+    branches: [master] # Se déclenche quand la PR est mergée dans main
 
 jobs:
   release:
@@ -65,4 +65,4 @@ jobs:
           git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes"
           
           # On pousse vers main explicitement si c'est là qu'on veut la doc à jour
-          git push origin main
+          git push origin master
