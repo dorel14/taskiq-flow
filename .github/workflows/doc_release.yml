@@ -49,10 +49,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # CRUCIAL : On ajoute spécifiquement les fichiers modifiés
-          # Cela évite d'inclure accidentellement des fichiers de workflow
-          git add docs/*.md README.md
+          # 1. On annule tout marquage de fichier (reset)
+          git reset
           
-          # On commit seulement s'il y a des changements
+          # 2. On ajoute UNIQUEMENT les fichiers de doc et le README racine
+          git add docs/ README.md
+          
+          # 3. On vérifie si on a accidentellement ajouté un workflow (sécurité)
+          if git diff --cached --name-only | grep -E ".github/workflows/"; then
+            echo "ERREUR : Un fichier de workflow a été détecté dans le commit. Annulation."
+            exit 1
+          fi
+
+          # 4. On commit et on push
           git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push origin HEAD
