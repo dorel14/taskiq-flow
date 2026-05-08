@@ -1,36 +1,47 @@
-name: Release python package
-
+name: Release
 on:
   push:
-    tags:
-      - "v*"
+    branches: [master]
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: read
-
+      contents: write
+      id-token: write
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          persist-credentials: false
           fetch-depth: 0
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      
+      - uses: actions/setup-python@v5
         with:
-          version: "latest"
-          enable-cache: true
-          cache-suffix: release-py3.14
-          python-version: 3.14
-
-      - name: Build package
-        run: uv build --no-sources
-
-      - name: Publish package
+          python-version: '3.12'
+      
+      - uses: astral-sh/setup-uv@v7
+      
+      - name: Install tools
+        run: uv pip install python-semantic-release
+      
+      - name: Run semantic-release
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: uv publish
+        run: |
+          python -m semantic_release publish
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          
+          # Update docs with the actual version
+          DATE=$(date +%Y-%m-%d)
+          find docs/ -name "*.md" -exec sed -i \
+            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
+            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" {} \;
+          sed -i \
+            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
+            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" README.md
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "docs: update version to $VERSION" || exit 0
+          git push origin master
