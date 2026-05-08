@@ -22,7 +22,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       
       - name: Install tools
-        run: uv pip install python-semantic-release
+        run: pip install python-semantic-release
       
       - name: Run semantic-release
         env:
