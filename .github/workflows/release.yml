@@ -43,16 +43,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           VERSION="${{ steps.next_ver.outputs.version }}"
+          # Update docs
           DATE=$(date +%Y-%m-%d)
           
-          # Mise à jour des docs AVANT le commit de release de PSR
+          # 1. Mise à jour de la ligne *Version: ...*
+          # On cherche le texte entre "*Version: " et "*"
           find docs/ -name "*.md" -exec sed -i \
-            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" {} \;
+            "s/\*Version: .*\*/\*Version: $VERSION\*/g" {} \;
           
-          sed -i \
-            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" README.md
+          sed -i "s/\*Version: .*\*/\*Version: $VERSION\*/g" README.md
+          sed -i "s/\*Version: .*\*/\*version: $VERSION\*/g" docs/_config.yml
+
+          # 2. Mise à jour de l'installation pip
+          # On cherche "taskiq-flow==" suivi de n'importe quel chiffre ou point
+          find docs/ -name "*.md" -exec sed -i \
+            "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" {} \;
+          
+          sed -i "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" README.md
 
           # Configurer git pour que PSR puisse commiter
           git config user.name "github-actions[bot]"

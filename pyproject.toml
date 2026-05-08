@@ -51,6 +51,8 @@ all = ["apscheduler", "redis"]
 [project.urls]
 Homepage = "https://github.com/taskiq-python/taskiq-flow"
 Repository = "https://github.com/taskiq-python/taskiq-flow"
+Documentation = "https://dorel14.github.io/taskiq-flow/"
+Issues = "https://github.com/dorel14/taskiq-flow/issues"
 
 [build-system]
 requires = ["hatchling"]
