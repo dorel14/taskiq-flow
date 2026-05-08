@@ -45,30 +45,31 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           VERSION="${{ steps.next_ver.outputs.version }}"
-          # Update docs
           DATE=$(date +%Y-%m-%d)
           
-          # 1. Mise à jour de la ligne *Version: ...*
-          # On cherche le texte entre "*Version: " et "*"
-          find docs/ -name "*.md" -exec sed -i \
-            "s/\*Version: .*\*/\*Version: $VERSION\*/g" {} \;
+          # 1. Mise à jour du README et des Markdown (Gère *Version: {VERSION}* ou *Version: 0.4.0*)
+          # Le -E permet d'utiliser (|) pour chercher l'un ou l'autre
+          find docs/ -name "*.md" -exec sed -i -E \
+            "s/\*+Version: [^*]+\*+/\*Version: $VERSION\*/g" {} \;
           
-          sed -i "s/\*Version: .*\*/\*Version: $VERSION\*/g" README.md
-          sed -i "s/\*Version: .*\*/\*version: $VERSION\*/g" docs/_config.yml
+          sed -i -E "s/\*+Version: [^*]+\*+/\*Version: $VERSION\*/g" README.md
 
-          # 2. Mise à jour de l'installation pip
-          # On cherche "taskiq-flow==" suivi de n'importe quel chiffre ou point
-          find docs/ -name "*.md" -exec sed -i \
-            "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" {} \;
+          # 2. Mise à jour de docs/_config.yml (Cherche la clé 'version:' ou 'Version:')
+          if [ -f docs/_config.yml ]; then
+            sed -i -E "s/^(v|V)ersion: .*/version: $VERSION/" docs/_config.yml
+          fi
+
+          # 3. Mise à jour de l'installation pip (Gère taskiq-flow=={VERSION} ou taskiq-flow==0.4.0)
+          find docs/ -name "*.md" -exec sed -i -E \
+            "s/taskiq-flow==(\{[Vv]ersion\}|[0-9.]+)/taskiq-flow==$VERSION/g" {} \;
           
-          sed -i "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" README.md
+          sed -i -E "s/taskiq-flow==(\{[Vv]ersion\}|[0-9.]+)/taskiq-flow==$VERSION/g" README.md
 
-          # Configurer git pour que PSR puisse commiter
+          # Configurer git et commiter les changements
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # On laisse PSR faire le commit de version, le tag et le build
-          # --noverify permet d'éviter les problèmes de hooks si présents
+          # On lance la version VCS (crée le tag et le commit de version incluant les modifs de docs)
           python -m semantic_release version --vcs-release
 
       # 3. Publier sur PyPI
