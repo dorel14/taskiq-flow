@@ -1,7 +1,7 @@
 name: Release
 on:
   push:
-    branches: [master] # Se déclenche quand la PR est mergée dans main
+    branches: [master] # Changé de main vers master
 
 jobs:
   release:
@@ -15,8 +15,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # CRUCIAL : C'est ici qu'on force l'utilisation de TON token
-          # Remplace RELEASE_TOKEN par le nom exact de ton secret
+          # Assurez-vous que RELEASE_TOKEN est un PAT avec le scope 'workflow'
           token: ${{ secrets.GH_TOKEN }} 
 
       - name: Setup Python
@@ -34,35 +33,39 @@ jobs:
             DATE=$(date +%Y-%m-%d)
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-            # On limite strictement aux fichiers README.md pour éviter de toucher au YAML
-            # On utilise une regex plus sûre pour éviter les boucles
+            # ASTUCE : On utilise [V]ERSION dans la regex pour que 
+            # ce fichier YAML ne corresponde pas à sa propre recherche.
             
-            find docs/ -name "README.md" -exec sed -i \
+            # 1. Update docs folder (uniquement les .md)
+            find docs/ -name "*.md" -exec sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-                -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" {} \;
+                -e "s/taskiq-flow=={[V]ERSION}/taskiq-flow==$VERSION/g" {} \;
     
+            # 2. Update root README
             sed -i \
                 -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-                -e "s/taskiq-flow=={[^}]*}/taskiq-flow==$VERSION/g" README.md
+                -e "s/taskiq-flow=={[V]ERSION}/taskiq-flow==$VERSION/g" README.md
 
       - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # On reset pour être sûr de ne pas avoir de fichiers fantômes
+          # Nettoyage préventif pour ne pas inclure de fichiers systèmes ou workflows
           git reset
           
-          # On ajoute seulement ce qui nous intéresse
-          git add README.md docs/*.md
+          # On ajoute strictement les fichiers de documentation
+          git add README.md
+          if [ -d "docs" ]; then git add docs/*.md; fi
           
-          # On vérifie si un workflow s'est glissé là par erreur
+          # Sécurité : on vérifie si le workflow a été modifié malgré tout
           if git diff --cached --name-only | grep ".github/workflows/"; then
-            echo "Alerte : Tentative de modification de workflow détectée !"
-            git checkout .github/workflows/ # On annule la modif du workflow
+            echo "ERREUR : Le workflow a été modifié par le script. Annulation pour éviter le blocage."
+            git checkout .github/workflows/
+            exit 1
           fi
 
           git commit -m "docs: update version to ${{ steps.version.outputs.version }}" || echo "No changes"
           
-          # On pousse vers main explicitement si c'est là qu'on veut la doc à jour
+          # On force le push vers master
           git push origin master
