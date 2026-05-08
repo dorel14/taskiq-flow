@@ -1,4 +1,5 @@
 name: Release
+
 on:
   push:
     branches: [master]
@@ -6,48 +7,70 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    concurrency: release # Évite les exécutions simultanées
     permissions:
       contents: write
-      id-token: write
+      id-token: write # Requis pour la publication PyPI via Trusted Publishers
     
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
-      
-      - uses: actions/setup-python@v5
+          token: ${{ secrets.GH_TOKEN }} # Utilise un PAT pour pouvoir déclencher d'autres workflows si besoin
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
-      - uses: astral-sh/setup-uv@v7
-      
-      - name: Install tools
-        run: pip install python-semantic-release
-      
-      - name: Debug version
-        run: python -m semantic_release version --print
-      
-      - name: Run semantic-release
+
+      - name: Install PSR
+        run: uv pip install --system python-semantic-release
+
+      # 1. Déterminer la nouvelle version sans publier tout de suite
+      - name: Get next version
+        id: next_ver
+        run: |
+          NEXT_VERSION=$(python -m semantic_release version --print)
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      # 2. Si une nouvelle version est nécessaire
+      - name: Update docs & Release
+        if: steps.next_ver.outputs.version != ''
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          python -m semantic_release publish
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          
-          # Update docs
+          VERSION="${{ steps.next_ver.outputs.version }}"
           DATE=$(date +%Y-%m-%d)
+          
+          # Mise à jour des docs AVANT le commit de release de PSR
           find docs/ -name "*.md" -exec sed -i \
             -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" {} \;
+            -e "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" {} \;
           
           sed -i \
             -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" README.md
-          
+            -e "s/taskiq-flow==[0-9.]*/taskiq-flow==$VERSION/g" README.md
+
+          # Configurer git pour que PSR puisse commiter
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "docs: update version to $VERSION" || exit 0
-          git push origin master
+          
+          # On laisse PSR faire le commit de version, le tag et le build
+          # --noverify permet d'éviter les problèmes de hooks si présents
+          python -m semantic_release version --vcs-release
+
+      # 3. Publier sur PyPI
+      - name: Publish to PyPI
+        if: steps.next_ver.outputs.version != ''
+        env:
+          # Si tu utilises un token classique :
+          # UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          # Sinon, PyPI recommande Trusted Publishers (OIDC) sans token
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          uv build
+          # Utilisation de uv pour publier (plus rapide et fiable)
+          uv publish --token ${{ secrets.PYPI_TOKEN }}
