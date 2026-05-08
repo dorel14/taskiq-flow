@@ -32,6 +32,8 @@ jobs:
       # 1. Déterminer la nouvelle version sans publier tout de suite
       - name: Get next version
         id: next_ver
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           NEXT_VERSION=$(python -m semantic_release version --print)
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
