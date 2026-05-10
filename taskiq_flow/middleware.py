@@ -1,4 +1,5 @@
-"""Middleware Pipeline pour l'orchestration de workflows.
+"""
+Middleware Pipeline pour l'orchestration de workflows.
 
 Ce module contient le PipelineMiddleware qui intercepte l'exécution
 des tâches TaskIQ pour gérer le flux d'exécution des pipelines.
@@ -52,6 +53,7 @@ class PipelineMiddleware(TaskiqMiddleware):
     Attributes:
         tracking_manager: Gestionnaire de suivi (optionnel)
         hook_manager: Gestionnaire d'événements (optionnel)
+
     """
 
     def __init__(
@@ -84,6 +86,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         Note:
             Si result.is_err, l'étape est considérée échouée mais
             le traitement d'erreur est délégué à on_error()
+
         """
         if result.is_err:
             return
@@ -459,7 +462,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         abort: BaseException | None = None,
     ) -> None:
         """
-        This function aborts pipeline.
+        Function that aborts pipeline.
 
         This is done by setting error result for
         the last task in the pipeline.

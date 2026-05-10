@@ -562,8 +562,7 @@ scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
     # pragma: allownextline secret
-    db_url="postgresql+asyncpg://user:pass@host/db"  
-)
+    db_url="postgresql+asyncpg://user:pass@host/db" # pragma: allowlist secret
 
 # Scheduler 2 (config identique) — seul un acquittera les jobs
 scheduler2 = PipelineScheduler(

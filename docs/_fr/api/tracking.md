@@ -97,28 +97,7 @@ metrics = await tracking.get_metrics(
 ```python
 class MyListener:
     async def on_pipeline_start(self, pipeline_id: str):
-
-### Maintenance
-
-```python
-# Delete specific pipeline record
-await tracking.delete_pipeline(pipeline_id: str)
-
-# Delete records older than N days
-deleted = await tracking.cleanup_older_than(days: int = 30) -> int
-
-# Get aggregated metrics
-metrics = await tracking.get_metrics(
-    days: int = 7
-) -> TrackingMetrics
-```
-
-### Event Listeners
-
-```python
-class MyListener:
-    async def on_pipeline_start(self, pipeline_id: str):
-        print(f"Pipeline {pipeline_id} started")
+        print(f"Pipeline {pipeline_id} démarré")
 
     async def on_pipeline_complete(self, pipeline_id: str, status: PipelineStatus):
         alert_if_failed(status)
@@ -222,7 +201,7 @@ stockage = RedisPipelineStorage(
     key_prefix="taskiq_flow:tracking:",
     ttl_seconds=604800  # 7 jours
 )
-suivi = PipelineTrackingManager().with_storage(stockage)
+tracking = PipelineTrackingManager().with_storage(storage)
 ```
 
 **Caractéristiques**:
