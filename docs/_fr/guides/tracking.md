@@ -211,7 +211,7 @@ import redis.asyncio as redis
 
 client_redis = redis.Redis(host="localhost", port=6379, decode_responses=True)
 stockage = RedisPipelineStorage(client_redis)
-tracking = PipelineTrackingManager().with_storage(storage)
+tracking = PipelineTrackingManager().with_storage(stockage)
 ```
 
 **Configuration**：
