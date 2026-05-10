@@ -721,8 +721,5 @@ asyncio.run(main())
 | `map_reduce(broker, map_task, reduce_task, items, ...)` | Combined map+reduce |
 | `map_sweep(broker, task, param_values, output, ...)` | Multi-dimensional sweep |
 
----
-
----
 
 *Master dataflow to build complex, parallel workflows. For sequential patterns, see [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}).*

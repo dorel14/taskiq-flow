@@ -89,7 +89,7 @@ scheduler = PipelineScheduler(
 **Recommendation**:
 - Development/mocks → `store="memory"`
 - Single-worker production → `store="sqlite"` with persistent path
-- Production multi-worker → `store="postgresql://user:pass@host/dbname"` (recommended)
+- Production multi-worker → `store="postgresql://user:pass@host/dbname"` (recommended) # pragma: allowlist secret
 
 > **Note**: PostgreSQL and MySQL support is **already implemented** in `JobPersistenceManager` and works via SQLAlchemy async engine. See [Advanced Storage (PostgreSQL/MySQL)](#advanced-storage-postgresqlmysql) below.
 
@@ -569,6 +569,7 @@ scheduler1 = PipelineScheduler(
 scheduler2 = PipelineScheduler(
     broker,
     store="postgresql",
+    # pragma: allownextline secret
     db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
 )
 # APScheduler's job stores use row-level locking; one scheduler per job
@@ -623,6 +624,7 @@ from taskiq_flow.scheduling.storage import JobPersistenceManager
 
 # PostgreSQL with asyncpg
 storage = JobPersistenceManager(
+    # pragma: allownextline secret
     db_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
     async_mode=True,
 )
@@ -634,6 +636,7 @@ storage = JobPersistenceManager(
         host="localhost",
         port=5432,
         user="taskiq",
+        # pragma: allownextline secret
         password="secret",        # pragma: allowlist secret
         database="taskiq_flow",
     ),
@@ -645,6 +648,7 @@ storage = JobPersistenceManager(
 
 ```python
 storage = JobPersistenceManager(
+    # pragma: allownextline secret
     db_url="mysql+aiomysql://user:pass@localhost:3306/taskiq_flow",  # pragma: allowlist secret
     async_mode=True,
 )

@@ -89,7 +89,7 @@ scheduler = PipelineScheduler(
 **Recommandation** :
 - Dev/mocks → `store="memory"`
 - Production mono-worker → `store="sqlite"` avec chemin persistant
-- Production distribué → `store="postgresql://user:pass@host/dbname"` (recommandé)
+- Production distribué → `store="postgresql://user:pass@host/dbname"` (recommandé) #pragma: allowlist secret
 
 > **Note** : Le support PostgreSQL et MySQL est **déjà implémenté** dans `taskiq_flow.scheduling.storage.JobPersistenceManager` et fonctionne via SQLAlchemy avec `sqlalchemy.asyncio.AsyncSession`. Voir la section [Stockage Avancé (PostgreSQL/MySQL)](#stockage-avancé-postgresqlmysql) ci-dessous.
 
@@ -561,13 +561,15 @@ Pour déploiements production HA, lancer multiples instances de scheduler avec u
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
+    # pragma: allownextline secret
+    db_url="postgresql+asyncpg://user:pass@host/db"  
 )
 
 # Scheduler 2 (config identique) — seul un acquittera les jobs
 scheduler2 = PipelineScheduler(
     broker,
     store="postgresql",
+    # pragma: allownextline secret
     db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
 )
 # Les job stores d'APScheduler utilisent un verrouillage ligne ; un scheduler par job
