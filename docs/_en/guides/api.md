@@ -458,7 +458,7 @@ async def check_pipeline_access(
     pipeline_id: str = Path(...),
     user: dict = Depends(get_current_user),
 ):
-    if not authorization.can_read(pipeline_id, user.get("roles", [])):
+    if not authorization.can_read(pipeline_id, user):
         raise HTTPException(status_code=403, detail="Pipeline access denied")
     return user
 
