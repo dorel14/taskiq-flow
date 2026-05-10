@@ -411,7 +411,7 @@ Use sequential pipelines for linear flows and dataflow for complex sub-workflows
 main_pipeline = Pipeline(broker)
 
 @broker.task
-def run_dataflow_subset(data: list) -> dict:
+async def run_dataflow_subset(data: list) -> dict:
     # Inner dataflow pipeline
     sub_pipeline = DataflowPipeline.from_tasks(
         broker,
