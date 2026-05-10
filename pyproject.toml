@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
-version = "0.4.0"
+version = "1.0.2"
 dependencies = [
   "apscheduler[sqlalchemy]>=3.11.2",
   "fastapi>=0.136.1",
@@ -51,9 +51,42 @@ all = ["apscheduler", "redis"]
 [project.urls]
 Homepage = "https://github.com/taskiq-python/taskiq-flow"
 Repository = "https://github.com/taskiq-python/taskiq-flow"
+Documentation = "https://dorel14.github.io/taskiq-flow/"
+Issues = "https://github.com/dorel14/taskiq-flow/issues"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
+# --- CONFIGURATION HATCH (DISTRIBUTION) ---
+[tool.hatch.build.targets.wheel]
+packages = ["taskiq_flow"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/taskiq_flow",
+    "/README.md",
+    "/LICENSE",
+]
+
+# --- CONFIGURATION SEMANTIC RELEASE V9 ---
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+build_command = "uv build"
+
+[tool.semantic_release.branches.master]
+match = "master"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+
+# --- TES AUTRES CONFIGS (LINTING/TESTS) ---
 [dependency-groups]
 dev = [
   "anyio>=4",
@@ -66,10 +99,6 @@ dev = [
   "ruff>=0.15.0",
   "isort>=8.0.1",
 ]
-
-[build-system]
-requires = ["hatchling", "versioningit"]
-build-backend = "hatchling.build"
 
 [tool.isort]
 profile = "black"
@@ -91,104 +120,13 @@ module = ["tests.*"]
 ignore_errors = true
 
 [tool.ruff]
-# List of enabled rulsets.
-# See https://docs.astral.sh/ruff/rules/ for more information.
-lint.select = [
-  "E",  # Error
-  "F",  # Pyflakes
-  "W",  # Pycodestyle
-  "C90",  # McCabe complexity
-  "I",  # Isort
-  "N",  # pep8-naming
-  "D",  # Pydocstyle
-  "ANN",  # Pytype annotations
-  "S",  # Bandit
-  "B",  # Bugbear
-  "COM",  # Commas
-  "C4",  # Comprehensions
-  "ISC",  # Implicit string concat
-  "PIE",  # Unnecessary code
-  "T20",  # Catch prints
-  "PYI",  # validate pyi files
-  "Q",  # Checks for quotes
-  "RSE",  # Checks raise statements
-  "RET",  # Checks return statements
-  "SLF",  # Self checks
-  "SIM",  # Simplificator
-  "PTH",  # Pathlib checks
-  "ERA",  # Checks for commented out code
-  "PL",  # PyLint checks
-  "RUF",  # Specific to Ruff checks
-  "UP",  # Pyupgrade
-]
-lint.ignore = [
-  "D105",  # Missing docstring in magic method
-  "D107",  # Missing docstring in __init__
-  "D212",  # Multi-line docstring summary should start at the first line
-  "D401",  # First line should be in imperative mood
-  "D104",  # Missing docstring in public package
-  "D100",  # Missing docstring in public module
-  "ANN401",  # typing.Any are disallowed in `**kwargs
-  "PLR0913",  # Too many arguments for function call
-  "PLR0911",  # Too many return statements
-  "D106",  # Missing docstring in public nested class
-  "SLF001",  # Private member accessed
-  "COM812",  # Trailing comma conflicts with formatter
-  "C901",  # Function is too complex
-]
-lint.mccabe = { max-complexity = 10 }
 line-length = 88
+lint.select = ["E", "F", "W", "C90", "I", "N", "D", "ANN", "S", "B", "COM", "C4", "ISC", "PIE", "T20", "PYI", "Q", "RSE", "RET", "SLF", "SIM", "PTH", "ERA", "PL", "RUF", "UP"]
+lint.ignore = ["D105", "D107", "D212", "D401", "D104", "D100", "ANN401", "PLR0913", "PLR0911", "D106", "SLF001", "COM812", "C901"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-  "S101",  # Use of assert detected
-  "S301",  # Use of pickle detected
-  "D103",  # Missing docstring in public function
-  "SLF001",  # Private member accessed
-  "S311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
-  "D101",  # Missing docstring in public class
-  "COM812",  # Trailing comma conflicts with formatter
-  "ANN001",  # Missing type annotation for function argument
-  "ANN002",  # Missing type annotation for function
-  "ANN003",  # Missing type annotation for return value
-  "ANN201",  # Missing return type annotation for public function
-  "ANN202",  # Missing return type annotation for private function
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "pep257"
-ignore-decorators = ["typing.overload"]
-
-[tool.ruff.lint.pylint]
-allow-magic-value-types = ["int", "str", "float"]
-
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["taskiq_dependencies.Depends", "taskiq.TaskiqDepends"]
+"tests/*" = ["S101", "S301", "D103", "SLF001", "S311", "D101", "COM812", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202"]
 
 [tool.pytest.ini_options]
-# anyio_mode = "auto"
 asyncio_mode = "auto"
-markers = [
-  "asyncio: mark test as async",
-]
-
-[tool.semantic_release]
-version_variable = "pyproject.toml:project.version"
-version_toml = ["pyproject.toml:project.version"]
-branch = "master"
-upload_to_pypi = true
-upload_to_vcs_release = true
-build_command = "uv build"
-
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]
-
-[tool.semantic_release.branches.master]
-match = "master"
-
-[tool.semantic_release.branches.develop]
-match = "develop"
-prerelease = false
+markers = ["asyncio: mark test as async"]

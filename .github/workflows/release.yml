@@ -1,4 +1,5 @@
 name: Release
+
 on:
   push:
     branches: [master]
@@ -6,42 +7,80 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    concurrency: release # Évite les exécutions simultanées
     permissions:
       contents: write
-      id-token: write
+      id-token: write # Requis pour la publication PyPI via Trusted Publishers
     
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
-      - uses: actions/setup-python@v5
+          token: ${{ secrets.GH_TOKEN }} # Utilise un PAT pour pouvoir déclencher d'autres workflows si besoin
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
-      - uses: astral-sh/setup-uv@v7
-      
-      - name: Install tools
-        run: uv pip install python-semantic-release
-      
-      - name: Run semantic-release
+
+      - name: Install PSR
+        run: uv pip install --system python-semantic-release
+
+      # 1. Déterminer la nouvelle version sans publier tout de suite
+      - name: Get next version
+        id: next_ver
         env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          python -m semantic_release publish
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          
-          # Update docs with the actual version
+          NEXT_VERSION=$(python -m semantic_release version --print)
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      # 2. Si une nouvelle version est nécessaire
+      - name: Update docs & Release
+        if: steps.next_ver.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          VERSION="${{ steps.next_ver.outputs.version }}"
           DATE=$(date +%Y-%m-%d)
-          find docs/ -name "*.md" -exec sed -i \
-            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" {} \;
-          sed -i \
-            -e "s/\*\*Version\*\*: [0-9.]* | Last updated: .*/**Version**: $VERSION | Last updated: $DATE/g" \
-            -e "s/taskiq-flow=={VERSION}/taskiq-flow==$VERSION/g" README.md
           
+          # 1. Mise à jour du README et des Markdown (Gère *Version: {VERSION}* ou *Version: 0.4.0*)
+          # Le -E permet d'utiliser (|) pour chercher l'un ou l'autre
+          find docs/ -name "*.md" -exec sed -i -E \
+            "s/\*+Version: [^*]+\*+/\*Version: $VERSION\*/g" {} \;
+          
+          sed -i -E "s/\*+Version: [^*]+\*+/\*Version: $VERSION\*/g" README.md
+
+          # 2. Mise à jour de docs/_config.yml (Cherche la clé 'version:' ou 'Version:')
+          if [ -f docs/_config.yml ]; then
+            sed -i -E "s/^(v|V)ersion: .*/version: $VERSION/" docs/_config.yml
+          fi
+
+          # 3. Mise à jour de l'installation pip (Gère taskiq-flow=={VERSION} ou taskiq-flow==0.4.0)
+          find docs/ -name "*.md" -exec sed -i -E \
+            "s/taskiq-flow==(\{[Vv]ersion\}|[0-9.]+)/taskiq-flow==$VERSION/g" {} \;
+          
+          sed -i -E "s/taskiq-flow==(\{[Vv]ersion\}|[0-9.]+)/taskiq-flow==$VERSION/g" README.md
+
+          # Configurer git et commiter les changements
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "docs: update version to $VERSION" || exit 0
-          git push origin master
+          
+          # On lance la version VCS (crée le tag et le commit de version incluant les modifs de docs)
+          python -m semantic_release version --vcs-release
+
+      # 3. Publier sur PyPI
+      - name: Publish to PyPI
+        if: steps.next_ver.outputs.version != ''
+        env:
+          # Si tu utilises un token classique :
+          # UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          # Sinon, PyPI recommande Trusted Publishers (OIDC) sans token
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          uv build
+          # Utilisation de uv pour publier (plus rapide et fiable)
+          uv publish --token ${{ secrets.PYPI_TOKEN }}
