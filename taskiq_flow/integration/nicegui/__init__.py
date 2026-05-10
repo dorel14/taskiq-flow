@@ -4,7 +4,7 @@ Ce module fournit des composants NiceGUI pour visualiser et interagir
 avec les DAG et pipelines Taskiq-Flow.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from taskiq_flow.integration.nicegui.dag_viewer import (

@@ -4,7 +4,7 @@ Contient des tâches communes comme identity_task utilisées
 par divers steps.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import Any

@@ -5,7 +5,7 @@ exécute une tâche après une autre en passant le résultat de la
 précédente comme argument à la suivante.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import Any

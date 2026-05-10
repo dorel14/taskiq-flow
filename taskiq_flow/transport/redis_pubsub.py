@@ -1,7 +1,7 @@
 """Redis PubSub transport for pipeline events.
 
 Author: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import logging

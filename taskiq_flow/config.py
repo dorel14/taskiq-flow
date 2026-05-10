@@ -4,7 +4,7 @@ Ce module fournit une configuration centralisée pour la sécurité,
 les métriques et autres paramètres.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from typing import Any

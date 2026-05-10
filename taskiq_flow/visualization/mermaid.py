@@ -4,7 +4,7 @@ Ce module fournit MermaidGenerator pour créer des diagrammes
 Mermaid.js à partir des DAG TaskIQ-Flow.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from typing import Any

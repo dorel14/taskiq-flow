@@ -4,7 +4,7 @@ Ce module fournit un middleware qui enforce l'utilisation de HTTPS
 pour les requêtes entrantes, configurable via la configuration.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import logging

@@ -7,7 +7,7 @@ sont intégrées dans les pipelines dataflow via les steps
 MapperStep et ReduceStep.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

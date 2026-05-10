@@ -6,7 +6,7 @@ Il décide quelle étape exécuter ensuite, gère le suivi (tracking)
 et les hooks d'événements.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from logging import getLogger

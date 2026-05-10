@@ -508,6 +508,7 @@ L'optimisation des performances est itérative :
 ## Prochaines Étapes
 
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveiller les métriques des pipelines
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Guide complet sur les pipelines DAG et l'architecture dataflow
 - **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Construire des tableaux de bord pour la performance
 - **[Exemple : Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Voir l'optimisation en action
 

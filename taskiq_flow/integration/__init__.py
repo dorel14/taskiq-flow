@@ -3,5 +3,5 @@
 Contient les intégrations avec des systèmes externes comme WebSocket.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """

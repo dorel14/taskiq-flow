@@ -80,6 +80,15 @@ sample_pipeline = DataflowPipeline.from_tasks(
 sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
 ```
 
+**Pipeline DAG structure:**
+
+```mermaid
+flowchart TD
+    A[fetch_user_data<br/>output: user_data] --> B[fetch_orders<br/>output: order_history]
+    A --> C[generate_recommendations<br/>output: recommendations]
+    B --> C
+```
+
 ### 2. Create FastAPI App with Visualization API
 
 ```python
@@ -276,9 +285,47 @@ from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != os.getenv("API_SECRET"):
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    return api_key
+
 @app.post("/pipelines/{pipeline_id}/execute")
 async def execute(..., api_key: str = Security(verify_api_key)):
     # ...
+```
+
+### 2b. Add JWT Authentication
+```python
+from jose import jwt
+from fastapi import Depends
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute(..., user: str = Depends(get_current_user)):
+    logger.info(f"User {user} executed {pipeline_id}")
+    # ...
+```
+
+### 2c. Add Pipeline-Level Authorization
+```python
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*"], "write": []},
+})
+
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user
 ```
 
 ### 3. Add Rate Limiting

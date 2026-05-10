@@ -6,7 +6,7 @@ nav_order: 28
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}), [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -394,6 +394,88 @@ async def execute(
     return await run_pipeline(pipeline_id, parameters)
 ```
 
+### 5.3. Pipeline-Level Authorization
+
+Use the built-in `PipelineAuthorization` with FastAPI dependencies to control per-pipeline access:
+
+```python
+from fastapi import Depends
+from taskiq_flow.security.authorization import PipelineAuthorization
+from taskiq_flow.security.dependencies import verify_pipeline_access
+
+# Create authorization instance
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*", "report_*"], "write": []},
+})
+
+# FastAPI dependency that checks both authentication AND authorization
+async def authorized_pipeline_access(
+    pipeline_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Verify user can access the specific pipeline."""
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/dag")
+async def get_pipeline_dag(
+    pipeline_id: str,
+    user: dict = Depends(authorized_pipeline_access),
+):
+    # user is now authenticated AND authorized for this pipeline
+    return viz_api.get_dag(pipeline_id)
+
+@app.get("/pipelines/{pipeline_id}/status")
+async def get_pipeline_status(
+    pipeline_id: str,
+    user: dict = Depends(authorized_pipeline_access),
+):
+    return viz_api.get_status(pipeline_id)
+```
+
+### 5.4. Combined Security Middleware + Route Dependencies
+
+For production, combine the global `SecurityMiddleware` (authentication) with per-route dependencies (authorization):
+
+```python
+from taskiq_flow.security.middleware import SecurityMiddleware
+from taskiq_flow.security.auth import TokenAuthProvider
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+# 1. Global middleware handles authentication only
+auth_provider = TokenAuthProvider(secret_key=os.getenv("SECRET_KEY"))
+app.add_middleware(
+    SecurityMiddleware,
+    auth_provider=auth_provider,
+    # Authorization is handled by route dependencies (not middleware)
+    # to access FastAPI path params properly
+)
+
+# 2. Per-route dependencies handle authorization
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user.get("roles", [])):
+        raise HTTPException(status_code=403, detail="Pipeline access denied")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/visualize")
+async def visualize_pipeline(
+    pipeline_id: str,
+    user: dict = Depends(check_pipeline_access),
+):
+    return viz_api.visualize(pipeline_id)
+```
+
+**Why this hybrid approach?**
+- Middleware runs **before** routing → `path_params` is empty there
+- Route dependencies run **after** routing → `pipeline_id` is available
+- Middleware sets `request.state.user` for all routes
+- Dependencies read `request.state.user` and check ACL per-pipeline
+
 ---
 
 ## 6. Rate Limiting
@@ -636,7 +718,7 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 ---
 
-## 12. Summary
+## 13. Summary
 
 | Feature | Endpoint | Method |
 |---------|----------|--------|
@@ -653,9 +735,10 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 ---
 
-## Next Steps
+## 14. Next Steps
 
 - **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event streaming for live updates
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG pipelines with automatic parallelism and DataflowPipeline
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Historical execution data for analytics
 - **[Example: API Server]({{ '/en/examples/api-example/' | relative_url }})** — Complete working FastAPI app
 

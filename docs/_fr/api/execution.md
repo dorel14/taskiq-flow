@@ -266,6 +266,8 @@ results = await engine.execute(inputs={"audio_files": files})
 - **[API Suivi]({{ '/fr/api/tracking/' | relative_url }})** — Surveiller l'exécution avec PipelineTrackingManager
 - **[API WebSocket]({{ '/fr/api/websocket/' | relative_url }})** — HookManager et système d'événements
 - **[API Core]({{ '/fr/api/core/' | relative_url }})** — Référence Pipeline et middleware
+- **[Exemple Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Voir ExecutionEngine utilisé dans un pipeline DAG réel
+- **[Exemple Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})** — Construction manuelle de DAG et utilisation d'ExecutionEngine
 
 ---
 

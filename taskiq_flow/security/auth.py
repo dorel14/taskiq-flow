@@ -4,7 +4,7 @@ Ce module fournit des fournisseurs d'authentification pour sécuriser
 l'API et les connexions WebSocket.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import logging

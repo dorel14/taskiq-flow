@@ -4,7 +4,7 @@ Contient des fonctions utilitaires pour gérer l'exécution
 parallèle et les synchronisations.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from collections.abc import Iterable

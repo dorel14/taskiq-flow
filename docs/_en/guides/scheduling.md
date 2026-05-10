@@ -80,13 +80,18 @@ scheduler = PipelineScheduler(
 |-------|-------------|--------------|----------|
 | `"memory"` | ❌ No | ❌ No | Development, single-process |
 | `"sqlite"` | ✅ Yes | ⚠️ Limited* | Single-worker production, simple persistence |
+| `"postgresql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, HA |
+| `"mysql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, alternative |
+| `"redis"` | ❌ | ❌ | **Not implemented** (raises `NotImplementedError`) |
 
-*SQLite store works with single scheduler instance; multiple workers need external DB.
+*SQLite store works with single scheduler instance; multiple workers need PostgreSQL/MySQL.
 
 **Recommendation**:
 - Development/mocks → `store="memory"`
-- Single-worker production → `store="sqlite"`
-- Distributed → Use external job store (PostgreSQL, Redis) — future enhancement
+- Single-worker production → `store="sqlite"` with persistent path
+- Production multi-worker → `store="postgresql://user:pass@host/dbname"` (recommended)
+
+> **Note**: PostgreSQL and MySQL support is **already implemented** in `JobPersistenceManager` and works via SQLAlchemy async engine. See [Advanced Storage (PostgreSQL/MySQL)](#advanced-storage-postgresqlmysql) below.
 
 ### 2.2. Starting & Stopping
 
@@ -550,22 +555,26 @@ class MetricsScheduler(PipelineScheduler):
 
 ### 12.1. High Availability
 
-For production HA deployments, run multiple scheduler instances with a shared job store (PostgreSQL recommended):
+For production HA deployments, run multiple scheduler instances with a shared job store:
 
 ```python
 # Scheduler 1
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
+    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
 )
 
 # Scheduler 2 (identical config) — only one will acquire jobs
-scheduler2 = PipelineScheduler(...)
+scheduler2 = PipelineScheduler(
+    broker,
+    store="postgresql",
+    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
+)
 # APScheduler's job stores use row-level locking; one scheduler per job
 ```
 
-**Note**: Currently only memory and sqlite stores are implemented; PostgreSQL/Redis support planned.
+See [Advanced Storage (PostgreSQL/MySQL)](#advanced-storage-postgresqlmysql) for detailed configuration.
 
 ### 12.2. Long-Running Jobs
 
@@ -602,6 +611,117 @@ for job in old_jobs:
     if job.next_run_time < datetime.now() - timedelta(days=30):
         await scheduler.remove_job(job.id)
 ```
+
+### 12.5. Advanced Storage (PostgreSQL/MySQL)
+
+`JobPersistenceManager` natively supports PostgreSQL and MySQL via SQLAlchemy AsyncEngine.
+
+#### PostgreSQL Configuration (Recommended for Production)
+
+```python
+from taskiq_flow.scheduling.storage import JobPersistenceManager
+
+# PostgreSQL with asyncpg
+storage = JobPersistenceManager(
+    db_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+
+# Using the URL helper
+storage = JobPersistenceManager(
+    db_url=JobPersistenceManager.get_connection_url(
+        "postgresql",
+        host="localhost",
+        port=5432,
+        user="taskiq",
+        password="secret",        # pragma: allowlist secret
+        database="taskiq_flow",
+    ),
+    async_mode=True,
+)
+```
+
+#### MySQL Configuration
+
+```python
+storage = JobPersistenceManager(
+    db_url="mysql+aiomysql://user:pass@localhost:3306/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+```
+
+#### SQLite Configuration (Development)
+
+```python
+# Sync (development only)
+storage = JobPersistenceManager(
+    db_url="sqlite:///jobs.db",
+    async_mode=False,
+)
+
+# Async (recommended even for SQLite)
+storage = JobPersistenceManager(
+    db_url="sqlite+aiosqlite:///jobs.db",
+    async_mode=True,
+)
+```
+
+#### Integration with PipelineScheduler
+
+```python
+from taskiq_flow.scheduling.scheduler import PipelineScheduler
+
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+)
+```
+
+#### CRUD Operations with JobPersistenceManager
+
+```python
+from datetime import datetime, timezone
+from taskiq_flow.scheduling.storage import JobPersistenceManager, SchedulerJob, PipelineExecution
+
+storage = JobPersistenceManager(db_url="sqlite:///test.db")
+
+# Save a job
+job = SchedulerJob(
+    id="job_001",
+    pipeline_id="etl_daily",
+    label="Daily ETL",
+    cron="0 2 * * *",
+    timezone="UTC",
+)
+await storage.save_job(job)
+
+# Load all jobs
+jobs = await storage.load_jobs()
+for j in jobs:
+    print(f"{j.id}: {j.cron} - {j.pipeline_id}")
+
+# Save execution history
+execution = PipelineExecution(
+    job_id="job_001",
+    pipeline_id="etl_daily",
+    status="success",
+    started_at=datetime.now(timezone.utc),
+    completed_at=datetime.now(timezone.utc),
+    duration_seconds=45.2,
+)
+await storage.save_execution_history("job_001", execution)
+
+# Retrieve history
+history = await storage.get_execution_history("job_001", limit=10)
+for run in history:
+    print(f"  {run.status} - {run.duration_seconds}s at {run.started_at}")
+```
+
+| Backend | Async | Multi-worker | Production |
+|---------|-------|--------------|------------|
+| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / small projects |
+| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommended |
+| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supported |
 
 ---
 
@@ -715,7 +835,7 @@ PipelineScheduler provides robust, production-ready scheduling:
 | **Interval** | `scheduler.schedule_interval(pipeline, minutes=5)` |
 | **One-off** | `scheduler.schedule_at(pipeline, run_at=datetime)` |
 | **Management** | `list_jobs()`, `remove_job()`, `pause_job()` |
-| **Persistence** | SQLite (single-worker) |
+| **Persistence** | SQLite (single-worker), PostgreSQL/MySQL (multi-worker) |
 | **Tracking** | Automatic with `PipelineTrackingManager` |
 | **Concurrency** | `max_instances`, `coalesce` controls |
 
@@ -725,7 +845,10 @@ PipelineScheduler provides robust, production-ready scheduling:
 tracking = PipelineTrackingManager().with_storage(RedisPipelineStorage(redis))
 pipeline = Pipeline(broker).with_tracking(tracking)
 
-scheduler = PipelineScheduler(broker, store="sqlite", store_path="./jobs.db")
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@host/taskiq_flow",  # pragma: allowlist secret
+)
 await scheduler.start()
 
 # Schedule your jobs...

@@ -529,6 +529,7 @@ pipeline = Pipeline(broker).with_tracking(tracking)
 ## Next Steps
 
 - **[WebSocket Streaming]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event delivery for dashboards
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — Full DAG pipelines with automatic parallelism
 - **[Scheduling]({{ '/en/guides/scheduling/' | relative_url }})** — Automated recurring pipeline execution
 - **[Performance Tuning]({{ '/en/guides/performance/' | relative_url }})** — Optimize tracking overhead
 

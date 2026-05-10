@@ -5,7 +5,7 @@ events (start, step completion, errors, retries, WebSocket messages)
 and updates the Prometheus metrics.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import time

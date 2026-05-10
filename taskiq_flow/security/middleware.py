@@ -4,7 +4,7 @@ Ce module fournit un middleware FastAPI pour la sécurité globale,
 incluant l'authentification, l'autorisation et la limitation de débit.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import logging

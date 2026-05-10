@@ -6,7 +6,7 @@ nav_order: 20
 
 **Motifs de pipelines séquentiels et dataflow, configurations et bonnes pratiques**
 
-> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}), [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -16,6 +16,8 @@ Taskiq-Flow propose deux types principaux de pipelines pour orchestrer des workf
 
 1. **SequentialPipeline** — Enchaînement manuel des étapes pour des workflows linéaires
 2. **DataflowPipeline** — Construction automatique de DAG depuis les dépendances entre tâches
+
+Pour une exploration approfondie des patterns dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Ce guide explore les deux types, leurs cas d'usage, et comment choisir entre eux.
 
@@ -47,78 +49,80 @@ pipeline = (
 Exécute une tâche, passant le résultat précédent comme premier argument：
 
 ```python
-pipeline.call_next(traiter_données).call_next(sauvegarder_résultat)
-# traiter_données reçoit la sortie de l'étape précédente
-# sauvegarder_résultat reçoit la sortie de traiter_données
+pipeline.call_next(process_data).call_next(save_result)
+# process_data receives output of previous step
+# save_result receives output of process_data
 ```
 
-**Liaison de paramètres**：
-- Par position : le résultat devient le premier argument
-- Par nom : `pipeline.call_next(tache, nom_param=résultat_précédent)`
+**Parameter binding**:
+- By position: result becomes first argument
+- By name: `pipeline.call_next(task, param_name=previous_result)`
 
-Exemple：
+Example:
 ```python
 @broker.task
-def multiplieur(valeur: int, facteur: int) -> int:
-    return valeur * facteur
+def multiply(value: int, factor: int) -> int:
+    return value * factor
 
-pipeline.call_next(additionner).call_next(multiplieur, facteur=3)
-# sortie de additionner → multiplieur(valeur=...), facteur=3
+pipeline.call_next(add_one).call_next(multiply, factor=3)
+# add_one output → multiply(value=...), factor=3
 ```
 
 #### `.call_after(task, *args, **kwargs)`
 
-Exécute une tâche **sans** consommer le résultat précédent (fire-and-forget dans le pipeline)：
+Execute a task **without** consuming the previous result (fire-and-forget within pipeline):
 
 ```python
-pipeline.call_next(processus).call_after(journaliser)
-# journaliser s'exécute après processus mais ne reçoit pas sa sortie
+pipeline.call_next(process).call_after(log_completion)
+# log_completion runs after process but doesn't receive process's output
 ```
 
-Utile pour les effets de bord (logs, notifications) qui ne devraient pas transformer le flux de données。
+Useful for side effects (logging, notifications) that shouldn't transform the data flow.
 
 #### `.map(task, max_parallel=None)`
 
-Applique une tâche à chaque élément d'un résultat itérable en parallèle：
+Apply a task to each element of an iterable result in parallel:
 
 ```python
-# L'étape précédente a retourné : [1, 2, 3, 4]
-pipeline.map(processer_élément)
-# Exécute processer_élément(1), processer_élément(2), ... concurremment
-# Collecte les résultats: [traité1, traité2, ...]
+# Previous step returned: [1, 2, 3, 4]
+pipeline.map(process_item)
+# Runs process_item(1), process_item(2), ... concurrently
+# Collects results: [processed1, processed2, ...]
 ```
 
-**Options**：
-- `max_parallel=10` — limiter les exécutions concurrentes
-- `output_name="résultats"` — clé de sortie personnalisée (défaut : nom de sortie de tâche)
+**Options**:
+- `max_parallel=10` — limit concurrent executions
+- `output_name="results"` — custom output key (default: task output name)
 
 #### `.filter(task)`
 
-Conserve les éléments où la tâche renvoie une valeur vraie：
+Keep elements where the task returns truthy:
 
 ```python
-# L'étape précédente a retourné : [1, 2, 3, 4]
-pipeline.filter(est_pair)
-# Garde les éléments où est_pair(élément) renvoie True
-# Résultat: [2, 4]
+# Previous step returned: [1, 2, 3, 4]
+pipeline.filter(is_even)
+# Keeps elements where is_even(element) returns True
+# Result: [2, 4]
 ```
 
-#### `.group(tâches, param_names=None)`
+#### `.group(tasks, param_names=None)`
 
-Exécute plusieurs tâches indépendantes en parallèle, à partir de la même entrée：
+Execute multiple independent tasks in parallel, starting from the same input:
 
 ```python
 pipeline.group(
-    [tache_a, tache_b, tache_c],
-    param_names=["x", "y", "z"]  # lier l'entrée à ces paramètres
+    [task_a, task_b, task_c],
+    param_names=["x", "y", "z"]  # bind input to these parameters
 )
-# Toutes les trois tâches reçoivent le même résultat précédent
-# Retourne : [résultat_a, résultat_b, résutlat_c]
+# All three tasks receive the same previous result
+# Returns: [result_a, result_b, result_c]
 ```
 
 ---
 
 ## 2. Pipeline Dataflow
+
+> Pour un guide complet sur les patterns dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Construction automatique de DAG via annotations `@pipeline_task(output=...)`.
 
@@ -129,18 +133,58 @@ from taskiq_flow import pipeline_task, DataflowPipeline
 
 @broker.task
 @pipeline_task(output="features")
-def extraire_features(données: list[str]) -> dict:
-    return {"count": len(données)}
+def extract_features(data: list[str]) -> dict:
+    return {"count": len(data)}
 
 @broker.task
 @pipeline_task(output="stats")
-def calculer_stats(features: dict) -> dict:
+def compute_stats(features: dict) -> dict:
     return {"entries": features["count"] * 2}
 
 @broker.task
 @pipeline_task(output="report")
-def générer_rapport(stats: dict) -> str:
+def generate_report(stats: dict) -> str:
     return f"Stats: {stats}"
+```
+
+**Key**: The `output` parameter declares what this task produces. Downstream tasks declare matching parameter names to consume those outputs.
+
+### 2.2. Building the Pipeline
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [extract_features, compute_stats, generate_report]
+)
+```
+
+**Automatic dependency resolution**:
+
+1. `extract_features` produces `features` — no dependencies
+2. `compute_stats` needs `features` — depends on `extract_features`
+3. `generate_report` needs `stats` — depends on `compute_stats`
+
+**Resulting DAG**:
+```
+extract_features → compute_stats → generate_report
+```
+
+### 2.3. Multiple Consumers
+
+Multiple tasks can consume the same output; they'll all wait for the producer:
+
+```python
+@broker.task
+@pipeline_task(output="features")
+def extract(data): ...
+
+@broker.task
+@pipeline_task(output="tags")
+def tag(features: dict): ...   # consumer 1 of features
+
+@broker.task
+@pipeline_task(output="embedding")
+def embed(features: dict): ... # consumer 2 of features
 ```
 
 **Clé** : Le paramètre `output` déclare ce que cette tâche produit. Les tâches en aval déclarent des noms de paramètres correspondants pour consommer ces sorties.
@@ -150,8 +194,18 @@ def générer_rapport(stats: dict) -> str:
 ```python
 pipeline = DataflowPipeline.from_tasks(
     broker,
-    [extraire_features, calculer_stats, générer_rapport]
+    [extract_features, compute_stats, generate_report]
 )
+
+**Automatic dependency resolution**:
+
+1. `extract_features` produces `features` — no dependencies
+2. `compute_stats` needs `features` — depends on `extract_features`
+3. `generate_report` needs `stats` — depends on `compute_stats`
+
+**Resulting DAG**:
+```
+extract_features → compute_stats → generate_report
 ```
 
 **Résolution automatique des dépendances**：
@@ -167,22 +221,20 @@ extraire_features → calculer_stats → générer_rapport
 
 ### 2.3. Multiple Consommateurs
 
-Plusieurs tâches peuvent consommer la même sortie ; elles attendront toutes le producteur：
+Multiple tasks can consume the same output; they'll all wait for the producer:
 
 ```python
 @broker.task
 @pipeline_task(output="features")
-def extraire(données): ...
+def extract(data): ...
 
 @broker.task
 @pipeline_task(output="tags")
-def tagger(features: dict): ...   # consommateur 1 de features
+def tag(features: dict): ...   # consumer 1 of features
 
 @broker.task
 @pipeline_task(output="embedding")
-def embeder(features: dict): ...  # consommateur 2 de features
-
-# tagger et embeder s'exécutent en parallèle après completion de extraire
+def embed(features: dict): ... # consumer 2 of features
 ```
 
 ### 2.4. Paramètres d'Entrée
@@ -213,8 +265,8 @@ Voir [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour plus de 
 ### 3.2. Définition d'un ID de Pipeline Personnalisé
 
 ```python
-pipeline.pipeline_id = "mon_workflow_001"
-# Si non défini, un UUID est généré automatiquement
+pipeline.pipeline_id = "my_workflow_001"
+# If not set, a UUID is automatically generated
 ```
 
 Important pour le suivi et les abonnements WebSocket.
@@ -224,8 +276,8 @@ Important pour le suivi et les abonnements WebSocket.
 ```python
 from taskiq_flow.hooks import HookManager
 
-crochets = HookManager()
-pipeline = Pipeline(broker).with_hooks(crochets)
+hooks = HookManager()
+pipeline = Pipeline(broker).with_hooks(hooks)
 ```
 
 Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}).
@@ -267,15 +319,10 @@ pipeline.with_timeout(seconds=60)
 Les objets Pipeline sont **à usage unique**. Pour des exécutions répétées, créez un nouveau pipeline ou utilisez `PipelineScheduler`：
 
 ```python
-# Correct: Créer un pipeline frais à chaque fois
-async def exécuter_workflow(données):
-    pipeline = Pipeline(broker).call_next(étape1).call_next(étape2)
-    return await pipeline.kiq(données)
-
-# Pour des schedules récurrents, utiliser PipelineScheduler
-from taskiq_flow import PipelineScheduler
-planificateur = PipelineScheduler(broker)
-await planificateur.schedule(pipeline, cron="* * * * *")
+# Correct: create a fresh pipeline each time
+async def execute_workflow(data):
+    pipeline = Pipeline(broker).call_next(step1).call_next(step2)
+    return await pipeline.kiq(data)
 ```
 
 ---
@@ -288,29 +335,29 @@ await planificateur.schedule(pipeline, cron="* * * * *")
 pipeline.print_dag()
 ```
 
-Exemple de sortie：
+Example output:
 ```
-Ordre d'Exécution DAG:
-  Niveau 0: tache_a
-  Niveau 1: tache_b, tache_c
-  Niveau 2: tache_d
+Execution Order DAG:
+  Level 0: task_a
+  Level 1: task_b, task_c
+  Level 2: task_d
 ```
 
-### 5.2. JSON pour Interfaces Web
+### 5.2. JSON for Web UIs
 
 ```python
-viz = pipeline.visualize()  # retourne un dict
+viz = pipeline.visualize()  # returns a dict
 print(viz)
 ```
 
-Structure：
+Structure:
 ```json
 {
   "nodes": [
-    {"id": "tache_a", "outputs": ["x", "y"]},
-    {"id": "tache_b", "inputs": ["x"]}
+    {"id": "task_a", "outputs": ["x", "y"]},
+    {"id": "task_b", "inputs": ["x"]}
   ],
-  "edges": [{"from": "tache_a", "to": "tache_b"}]
+  "edges": [{"from": "task_a", "to": "task_b"}]
 }
 ```
 
@@ -329,44 +376,44 @@ Le diagramme résultant montre les nœuds, liens et ordre d'exécution.
 
 ## 6. Inspection du Pipeline (DataflowRegistry)
 
-Pour des cas avancés, construire et inspecter manuellement le graphe de dataflow:
+For advanced use cases, manually construct and inspect the dataflow graph:
 
 ```python
 from taskiq_flow import DataflowRegistry
 
 registry = DataflowRegistry()
 
-# Enregistrer les tâches avec E/S explicites
+# Register tasks with explicit I/O
 registry.register_task(
-    task=charger_données,
-    output="brut",
-    inputs=["source"]  # entrée externe
+    task=load_data,
+    output="raw",
+    inputs=["source"]  # external input
 )
 registry.register_task(
-    task=nettoyer,
-    output="propre",
-    inputs=["brut"]
+    task=clean,
+    output="clean",
+    inputs=["raw"]
 )
 registry.register_task(
-    task=sauvegarder,
-    output="sauvé",
-    inputs=["propre"]
+    task=save,
+    output="saved",
+    inputs=["clean"]
 )
 
-# Inspecter la structure
-print("Tâches:", [t.nom_tâche for t in registry.get_tasks()])
-print("Sorties:", registry.get_sorties())           # ["brut", "propre", "sauvé"]
-print("Entrées externes:", registry.get_entrées_externes())  # ["source"]
+# Inspect structure
+print("Tasks:", [t.task_name for t in registry.get_tasks()])
+print("Outputs:", registry.get_outputs())           # ["raw", "clean", "saved"]
+print("External inputs:", registry.get_external_inputs())  # ["source"]
 
-# Trouver les dépendances
-producteur = registry.get_producer("propre")   # retourne TaskNode pour 'propre'
-consommateurs = registry.get_consumers("brut") # liste des tâches nécessitant 'brut'
+# Find dependencies
+producer = registry.get_producer("clean")   # returns TaskNode for 'clean'
+consumers = registry.get_consumers("raw")   # list of tasks needing 'raw'
 
-# Construire le DAG
+# Build DAG
 dag = registry.build_dag()
 dag.print()
-ordre = dag.topological_sort()  # liste des tâches dans l'ordre d'exécution
-niveaux = dag.niveaux              # liste de listes (groupes parallèles)
+order = dag.topological_sort()  # list of tasks in execution order
+levels = dag.levels              # list of lists (parallel groups)
 ```
 
 Voir `examples/registry_discovery_example.py` pour une utilisation complète.
@@ -481,16 +528,16 @@ séquentiel.call_next(traiter_lot).call_next(finaliser)
 Construire des pipelines à l'exécution selon la configuration：
 
 ```python
-def construire_pipeline(config: dict) -> Pipeline:
-    étapes = []
+def build_pipeline(config: dict) -> Pipeline:
+    steps = []
     if config.get("preprocess"):
-        étapes.append(tâche_prétraitement)
-    if config.get("analyser"):
-        étapes.append(tâche_analyse)
+        steps.append(preprocess_task)
+    if config.get("analyze"):
+        steps.append(analyze_task)
     # ...
     pipeline = Pipeline(broker)
-    for étape in étapes:
-        pipeline.call_next(étape)
+    for step in steps:
+        pipeline.call_next(step)
     return pipeline
 ```
 
@@ -499,13 +546,13 @@ def construire_pipeline(config: dict) -> Pipeline:
 Utiliser `.filter()` et les étapes de condition：
 
 ```python
-haute_valeur = pipeline.filter(est_haute_valeur)
-haute_valeur.call_next(traitement_premium)
-basse_valeur = pipeline.filter(est_basse_valeur)
-basse_valeur.call_next(traitement_standard)
+high_value = pipeline.filter(is_high_value)
+high_value.call_next(premium_processing)
+low_value = pipeline.filter(is_low_value)
+low_value.call_next(standard_processing)
 
-# Fusion
-fusionné = haute_valeur.group([traitement_premium, traitement_standard])
+# Merge
+merged = high_value.group([premium_processing, standard_processing])
 ```
 
 Voir [steps/condition.py](https://github.com/dorel14/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) pour `IfStep`.

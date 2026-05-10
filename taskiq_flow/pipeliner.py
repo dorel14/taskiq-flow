@@ -6,7 +6,7 @@ l'orchestration de taskiq-flow, gérant l'enchaînement des étapes et
 leur exécution via le middleware.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from __future__ import annotations

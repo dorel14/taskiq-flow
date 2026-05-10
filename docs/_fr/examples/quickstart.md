@@ -145,16 +145,16 @@ pipeline = (
 
 ```python
 @broker.task
-def tache_a(x: int) -> int: return x * 2
+def task_a(x: int) -> int: return x * 2
 @broker.task
-def tache_b(x: int) -> int: return x + 10
+def task_b(x: int) -> int: return x + 10
 @broker.task
-def tache_c(x: int) -> int: return x ** 2
+def task_c(x: int) -> int: return x ** 2
 
 pipeline = Pipeline(broker).call_next(add_one)  # 1 → 2
-pipeline.group([tache_a, tache_b, tache_c], param_names=["x"])
-# Les trois reçoivent 2 et s'exécutent en parallèle
-# Résultat: [4, 12, 4]
+pipeline.group([task_a, task_b, task_c], param_names=["x"])
+# All three receive 2 and execute in parallel
+# Result: [4, 12, 4]
 ```
 
 ---

@@ -5,7 +5,7 @@ du graphe de dépendances en JSON (pour UI web), DOT (pour Graphviz)
 et ASCII (pour terminal). Utile pour le debug et le monitoring.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from taskiq_flow.visualization.dag_visualizer import DAGVisualizer, visualize_pipeline

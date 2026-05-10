@@ -5,7 +5,7 @@ TaskIQ et autres valeurs fixes utilisées par le middleware
 et les steps du pipeline.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import Literal

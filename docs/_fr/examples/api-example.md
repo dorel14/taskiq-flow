@@ -43,6 +43,8 @@ pip install fastapi uvicorn[standard]
 
 ### 1. Définir Tâches et Pipeline
 
+Le pipeline suivant illustre un cas d'usage commun de recommandation:
+
 ```python
 from fastapi import FastAPI, HTTPException
 from taskiq import InMemoryBroker
@@ -78,6 +80,15 @@ sample_pipeline = DataflowPipeline.from_tasks(
     [fetch_user_data, fetch_orders, generate_recommendations],
 )
 sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
+```
+
+**Structure du DAG:**
+
+```mermaid
+flowchart TD
+    A[fetch_user_data<br/>output: user_data] --> B[fetch_orders<br/>output: order_history]
+    A --> C[generate_recommendations<br/>output: recommendations]
+    B --> C
 ```
 
 ### 2. Créer App FastAPI avec Visualization API
@@ -243,16 +254,16 @@ from taskiq_flow.api import PipelineVisualizationAPI
 app = FastAPI()
 viz_api = PipelineVisualizationAPI(broker, app)
 
-# Enregistrer pipeline
-viz_api.add_pipeline("mon_pipe", mon_pipeline)
+# Register pipeline
+viz_api.add_pipeline("my_pipe", my_pipeline)
 
-# Lister pipelines enregistrés
+# List registered pipelines
 for pid, p in viz_api.pipelines.items():
     print(f"Pipeline: {pid}, tasks: {len(p.visualize()['nodes'])}")
 
-# Obtenir visualization
-dag_json = mon_pipeline.visualize()
-dot = mon_pipeline.visualize_dot()
+# Get visualization
+dag_json = my_pipeline.visualize()
+dot = my_pipeline.visualize_dot()
 ```
 
 Utile pour construire backends dashboard personnalisés ou outils CLI.
@@ -274,9 +285,47 @@ from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != os.getenv("API_SECRET"):
+        raise HTTPException(status_code=403, detail="Clé API invalide")
+    return api_key
+
 @app.post("/pipelines/{pipeline_id}/execute")
 async def execute(..., api_key: str = Security(verify_api_key)):
     # ...
+```
+
+### 2b. Ajouter Authentification JWT
+```python
+from jose import jwt
+from fastapi import Depends
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute(..., user: str = Depends(get_current_user)):
+    logger.info(f"Utilisateur {user} a exécuté {pipeline_id}")
+    # ...
+```
+
+### 2c. Ajouter Autorisation au Niveau Pipeline
+```python
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*"], "write": []},
+})
+
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return user
 ```
 
 ### 3. Ajouter Rate Limiting

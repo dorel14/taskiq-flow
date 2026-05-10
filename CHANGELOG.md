@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.2] - 2026-05-10
+
+### Added
+
+- Complete French documentation for all dataflow components (DataNode, DAG, DataCache, DataflowRegistry)
+- French dataflow guide with examples and API references
+- Detailed error handling documentation for dataflow pipelines (deadlock, missing inputs, circular dependencies)
+- Performance tips section in dataflow guide
+
+### Changed
+
+- Updated module docstrings from 0.3.2/0.4.5 to 1.0.2
+- Improved dataflow execution guide sections with dataflow-specific troubleshooting
+- Enhanced Next Steps navigation across all guides for better discoverability
+
+## [1.0.1] - 2026-05-08
+
+### Changed
+
+- Documentation improvements and cross-references between guides
+- Updated `{VERSION}` placeholders in all .md guides to `1.0.2`
+- Added dataflow references to pipelines, execution, tracking, websocket, and API guides (EN + FR)
+- Added dataflow-specific pitfalls and troubleshooting sections
+
+## [1.0.0] - 2026-05-07
+
+### Added
+
+- **Dataflow Guide** (EN + FR) — comprehensive documentation for DataflowPipeline, DAG, DataflowRegistry, decorators, and execution engine
+- **Dataflow-specific examples** in `examples/dataflow_audio_pipeline.py` with sequential, parallel, map-reduce, and visualization examples
+- **DAG visualization endpoints** in API: `/pipelines/{id}/dag`, `/pipelines/{id}/dag/dot`, `/pipelines/{id}/visualize`
+- **WebSocket event streaming** for real-time pipeline monitoring
+- **PipelineScheduler** with cron, interval, and one-off scheduling
+- **Resource-aware parallelism** via `ResourceAwareExecutor` and `TaskResourceProfile`
+- **Error handling modes**: `FAIL_FAST`, `CONTINUE_ON_ERROR`, `SKIP_FAILED`, `DEAD_LETTER`
+- **Retry middleware** with exponential backoff, jitter, and max retry time
+- **PipelineTrackingManager** with Redis, PostgreSQL, SQLite, and in-memory storage backends
+- **Hook system** for lifecycle events (PipelineStart, StepStart, StepComplete, PipelineComplete, Error)
+- **Middleware system** (`PipelineMiddleware`) for orchestration and monitoring
+- **Map-reduce** operations with intelligent chunking and parallelism
+- **Mermaid diagram generation** for pipeline visualization
+- **Cytoscape.js export** for interactive web visualization
+- **NetworkX integration** for advanced graph analysis
+
+### Changed
+
+- **Version bumped to 1.0.0** — stable API for production use
+- Documentation restructured with new Dataflow Guide as primary reference
+- All module docstrings updated to version 1.0.0
+- Improved type annotations throughout the codebase
+- Enhanced error messages with contextual information
+
+### Fixed
+
+- 63 ruff linting errors
+- Type checking errors in scheduler module
+- Test failures in tracking factory
+- Missing exports for PipelineTrackingManager and LabelBasedScheduler
+
 ## [0.3.1]
 
 ### Added
@@ -120,7 +180,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple scheduling
 - Basic tracking
 
-[0.3.2]: https://github.com/dorel14/taskiq-flow/compare/v0.3.1...v0.3.2
+[1.0.2]: https://github.com/dorel14/taskiq-flow/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/dorel14/taskiq-flow/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/dorel14/taskiq-flow/compare/v0.3.1...v1.0.0
 [0.3.1]: https://github.com/dorel14/taskiq-flow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/dorel14/taskiq-flow/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dorel14/taskiq-flow/compare/v0.1.0...v0.2.0

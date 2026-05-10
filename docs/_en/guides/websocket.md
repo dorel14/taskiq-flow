@@ -631,6 +631,50 @@ class RateLimiter:
         return False
 ```
 
+### 10.4. SSL/TLS Encryption (WSS)
+
+Enable encrypted WebSocket connections for production:
+
+```python
+from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
+
+# With SSL certificates
+server = PipelineWebSocketServer(
+    host="0.0.0.0",
+    port=8765,
+    ssl_cert="/path/to/cert.pem",
+    ssl_key="/path/to/key.pem",
+)
+
+# Connect with wss://
+# Client: new WebSocket("wss://your-domain.com/ws")
+```
+
+**Using a reverse proxy (recommended):**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
+
+    location /ws {
+        proxy_pass http://localhost:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+```javascript
+// Client connects via wss through the proxy
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
+
 ---
 
 ## 11. Troubleshooting
@@ -700,6 +744,7 @@ await server.start_server()
 ## Next Steps
 
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Backend storage and historical queries
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG pipelines with automatic parallelism and WebSocket-compatible events
 - **[API Guide]({{ '/en/guides/api/' | relative_url }})** — REST endpoints for dashboard backends
 - **[Examples: WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }})** — Complete working code
 

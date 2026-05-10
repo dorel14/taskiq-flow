@@ -5,7 +5,7 @@ Handles retries, error modes (fail_fast, continue_on_error, skip_failed),
 and data caching.
 
 Author: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

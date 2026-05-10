@@ -8,7 +8,7 @@ des événements pendant la déconnexion.
 Supports both FastAPI WebSocket and picows implementations.
 
 Author: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import asyncio

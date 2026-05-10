@@ -7,7 +7,7 @@ Ce module fournit deux classes principales:
 Permet de programmer l'exécution périodique ou différée des pipelines.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import logging

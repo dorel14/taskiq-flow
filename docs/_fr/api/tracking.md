@@ -19,19 +19,19 @@ Coordinateur central pour enregistrer et récupérer les données d'exécution d
 ```python
 from taskiq_flow import PipelineTrackingManager
 
-suivi = PipelineTrackingManager()
-suivi = suivi.with_auto_storage(broker)
-# ou
-suivi = suivi.with_storage(InMemoryPipelineStorage())
+tracking = PipelineTrackingManager()
+tracking = tracking.with_auto_storage(broker)
+# or
+tracking = tracking.with_storage(InMemoryPipelineStorage())
 ```
 
 **Configuration**:
 
 ```python
-suivi = PipelineTrackingManager(
-    storage=None,         # Stockage pré-configuré optionnel
-    max_history=1000,    # Max enregistrements pipelines (store mémoire seulement)
-    auto_cleanup=True    # Purge automatique anciens enregistrements
+tracking = PipelineTrackingManager(
+    storage=None,         # Optional pre-configured storage
+    max_history=1000,    # Max pipeline records (memory store only)
+    auto_cleanup=True    # Auto-purge old records
 )
 ```
 
@@ -50,29 +50,29 @@ suivi = PipelineTrackingManager(
 ### Attacher aux Pipelines
 
 ```python
-pipeline = Pipeline(broker).with_tracking(suivi)
-# ou
-pipeline.with_tracking(suivi)  # modification in-place
+pipeline = Pipeline(broker).with_tracking(tracking)
+# or
+pipeline.with_tracking(tracking)  # in-place modification
 ```
 
-Le gestionnaire de suivi **doit** être attaché **avant** l'appel à `pipeline.kiq()`.
+The tracking manager **must** be attached **before** calling `pipeline.kiq()`.
 
 ### Interroger les Statuts
 
 ```python
-# Obtenir statut d'une exécution pipeline spécifique
-statut = await suivi.get_status(pipeline_id: str) -> PipelineStatus | None
+# Get status of specific pipeline execution
+status = await tracking.get_status(pipeline_id: str) -> PipelineStatus | None
 
-# Lister tous les pipelines suivis
-tous_statuts = await suivi.list_pipelines(
-    filtre_statut: str | None = None,  # Filtrer par statut
+# List all tracked pipelines
+all_statuses = await tracking.list_pipelines(
+    filter_status: str | None = None,  # Filter by status
     limit: int = 100
 ) -> list[PipelineStatus]
 
-# Obtenir historique exécutions
-historique = await suivi.get_historique(
-    depuis: datetime | None = None,
-    jusqu_à: datetime | None = None,
+# Get execution history
+history = await tracking.get_history(
+    since: datetime | None = None,
+    until: datetime | None = None,
     limit: int = 100
 ) -> list[PipelineStatus]
 ```
@@ -80,30 +80,51 @@ historique = await suivi.get_historique(
 ### Maintenance
 
 ```python
-# Supprimer enregistrement pipeline spécifique
-await suivi.delete_pipeline(pipeline_id: str)
+# Delete specific pipeline record
+await tracking.delete_pipeline(pipeline_id: str)
 
-# Supprimer enregistrements plus vieux que N jours
-supprimés = await suivi.cleanup_older_than(days: int = 30) -> int
+# Delete records older than N days
+deleted = await tracking.cleanup_older_than(days: int = 30) -> int
 
-# Obtenir métriques agrégées
-métriques = await suivi.get_metrics(
+# Get aggregated metrics
+metrics = await tracking.get_metrics(
     days: int = 7
 ) -> TrackingMetrics
 ```
 
-### Écouteurs d'Événements
+### Event Listeners
 
 ```python
-class MonÉcouteur:
+class MyListener:
     async def on_pipeline_start(self, pipeline_id: str):
-        print(f"Pipeline {pipeline_id} démarré")
 
-    async def on_pipeline_complete(self, pipeline_id: str, statut: PipelineStatus):
-        alerter_si_échec(statut)
+### Maintenance
 
-écouteur = MonÉcouteur()
-suivi.add_listener(écouteur)
+```python
+# Delete specific pipeline record
+await tracking.delete_pipeline(pipeline_id: str)
+
+# Delete records older than N days
+deleted = await tracking.cleanup_older_than(days: int = 30) -> int
+
+# Get aggregated metrics
+metrics = await tracking.get_metrics(
+    days: int = 7
+) -> TrackingMetrics
+```
+
+### Event Listeners
+
+```python
+class MyListener:
+    async def on_pipeline_start(self, pipeline_id: str):
+        print(f"Pipeline {pipeline_id} started")
+
+    async def on_pipeline_complete(self, pipeline_id: str, status: PipelineStatus):
+        alert_if_failed(status)
+
+listener = MyListener()
+tracking.add_listener(listener)
 ```
 
 **Hooks écouteur** (tous optionnels):
@@ -123,8 +144,55 @@ suivi.add_listener(écouteur)
 ```python
 from taskiq_flow.tracking import InMemoryPipelineStorage
 
-stockage = InMemoryPipelineStorage(max_records=1000)
-suivi = PipelineTrackingManager().with_storage(stockage)
+storage = InMemoryPipelineStorage(max_records=1000)
+tracking = PipelineTrackingManager().with_storage(storage)
+```
+
+**Characteristics**:
+- Zero configuration
+- Fast (no I/O)
+- **Not shared between workers**
+- Lost on process restart
+- Good for: development, testing, single-process
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_records` | `int` | 1000 | Maximum pipeline records to keep (LRU eviction) |
+
+---
+
+### RedisPipelineStorage
+
+```python
+from taskiq_flow.tracking import RedisPipelineStorage
+import redis.asyncio as redis
+
+redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+storage = RedisPipelineStorage(
+    redis_client,
+    key_prefix="taskiq_flow:tracking:",
+    ttl_seconds=604800  # 7 days
+)
+tracking = PipelineTrackingManager().with_storage(storage)
+```
+
+**Characteristics**:
+- Shared between multiple workers
+- Survives restarts
+- Scalable (Redis cluster)
+- TTL-based expiration
+- Good for: production, distributed deployments
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `redis_client` | `Redis` | **required** | Connected Redis client |
+| `key_prefix` | `str` | `"taskiq_flow:tracking:"` | Prefix for all keys |
+| `ttl_seconds` | `int` | 604800 (7d) | Automatic expiration after N seconds |
+| `serializer` | `Callable` | `json.dumps` | Custom serialization function |
 ```
 
 **Caractéristiques**:
@@ -266,32 +334,27 @@ Implémenter protocole `TrackingStorage` pour backend personnalisé:
 from taskiq_flow.tracking.storage import TrackingStorage
 from taskiq_flow.tracking.models import PipelineStatus
 
-class StockagePostgres(TrackingStorage):
-    async def save_status(self, statut: PipelineStatus):
-        """Sauvegarder ou mettre à jour statut pipeline."""
+class PostgresStorage(TrackingStorage):
+    async def save_status(self, status: PipelineStatus):
+        """Save status to PostgreSQL."""
         ...
 
     async def get_status(self, pipeline_id: str) -> PipelineStatus | None:
-        """Récupérer statut pipeline par ID."""
+        """Fetch from DB."""
         ...
 
-    async def list_pipelines(self, filtre_statut: str | None = None,
-                             limit: int = 100) -> list[PipelineStatus]:
-        """Lister pipelines, optionnellement filtrés par statut."""
+    async def list_pipelines(self, filter_status: str | None = None):
+        """Query with optional filter."""
         ...
 
     async def delete_pipeline(self, pipeline_id: str):
-        """Supprimer enregistrement pipeline."""
+        """Remove record."""
         ...
 
-    async def cleanup_older_than(self, days: int) -> int:
-        """Supprimer enregistrements plus vieux que N jours. Retourne compte supprimés."""
-        ...
-
-suivi = PipelineTrackingManager().with_storage(StockagePostgres())
+tracking = PipelineTrackingManager().with_storage(PostgresStorage())
 ```
 
-Toutes méthodes stockage doivent être async.
+All storage methods must be async.
 
 ---
 
@@ -309,10 +372,10 @@ Toutes méthodes stockage doivent être async.
 
 | Problème | Cause Probable | Solution |
 |----------|----------------|----------|
-| `get_status()` retourne `None` | Suivi non attaché, ou `pipeline_id` incorrect | S'assurer `pipeline.with_tracking(suivi)` appelé avant `kiq()` |
-| Erreurs de stockage | Connexion Redis échouée | Vérifier Redis tourne, chaîne connexion valide |
-| Croissance mémoire (store mémoire) | Pas de purge anciens enregistrements | Définir `max_records` ou utiliser Redis avec TTL |
-| Écouteurs ne se déclenchent pas | Non ajoutés avant démarrage pipeline | Appeler `suivi.add_listener()` avant `pipeline.kiq()` |
+| `get_status()` returns `None` | Tracking not attached, or wrong `pipeline_id` | Ensure `pipeline.with_tracking(tracking)` called before `kiq()` |
+| Storage errors | Redis connection failed | Check Redis is running, connection string valid |
+| Memory growth (memory store) | No old record cleanup | Set `max_records` or use Redis with TTL |
+| Listeners not firing | Not added before pipeline start | Call `tracking.add_listener()` before `pipeline.kiq()` |
 
 ---
 

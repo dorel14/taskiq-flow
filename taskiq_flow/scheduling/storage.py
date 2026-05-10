@@ -4,7 +4,7 @@ This module provides SQLAlchemy-based job persistence supporting
 multiple database backends: SQLite, PostgreSQL, MySQL.
 
 Author: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

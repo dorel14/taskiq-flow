@@ -6,7 +6,7 @@ nav_order: 22
 
 **Comprendre les modèles d'exécution, les modes et la gestion des résultats**
 
-> **Version** : {VERSION} | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce
+> **Version** : {VERSION} | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce | **Voir aussi** : [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -236,9 +236,9 @@ pipeline = Pipeline(broker)
 # Timeout global pour tout le pipeline (secondes)
 pipeline.with_timeout(60)
 
-# Ou timeout par tâche via le décorateur taskiq
+# Or per-task timeout via the taskiq decorator
 @broker.task(timeout=30)
-def tache_lente(): ...
+def slow_task(): ...
 ```
 
 **Comportement des timeouts**：
@@ -256,11 +256,11 @@ Chaque tâche reçoit un paramètre optionnel `context` contenant des métadonn�
 from taskiq_flow import PipelineContext
 
 @broker.task
-async def ma_tache(données: str, context: PipelineContext):
-    print(f"ID Pipeline: {context.pipeline_id}")
-    print(f"Index d'étape: {context.step_index}")
-    print(f"ID Tâche: {context.task_id}")
-    return données.upper()
+async def my_task(data: str, context: PipelineContext):
+    print(f"Pipeline ID: {context.pipeline_id}")
+    print(f"Step index: {context.step_index}")
+    print(f"Task ID: {context.task_id}")
+    return data.upper()
 ```
 
 **Champs du contexte**：
@@ -416,10 +416,10 @@ pipeline.print_dag()
 
 ```python
 @broker.task
-async def tache_debug(données, context: PipelineContext):
-    print(f"Reçu: {données}")
-    print(f"Contexte: pipeline={context.pipeline_id}, étape={context.step_index}")
-    return données
+async def debug_task(data, context: PipelineContext):
+    print(f"Received: {data}")
+    print(f"Context: pipeline={context.pipeline_id}, step={context.step_index}")
+    return data
 ```
 
 ### 10.4. Middleware de Traçage
@@ -485,6 +485,9 @@ Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour
 | Tâches reçoivent de mauvaises entrées | Nommage incorrect des paramètres | S'assurer que `@pipeline_task(output=...)` correspond aux noms de paramètres en aval |
 | Résultats dans le désordre | Tâches dataflow finissant à des moments différents | Le dict des résultats préserve les noms de sortie, pas l'ordre d'exécution |
 | Explosion mémoire | Parallélisme illimité | Définir `max_parallel` ou traiter par lots |
+| Deadlock détecté | Dépendance circulaire ou entrée externe manquante | Vérifier le graphe de flux de données pour les cycles ; fournir toutes les entrées externes |
+| `kiq_dataflow()` lève "No DAG built" | Aucune tâche ajoutée au pipeline | Utiliser `DataflowPipeline.from_tasks()` ou `add_dataflow_task()` |
+| Résultats partiels uniquement | `continue_on_error=True` avec des tâches échouées | Vérifier `PipelineErrorAggregator` ou le rapport d'exécution |
 
 ---
 
@@ -502,9 +505,10 @@ Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour
 ## Prochaines Étapes
 
 - **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Choisir entre types de pipelines et motifs
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Guide complet sur les pipelines dataflow, DAGs et décorateurs
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveillance du statut et historique des pipelines
 - **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Réglage pour vitesse et ressources
 
 ---
 
-*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Ensuite, apprenez sur les [Types de Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*
+*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Découvrez les [Pipelines Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}) pour des workflows complexes.*

@@ -309,6 +309,7 @@ With the basics under your belt, explore the deeper guides:
 | Topic | Guide |
 |-------|-------|
 | Sequential & Dataflow Pipelines | [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}) |
+| **Dataflow Deep Dive** | **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** |
 | Task definitions & decorators | [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }}) |
 | Execution modes & error handling | [Execution Guide]({{ '/en/guides/execution/' | relative_url }}) |
 | Real-time monitoring | [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}) |

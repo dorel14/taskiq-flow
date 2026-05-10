@@ -6,7 +6,7 @@ d'événements. Supporte l'authentification, les ACLs, les limites
 de connexion et SSL/TLS.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import asyncio

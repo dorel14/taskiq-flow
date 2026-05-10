@@ -6,7 +6,7 @@ des dépendances déclarées via @pipeline_task. Permet l'exécution
 parallèle automatique, les opérations map-reduce et la visualisation du graphe.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import logging

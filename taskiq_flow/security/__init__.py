@@ -4,7 +4,7 @@ Ce module fournit des fonctionnalités de sécurité incluant
 l'authentification, l'autorisation, le rate limiting et l'audit.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from taskiq_flow.config import TaskiqFlowConfig

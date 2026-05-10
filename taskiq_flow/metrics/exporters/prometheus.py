@@ -4,7 +4,7 @@ Ce module fournit un endpoint FastAPI pour exposer les métriques
 au format Prometheus.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from collections.abc import Callable

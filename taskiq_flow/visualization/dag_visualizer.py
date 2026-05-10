@@ -4,7 +4,7 @@ Ce module fournit des fonctionnalités avancées de visualisation
 utilisant NetworkX pour l'analyse de graphes.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from typing import Any

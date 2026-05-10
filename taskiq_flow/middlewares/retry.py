@@ -3,7 +3,7 @@
 This module provides retry functionality leveraging TaskIQ's RetryMiddleware.
 
 Author: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import asyncio

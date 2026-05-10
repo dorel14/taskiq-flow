@@ -4,7 +4,7 @@ Ce module fournit un collecteur de métriques qui suit les événements
 des pipelines et expose les métriques au format Prometheus.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import time

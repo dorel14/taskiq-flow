@@ -50,17 +50,17 @@ Pipeline(
 | `with_timeout` | `with_timeout(seconds) -> Pipeline` | Définit timeout |
 | `with_context` | `with_context(enable=True) -> Pipeline` | Active passage PipelineContext aux tâches |
 
-**Exemple**:
+**Example**:
 ```python
 pipeline = (
     Pipeline(broker)
-    .call_next(tache1)
-    .call_next(tache2, facteur=2)
-    .map(tache3, max_parallel=10)
-    .filter(valider)
-    .with_tracking(suivi)
+    .call_next(task1)
+    .call_next(task2, factor=2)
+    .map(task3, max_parallel=10)
+    .filter(validate)
+    .with_tracking(tracking)
 )
-résultat = await pipeline.kiq(entrée_initiale)
+result = await pipeline.kiq(initial_input)
 ```
 
 ---
@@ -74,7 +74,7 @@ from taskiq_flow import DataflowPipeline
 
 pipeline = DataflowPipeline.from_tasks(
     broker,
-    [tache_a, tache_b, tache_c]
+    [task_a, task_b, task_c]
 )
 ```
 
@@ -156,10 +156,10 @@ Métadonnées passées aux tâches quand `with_context(enable=True)` est défini
 from taskiq_flow import PipelineContext
 
 @broker.task
-async def ma_tache(données: str, context: PipelineContext):
+async def my_task(data: str, context: PipelineContext):
     print(f"Pipeline: {context.pipeline_id}")
-    print(f"Étape: {context.step_index}")
-    print(f"Tâche ID: {context.task_id}")
+    print(f"Step: {context.step_index}")
+    print(f"Task ID: {context.task_id}")
 ```
 
 **Champs**:

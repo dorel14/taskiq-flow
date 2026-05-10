@@ -4,7 +4,7 @@ Ce module fournit un système de journalisation d'audit pour suivre
 les accès et les actions sur les pipelines.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import logging

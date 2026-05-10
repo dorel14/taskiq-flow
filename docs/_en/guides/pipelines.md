@@ -6,7 +6,7 @@ nav_order: 20
 
 **Sequential and Dataflow pipeline patterns, configurations, and best practices**
 
-> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }}), [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -16,6 +16,8 @@ Taskiq-Flow provides two main pipeline types for orchestrating task workflows:
 
 1. **SequentialPipeline** — Manual step chaining for linear workflows
 2. **DataflowPipeline** — Automatic DAG construction from task dependencies
+
+For a comprehensive deep-dive into dataflow patterns, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 This guide explores both types, their use cases, and how to choose between them.
 
@@ -119,6 +121,8 @@ pipeline.group(
 ---
 
 ## 2. Dataflow Pipeline
+
+> For a comprehensive guide on dataflow patterns, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 Automatic DAG construction using `@pipeline_task(output=...)` annotations.
 
