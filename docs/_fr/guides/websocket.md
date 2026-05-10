@@ -51,17 +51,17 @@ from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 from taskiq_flow.integration.websocket import get_websocket_server
 
-# 1. Créer le broker et le gestionnaire de hooks
+# 1. Create broker and hook manager
 broker = InMemoryBroker()
-gestionnaire_hooks = HookManager()
+hook_manager = HookManager()
 
-# 2. Configurer le pont WebSocket
-setup_websocket_bridge(gestionnaire_hooks)  # connecte HookManager → transport WebSocket
+# 2. Configure WebSocket bridge
+setup_websocket_bridge(hook_manager)  # connect HookManager → WebSocket transport
 
-# 3. Créer un pipeline avec hooks attachés
+# 3. Create pipeline with hooks attached
 pipeline = Pipeline(broker)
 pipeline.pipeline_id = "workflow_demo"
-pipeline.with_hooks(gestionnaire_hooks)
+pipeline.with_hooks(hook_manager)
 
 # Ajouter des tâches au pipeline...
 
@@ -447,13 +447,13 @@ Réduire la bande passante en filtrant côté serveur:
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Envoyer seulement les événements pour pipelines spécifiques
-filtre = EventFilter(pipeline_ids=['pipeline_1', 'pipeline_2'])
-gestionnaire_hooks.add_filter(filtre)
+# Send only events for specific pipelines
+filter = EventFilter(pipeline_ids=['pipeline_1', 'pipeline_2'])
+hook_manager.add_filter(filter)
 
-# Seulement les événements d'étape (pas niveau pipeline)
-filtre = EventFilter(event_types=['StepStartEvent', 'StepCompleteEvent'])
-gestionnaire_hooks.add_filter(filtre)
+# Only step events (not pipeline-level)
+filter = EventFilter(event_types=['StepStartEvent', 'StepCompleteEvent'])
+hook_manager.add_filter(filter)
 ```
 
 Filtrage côté client également possible:
@@ -648,34 +648,82 @@ class LimiteurDebit:
 
 **Symptôme** : Connexion réussie, mais aucun événement n'arrive.
 
-**Corrections**：
+**Corrections** ：
 - S'assurer que le pipeline a `pipeline_id` défini
-- Confirmer que `pipeline.with_hooks(gestionnaire_hooks)` est appelé
-- Vérifier que `setup_websocket_bridge(gestionnaire_hooks)` est appelé avant que le pipeline ne démarre
+- Confirmer que `pipeline.with_hooks(hook_manager)` est appelé
+- Vérifier que `setup_websocket_bridge(hook_manager)` est appelé avant le démarrage du pipeline
 - Vérifier le format du message d'abonnement (voir Section 5)
 
 ### Utilisation Mémoire Élevée
 
 **Symptôme** : Mémoire serveur augmente avec le temps.
 
-**Corrections**：
+**Corrections** :
 - Limiter le nombre de pipelines suivis
-- Implémenter nettoyage automatique des clients déconnectés
-- Utiliser transport Redis pour externaliser l'état du processus
-- Définir limite max de connexions
+- Implémenter le nettoyage automatique des clients déconnectés
+- Utiliser le transport Redis pour externaliser l'état du processus
+- Définir la limite maximale de connexions
 
 ### Événements Dans le Désordre
 
 **Symptôme** : Le client reçoit StepComplete avant StepStart.
 
-**Corrections**：
-- Utiliser garanties de livraison séquentielle (par défaut pour WebSocket)
+**Corrections** :
+- Utiliser les garanties de livraison séquentielle (par défaut pour WebSocket)
 - S'assurer que tous les hooks sont correctement attachés
-- Vérifier les middleware personnalisés qui pourraient émettre des événements asynchrone
+- Vérifier les middleware personnalisés qui pourraient émettre des événements de manière asynchrone
+
+---
+
+### 10.4. Chiffrement SSL/TLS (WSS)
+
+Activez les connexions WebSocket chiffrées pour la production :
+
+```python
+from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
+
+# Avec certificats SSL
+server = PipelineWebSocketServer(
+    host="0.0.0.0",
+    port=8765,
+    ssl_cert="/chemin/vers/cert.pem",
+    ssl_key="/chemin/vers/key.pem",
+)
+
+# Connexion avec wss://
+# Client : new WebSocket("wss://votre-domaine.com/ws")
+```
+
+**Via un reverse proxy (recommandé) :**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
+
+    location /ws {
+        proxy_pass http://localhost:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+```javascript
+// Le client se connecte via wss à travers le proxy
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
 
 ---
 
 ## 12. Résumé
+
+### 12.1. Résumé Composants
 
 | Composant | Responsabilité |
 |-----------|----------------|
@@ -685,24 +733,27 @@ class LimiteurDebit:
 | `Serveur WebSocket` | Gère connexions clients, diffuse |
 | `Client` | S'abonne, reçoit, affiche événements |
 
-**Configuration basique (5 lignes)**:
+**Script de base (5 lignes)**:
 
 ```python
-crochets = HookManager()
-setup_websocket_bridge(crochets)
-pipeline = Pipeline(broker).with_hooks(crochets)
-serveur = get_websocket_server()
-await serveur.start_server()
+hooks = HookManager()
+setup_websocket_bridge(hooks)
+pipeline = Pipeline(broker).with_hooks(hooks)
+server = get_websocket_server()
+await server.start_server()
 ```
 
 ---
 
-## Prochaines Étapes
+## 13. Prochaines Étapes
 
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Backend de stockage et requêtes historiques
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Pipeline DAG complet avec événements compatibles WebSocket
 - **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Endpoints REST pour backends de tableau de bord
 - **[Exemples: Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }})** — Code complet fonctionnel
 
 ---
 
 *Streamer les événements de pipeline en direct. Combiner avec [Stockage de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour historique persistant.*
+
+---

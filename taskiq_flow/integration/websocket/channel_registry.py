@@ -5,7 +5,7 @@ et abonnement par motif (wildcards) pour une publication/diffusion
 flexible des événements de pipeline.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import asyncio

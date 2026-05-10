@@ -98,59 +98,62 @@ Obtenir clés sortie déclarées pour une tâche:
 ```python
 from taskiq_flow import get_task_outputs
 
-sorties = get_task_outputs(tache_extract)
-print(sorties)  # ['features']
+outputs = get_task_outputs(extract_task)
+print(outputs)  # ['features']
 ```
 
 ### get_task_inputs(task: Callable) -> list[str]
 
-Obtenir dépendances entrée déclarées:
+Get declared input dependencies:
 
 ```python
 from taskiq_flow import get_task_inputs
 
-entrées = get_task_inputs(tache_tag)
-print(entrées)  # ['features']
+inputs = get_task_inputs(tag_task)
+print(inputs)  # ['features']
 ```
 
 ### is_pipeline_task(task: Callable) -> bool
 
-Vérifier si fonction décorée avec `@pipeline_task`:
+Check if function is decorated with `@pipeline_task`:
 
 ```python
 from taskiq_flow import is_pipeline_task
 
-if is_pipeline_task(ma_fonction):
-    print("Ceci est une tâche pipeline avec déclarations sortie")
+if is_pipeline_task(my_function):
+    print("This is a pipeline task with output declarations")
 ```
 
 ### resolve_task_dependencies(tasks: list[Callable]) -> dict
 
-Construire carte dépendances:
+Build dependency map:
 
 ```python
 from taskiq_flow import resolve_task_dependencies
 
-deps = resolve_task_dependencies([tache_a, tache_b, tache_c])
-# Retourne: {tache_a: [], tache_b: ['features'], tache_c: ['tags']}
+deps = resolve_task_dependencies([task_a, task_b, task_c])
+# Returns: {task_a: [], task_b: ['features'], task_c: ['tags']}
 ```
 
 ---
 
-## Ordre des Décorateurs
+## Decorator Order
 
-L'ordre des décorateurs compte: `@broker.task` doit être le plus externe (appliqué en dernier), `@pipeline_task` interne (appliqué en premier):
+The order of decorators matters: `@broker.task` must be the outermost (applied last), `@pipeline_task` inner (applied first):
 
 ```python
 # CORRECT
 @broker.task
-@pipeline_task(output="resultat")
-def ma_tache(): ...
+@pipeline_task(output="result")
+def my_task(): ...
 
-# INCORRECT (échouera)
-@pipeline_task(output="resultat")
+# INCORRECT (will fail)
+@pipeline_task(output="result")
 @broker.task
-def ma_tache(): ...
+def my_task(): ...
+```
+
+Why: `@broker.task` wraps the function; `@pipeline_task` attaches metadata to the original function. Python applies decorators bottom-to-top.
 ```
 
 Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métadonnées à la fonction originale. Python applique décorateurs bas-vers-haut.

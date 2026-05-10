@@ -45,10 +45,10 @@ from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 from taskiq_flow.integration.websocket import get_websocket_server
 from taskiq_flow.middleware import PipelineMiddleware
 
-# Créer broker
+# Create broker
 broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
 
-# Définir tâches simples
+# Define simple tasks
 @broker.task
 def add_one(x: int) -> int:
     return x + 1
@@ -58,18 +58,18 @@ def multiply_by_two(x: int) -> int:
     return x * 2
 
 async def main():
-    # 1. Configurer hook manager et pont WebSocket
+    # 1. Configure hook manager and WebSocket bridge
     hook_manager = HookManager()
     setup_websocket_bridge(hook_manager)
 
-    # 2. Créer pipeline et attacher hooks
+    # 2. Create pipeline and attach hooks
     pipeline = Pipeline(broker)
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(add_one, param_name="x")
     pipeline.call_next(multiply_by_two, param_name="x")
     pipeline.with_hooks(hook_manager)
 
-    # 3. Démarrer serveur WebSocket en arrière-plan
+    # 3. Start WebSocket server in background
     websocket_server = get_websocket_server()
     _ = asyncio.create_task(
         websocket_server.start_server("127.0.0.1", 8765),
@@ -80,14 +80,14 @@ async def main():
     print(f"Connect a WebSocket client and subscribe with: {msg}")
     print("Then run the pipeline to see real-time events...")
 
-    # Attendre que serveur démarre
+    # Wait for server to start
     await asyncio.sleep(1)
 
-    # 4. Exécuter le pipeline
+    # 4. Execute the pipeline
     result = await pipeline.kiq(5)  # Start with 5 → 6 → 12
     print(f"Pipeline result: {result}")
 
-    # Garder serveur actif brièvement
+    # Keep server alive briefly
     await asyncio.sleep(5)
     print("Demo complete. Server will shut down.")
 
@@ -181,26 +181,62 @@ pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 Sans ceci, le pipeline n'émettra pas événements vers WebSocket.
 
-### 4. Définir pipeline_id
+### 4. Define pipeline_id
 ```python
-pipeline.pipeline_id = "mon_pipeline"
+pipeline.pipeline_id = "my_pipeline"
 ```
-Nécessaire pour que clients s'abonnent à pipelines spécifiques.
+Necessary for clients to subscribe to specific pipelines.
 
-### 5. Démarrer Serveur
+### 5. Start Server
 ```python
-serveur = get_websocket_server(host="127.0.0.1", port=8765)
-await serveur.start_server()
+server = get_websocket_server(host="127.0.0.1", port=8765)
+await server.start_server()
 ```
 
 ---
 
 ## Personnalisation
 
-### Changer Port
+### Change Port
 ```python
-serveur = get_websocket_server(port=9000)
+server = get_websocket_server(port=9000)
 ```
+
+### Multiple Pipelines
+```python
+pipeline1 = Pipeline(broker).with_hooks(hook_manager)
+pipeline1.pipeline_id = "pipeline_1"
+
+pipeline2 = Pipeline(broker).with_hooks(hook_manager)
+pipeline2.pipeline_id = "pipeline_2"
+```
+
+Clients can subscribe to specific pipeline IDs.
+
+### Event Filtering
+```python
+from taskiq_flow.hooks import EventFilter
+
+# Only send step completion events
+filter = EventFilter(
+    pipeline_ids=["*"],
+    event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
+)
+hook_manager.add_filter(filter)
+```
+
+### Multiple Pipelines
+```python
+pipeline1 = Pipeline(broker).with_hooks(hook_manager)
+pipeline1.pipeline_id = "pipeline_1"
+
+pipeline2 = Pipeline(broker).with_hooks(hook_manager)
+pipeline2.pipeline_id = "pipeline_2"
+```
+
+Clients can subscribe to specific pipeline IDs.
+
+### Event Filtering
 
 ### Multiples Pipelines
 ```python
@@ -217,12 +253,12 @@ Les clients peuvent s'abonner à IDs pipeline spécifiques.
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Seulement envoyer événements complétion étape
-filtre = EventFilter(
+# Only send step completion events
+filter = EventFilter(
     pipeline_ids=["*"],
     event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
 )
-gestionnaire_hooks.add_filter(filtre)
+hook_manager.add_filter(filter)
 ```
 
 ---

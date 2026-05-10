@@ -5,7 +5,7 @@ en un seul résultat en appliquant une fonction de réduction.
 C'est un wrapper autour de MapReduce.reduce.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from collections.abc import Callable

@@ -4,7 +4,7 @@ Ce module fournit des endpoints FastAPI pour interroger les DAG
 et obtenir des visualisations dans différents formats.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import io

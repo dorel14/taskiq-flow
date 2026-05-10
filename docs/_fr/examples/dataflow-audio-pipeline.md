@@ -75,10 +75,16 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 ```
 
 Le pipeline construit automatiquement ce DAG:
+
+```mermaid
+flowchart TD
+    A[extract_audio_features] --> B[compute_mir_features]
+    A --> C[generate_tags]
+    B --> D[create_embedding]
+    C --> D
 ```
-extract_audio_features → compute_mir_features → generate_tags
-                            ↓
-                         create_embedding (après compute_mir_features, parallèle à generate_tags)
+
+**Note**: `create_embedding` dépend à la fois de `mir_features` (sortie de `compute_mir_features`) et `tags` (sortie de `generate_tags`), donc il s'exécute après que les deux tâches parallèles sont terminées.
 ```
 
 ---
@@ -208,21 +214,21 @@ Le pipeline fournit multiples formats de visualisation:
 # ASCII art (console)
 pipeline.print_dag()
 
-# JSON (pour UIs web)
+# JSON (for web UIs)
 viz_json = pipeline.visualize()
 # Structure:
 # {
-#   "nodes": [{"id": "nom_tache", "outputs": [...], "inputs": [...]}, ...],
-#   "edges": [{"from": "tache_a", "to": "tache_b"}],
-#   "levels": [["tache1"], ["tache2", "tache3"], ...]
+#   "nodes": [{"id": "task_name", "outputs": [...], "inputs": [...]}, ...],
+#   "edges": [{"from": "task_a", "to": "task_b"}],
+#   "levels": [["task1"], ["task2", "task3"], ...]
 # }
 
-# Format DOT (pour Graphviz)
+# DOT format (for Graphviz)
 dot = pipeline.visualize_dot()
-# Sauvegarder et rendre:
+# Save and render:
 # with open("pipeline.dot", "w") as f:
 #     f.write(dot)
-# Exécuter: dot -Tpng pipeline.dot -o pipeline.png
+# Run: dot -Tpng pipeline.dot -o pipeline.png
 ```
 
 ---

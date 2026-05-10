@@ -7,7 +7,7 @@ de pipeline aux clients connectés.
 - picows: Serveur WebSocket autonome basé sur picows
 
 Author: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from taskiq_flow.integration.websocket.fastapi_ws import (

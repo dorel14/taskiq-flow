@@ -21,13 +21,13 @@ Cette galerie propose des parcours détaillés des scripts d'exemple inclus dans
 
 | Exemple | Description | Concepts Clés |
 |---------|-------------|---------------|
-| [Pipeline Basique](quickstart.md) | Pipeline séquentiel simple avec opérations map, filter, group | SequentialPipeline, étapes de base |
-| [Démonstration Suivi](tracking-demo.md) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
-| [Pipeline Planifié](scheduled-pipeline.md) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
-| [Pipeline Audio Dataflow](dataflow-audio-pipeline.md) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
-| [Découverte Registry](registry-discovery.md) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
-| [Démo WebSocket](websocket-demo.md) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
-| [API REST](api-example.md) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
+| [Pipeline Basique]({{ '/fr/examples/quickstart/' | relative_url }}) | Pipeline séquentiel simple avec opérations map, filter, group | SequentialPipeline, étapes de base |
+| [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }}) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
+| [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }}) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
+| [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }}) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
+| [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }}) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
+| [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }}) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
+| [API REST]({{ '/fr/examples/api-example/' | relative_url }}) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
 
 ---
 
@@ -63,19 +63,19 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 ## Catégories d'Exemples
 
 ### Démarrage
-- [Pipeline Basique](quickstart.md) — Commencez ici si vous êtes novice
+- [Pipeline Basique]({{ '/fr/examples/quickstart/' | relative_url }}) — Commencez ici si vous êtes novice
 
 ### Monitoring & Opérations
-- [Démonstration Suivi](tracking-demo.md)
-- [Pipeline Planifié](scheduled-pipeline.md)
-- [Démo WebSocket](websocket-demo.md)
+- [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }})
+- [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }})
+- [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }})
 
 ### Workflows Avancés
-- [Pipeline Audio Dataflow](dataflow-audio-pipeline.md)
-- [Découverte Registry](registry-discovery.md)
+- [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})
 
 ### Intégration
-- [API REST](api-example.md)
+- [API REST]({{ '/fr/examples/api-example/' | relative_url }})
 
 ---
 

@@ -7,7 +7,7 @@ Ces événements sont utilisés par le HookManager pour notifier
 les callbacks enregistrés.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from datetime import datetime, timezone

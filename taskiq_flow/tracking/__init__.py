@@ -1,10 +1,11 @@
-"""Module de suivi (tracking) des exécutions de pipelines.
+"""
+Module de suivi (tracking) des exécutions de pipelines.
 
 Ce module fournit les composants pour suivre l'état d'exécution
 des pipelines: manager, modèles, stockages (mémoire, Redis) et factory.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from taskiq_flow.tracking.factory import TrackingStorageFactory

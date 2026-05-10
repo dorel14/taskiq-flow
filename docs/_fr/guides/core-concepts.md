@@ -10,12 +10,16 @@ color_scheme: dark
 
 > **Version** : {VERSION}
 
+---
+
 ## Aperçu
 
 Taskiq-Flow est basé sur deux modèles principaux :
 
 1. **SequentialPipeline** — Exécution linéaire étape par étape
 2. **DataflowPipeline** — Construction automatique de DAG à partir des dépendances
+
+Pour une compréhension approfondie du modèle dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Comprendre ces modèles vous aide à choisir la bonne approche pour votre workflow.
 

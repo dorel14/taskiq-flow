@@ -5,7 +5,7 @@ d'une collection en parallèle, ainsi que la tâche partagée wait_tasks
 pour la collecte des résultats.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

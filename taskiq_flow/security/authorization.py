@@ -4,7 +4,7 @@ Ce module gère les listes de contrôle d'accès (ACL) pour les pipelines,
 permettant de définir quels rôles peuvent accéder à quels pipelines.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from enum import Enum

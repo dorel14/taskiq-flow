@@ -49,8 +49,8 @@ redis = ["redis>=5.0,<6"]
 all = ["apscheduler", "redis"]
 
 [project.urls]
-Homepage = "https://github.com/taskiq-python/taskiq-flow"
-Repository = "https://github.com/taskiq-python/taskiq-flow"
+Homepage = "https://github.com/dorel14/taskiq-flow"
+Repository = "https://github.com/dorel14/taskiq-flow"
 Documentation = "https://dorel14.github.io/taskiq-flow/"
 Issues = "https://github.com/dorel14/taskiq-flow/issues"
 
@@ -82,9 +82,24 @@ dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
 
 [tool.semantic_release.commit_parser_options]
-allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "style", "test"]
+allowed_tags = [
+                "build",
+                "chore",
+                "ci",
+                "docs",
+                "feat",
+                "fix",
+                "perf",
+                "refactor",
+                "style",
+                "test"
+              ]
 minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]
+patch_tags = [
+              "fix",
+              "perf",
+              "docs"
+            ]
 
 # --- TES AUTRES CONFIGS (LINTING/TESTS) ---
 [dependency-groups]
@@ -121,11 +136,73 @@ ignore_errors = true
 
 [tool.ruff]
 line-length = 88
-lint.select = ["E", "F", "W", "C90", "I", "N", "D", "ANN", "S", "B", "COM", "C4", "ISC", "PIE", "T20", "PYI", "Q", "RSE", "RET", "SLF", "SIM", "PTH", "ERA", "PL", "RUF", "UP"]
-lint.ignore = ["D105", "D107", "D212", "D401", "D104", "D100", "ANN401", "PLR0913", "PLR0911", "D106", "SLF001", "COM812", "C901"]
+lint.select = [
+              "E",
+              "F",
+              "W",
+              "C90",
+              "I",
+              "N",
+              "D",
+              "ANN",
+              "S",
+              "B",
+              "COM",
+              "C4",
+              "ISC",
+              "PIE",
+              "T20",
+              "PYI",
+              "Q",
+              "RSE",
+              "RET",
+              "SLF",
+              "SIM",
+              "PTH",
+              "ERA",
+              "PL",
+              "RUF",
+              "UP"
+            ]
+lint.ignore = [
+              "D105",
+              "D107",
+              "D212",
+              "D401",
+              "D104",
+              "D100",
+              "D417",
+              "ANN401",
+              "PLR0913",
+              "PLR0911",
+              "PLR2004",
+              "D106",
+              "SLF001",
+              "COM812",
+              "C901"
+              ]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+                        "taskiq_dependencies.Depends",
+                        "taskiq.TaskiqDepends"
+                        ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S301", "D103", "SLF001", "S311", "D101", "COM812", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202"]
+"tests/*" = [
+            "S101",
+            "S301",
+            "D103",
+            "SLF001",
+            "S311",
+            "D101",
+            "COM812",
+            "ANN001",
+            "ANN002",
+            "ANN003",
+            "ANN201",
+            "ANN202"
+            ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

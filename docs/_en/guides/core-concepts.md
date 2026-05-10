@@ -10,12 +10,16 @@ color_scheme: dark
 
 > **Version**: {VERSION}
 
+---
+
 ## Overview
 
 Taskiq-Flow is built on two core models:
 
 1. **SequentialPipeline** — Linear step-by-step execution
 2. **DataflowPipeline** — Automatic DAG construction from dependencies
+
+For a deep dive into the dataflow model, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 Understanding these models helps you choose the right approach for your workflow.
 

@@ -4,7 +4,7 @@ Fournit des utilitaires pour configurer le logging avec format JSON
 et contexte enrichi.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import json

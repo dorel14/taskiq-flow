@@ -141,16 +141,8 @@ from taskiq_flow.errors import PipelineErrorAggregator
 
 aggregator = PipelineErrorAggregator()
 
-# Pendant/après exécution, erreurs collectées :
-aggregator.add_error(task=tache Echouee, error=exc, context={...})
-
-# Plus tard, analyser :
-print(f"Total erreurs: {len(aggregator.errors)}")
-print(f"Tâches échouées: {aggregator.failed_tasks}")
-print(f"Tâches skipées: {aggregator.skipped_tasks}")
-
-for err in aggregator.errors:
-    print(f"  {err.task_name}: {type(err.error).__name__}: {err.error}")
+# During/after execution, errors are collected:
+aggregator.add_error(task=failed_task, error=exc, context={...})
 ```
 
 Utile pour générer rapports d'erreur et alertes.

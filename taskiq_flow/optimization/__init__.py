@@ -1,7 +1,7 @@
 """Resource-aware optimization for pipeline execution.
 
 Author: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from taskiq_flow.optimization.parallel import (

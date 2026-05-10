@@ -75,11 +75,16 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 ```
 
 The pipeline automatically builds this DAG:
+
+```mermaid
+flowchart TD
+    A[extract_audio_features] --> B[compute_mir_features]
+    A --> C[generate_tags]
+    B --> D[create_embedding]
+    C --> D
 ```
-extract_audio_features → compute_mir_features → generate_tags
-                                 ↓
-                              create_embedding (runs after compute_mir_features, in parallel with generate_tags)
-```
+
+**Note**: `create_embedding` depends on both `mir_features` (output of `compute_mir_features`) and `tags` (output of `generate_tags`), so it executes after both parallel tasks complete.
 
 ---
 

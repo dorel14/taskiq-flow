@@ -6,7 +6,7 @@ nav_order: 23
 
 **Suivi en temps réel et historique des exécutions avec PipelineTrackingManager**
 
-> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
+> **Version**: 1.0.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 
@@ -27,21 +27,21 @@ Taskiq-Flow offre des capacités complètes de suivi pour monitorer les exécuti
 ```python
 from taskiq_flow import Pipeline, PipelineTrackingManager
 
-# Initialiser le suivi avec sélection automatique du stockage
-suivi = PipelineTrackingManager().with_auto_storage(broker)
+# Initialize tracking with automatic storage selection
+tracking = PipelineTrackingManager().with_auto_storage(broker)
 
-# Attacher le suivi au pipeline
-pipeline = Pipeline(broker).with_tracking(suivi)
+# Attach tracking to pipeline
+pipeline = Pipeline(broker).with_tracking(tracking)
 
-# Exécuter
-task = await pipeline.kiq(données)
+# Execute
+task = await pipeline.kiq(data)
 result = await task.wait_result()
 
-# Interroger le statut
-statut = await suivi.get_status(pipeline.pipeline_id)
-print(f"Statut: {statut.statut}")        # TERMINÉ
-print(f"Étapes: {len(statut.étapes)}")     # Nombre d'étapes exécutées
-print(f"Durée: {statut.durée_ms}ms")
+# Query status
+status = await tracking.get_status(pipeline.pipeline_id)
+print(f"Status: {status.status}")        # COMPLETED
+print(f"Steps: {len(status.steps)}")     # Number of steps executed
+print(f"Duration: {status.duration_ms}ms")
 ```
 
 C'est le pattern de base. Approfondissons.
@@ -57,20 +57,20 @@ Le composant central pour enregistrer et récupérer les données d'exécution d
 ```python
 from taskiq_flow import PipelineTrackingManager, InMemoryPipelineStorage, RedisPipelineStorage
 
-# Option 1: Sélection automatique selon le broker (recommandé)
-suivi = PipelineTrackingManager().with_auto_storage(broker)
-# Utilise Redis si le broker le supporte, sinon fallback Mémoire
+# Option 1: Auto-select based on broker (recommended)
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+# Uses Redis if broker supports it, else falls back to Memory
 
-# Option 2: Stockage mémoire explicite (développement uniquement)
-suivi = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
+# Option 2: Explicit memory storage (development only)
+tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
-# Option 3: Stockage Redis explicite (production)
-suivi = PipelineTrackingManager().with_storage(
-    RedisPipelineStorage(client_redis)
+# Option 3: Explicit Redis storage (production)
+tracking = PipelineTrackingManager().with_storage(
+    RedisPipelineStorage(redis_client)
 )
 
-# Option 4: Backend de stockage personnalisé
-suivi = PipelineTrackingManager().with_storage(MonStockagePersonnalisé())
+# Option 4: Custom storage backend
+tracking = PipelineTrackingManager().with_storage(CustomStorage())
 ```
 
 ### 2.2. Durée de Vie du Stockage
@@ -128,52 +128,52 @@ statut: PipelineStatus
 ### 4.1. Obtenir le Statut d'un Pipeline
 
 ```python
-statut = await suivi.get_status(pipeline_id)
+status = await tracking.get_status(pipeline_id)
 
-if statut.statut == "TERMINÉ":
-    print(f"Pipeline terminé en {statut.durée_ms}ms")
-    print(f"Résultat: {statut.résultat}")
-elif statut.statut == "ÉCHOUÉ":
-    print(f"Échec: {statut.erreur}")
+if status.status == "COMPLETED":
+    print(f"Pipeline completed in {status.duration_ms}ms")
+    print(f"Result: {status.result}")
+elif status.status == "FAILED":
+    print(f"Failed: {status.error}")
 ```
 
 ### 4.2. Lister Tous les Pipelines
 
 ```python
-tous_statuts = await suivi.list_pipelines()
-for statut in tous_statuts:
-    print(f"{statut.pipeline_id}: {statut.statut}")
+all_statuses = await tracking.list_pipelines()
+for status in all_statuses:
+    print(f"{status.pipeline_id}: {status.status}")
 ```
 
 ### 4.3. Filtrer par Statut
 
 ```python
-en_cours = await suivi.list_pipelines(filtre_statut="EN_COURSE")
-échoués = await suivi.list_pipelines(filtre_statut="ÉCHOUÉ")
-terminés = await suivi.list_pipelines(filtre_statut="TERMINÉ")
+running = await tracking.list_pipelines(filter_status="RUNNING")
+failed = await tracking.list_pipelines(filter_status="FAILED")
+completed = await tracking.list_pipelines(filter_status="COMPLETED")
 ```
 
 ### 4.4. Obtenir l'Historique
 
 ```python
-# Obtenir les 10 derniers pipelines
-historique = await suivi.get_historique(limit=10)
+# Get last 10 pipelines
+history = await tracking.get_history(limit=10)
 
-# Filtrer par plage de dates
+# Filter by date range
 from datetime import datetime, timedelta
-il_y_a_semaine = datetime.now() - timedelta(days=7)
-récents = await suivi.get_historique(depuis=il_y_a_semaine)
+week_ago = datetime.now() - timedelta(days=7)
+recent = await tracking.get_history(since=week_ago)
 ```
 
 ### 4.5. Supprimer les Anciens Enregistrements
 
 ```python
-# Supprimer les enregistrements de plus de 30 jours
-supprimés = await suivi.nettoyer_anciens(days=30)
-print(f"Supprimé {supprimés} anciens enregistrements de pipeline")
+# Delete records older than 30 days
+deleted = await tracking.cleanup_old(days=30)
+print(f"Deleted {deleted} old pipeline records")
 
-# Supprimer un pipeline spécifique
-await suivi.supprimer_pipeline(pipeline_id)
+# Delete specific pipeline
+await tracking.delete_pipeline(pipeline_id)
 ```
 
 ---
@@ -185,12 +185,12 @@ await suivi.supprimer_pipeline(pipeline_id)
 ```python
 from taskiq_flow.tracking import InMemoryPipelineStorage
 
-stockage = InMemoryPipelineStorage()
-suivi = PipelineTrackingManager().with_storage(stockage)
+storage = InMemoryPipelineStorage()
+tracking = PipelineTrackingManager().with_storage(storage)
 
-# Les données vivent uniquement dans le processus Python
-# Au redémarrage, tout l'historique est perdu
-# Adeéquat pour: développement, tests, scripts one-shot
+# Data lives only in Python process
+# Lost on restart
+# Suitable for: development, testing, one-shot scripts
 ```
 
 **Avantages**：
@@ -211,7 +211,7 @@ import redis.asyncio as redis
 
 client_redis = redis.Redis(host="localhost", port=6379, decode_responses=True)
 stockage = RedisPipelineStorage(client_redis)
-suivi = PipelineTrackingManager().with_storage(stockage)
+tracking = PipelineTrackingManager().with_storage(stockage)
 ```
 
 **Configuration**：
@@ -244,24 +244,24 @@ Implémenter le protocole `TrackingStorage`:
 from taskiq_flow.tracking.storage import TrackingStorage
 from taskiq_flow.tracking.models import PipelineStatus
 
-class StockagePostgres(TrackingStorage):
-    async def save_status(self, statut: PipelineStatus):
-        # Insertion/mise à jour en PostgreSQL
+class PostgresStorage(TrackingStorage):
+    async def save_status(self, status: PipelineStatus):
+        # Insert/update in PostgreSQL
         pass
 
     async def get_status(self, pipeline_id: str) -> PipelineStatus | None:
-        # Récupération depuis la base
+        # Fetch from DB
         pass
 
-    async def list_pipelines(self, filtre_statut: str | None = None):
-        # Requête avec filtre optionnel
+    async def list_pipelines(self, filter_status: str | None = None):
+        # Query with optional filter
         pass
 
     async def delete_pipeline(self, pipeline_id: str):
-        # Suppression d'enregistrement
+        # Remove record
         pass
 
-suivi = PipelineTrackingManager().with_storage(StockagePostgres())
+tracking = PipelineTrackingManager().with_storage(PostgresStorage())
 ```
 
 ---
@@ -271,13 +271,13 @@ suivi = PipelineTrackingManager().with_storage(StockagePostgres())
 Pour des mises à jour de tableau de bord en direct, combiner `PipelineTrackingManager` avec `HookManager`:
 
 ```python
-from taskiq_flow.hooks import HookManager, DiffuseurÉvénementsSuivi
+from taskiq_flow.hooks import HookManager, TrackingEventBroadcaster
 
-gestionnaire_crochets = HookManager()
-diffuseur = DiffuseurÉvénementsSuivi(suivi, gestionnaire_crochets)
-suivi.ajouter_écouteur(diffuseur.on_mise_à_jour_statut)
+hook_manager = HookManager()
+broadcaster = TrackingEventBroadcaster(tracking, hook_manager)
+tracking.add_listener(broadcaster.on_status_update)
 
-pipeline = Pipeline(broker).with_hooks(gestionnaire_crochets).with_tracking(suivi)
+pipeline = Pipeline(broker).with_hooks(hook_manager).with_tracking(tracking)
 ```
 
 Les événements de pipeline sont maintenant diffusés via WebSocket en temps réel.
@@ -291,13 +291,13 @@ Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) pour la con
 Collecter des statistiques de performance au fil du temps:
 
 ```python
-# Collecter les statistiques
-stats = await suivi.get_métriques(jours=7)
+# Collect statistics
+stats = await tracking.get_metrics(days=7)
 
-print(f"Total exécutions: {stats.total_pipelines}")
-print(f"Taux de succès: {stats.taux_réussite:.1%}")
-print(f"Durée moyenne: {stats.durée_ms_moyenne:.0f}ms")
-print(f"Raisons d'échec: {stats.raisons_échec}")
+print(f"Total executions: {stats.total_pipelines}")
+print(f"Success rate: {stats.success_rate:.1%}")
+print(f"Avg duration: {stats.avg_duration_ms:.0f}ms")
+print(f"Failure reasons: {stats.failure_reasons}")
 ```
 
 **Métriques courantes**：
@@ -313,13 +313,13 @@ Intégrer avec des systèmes de monitoring (Prometheus, Grafana):
 ```python
 from prometheus_client import Counter, Histogram
 
-COMPT_PIPELINES = Counter('pipelines_total', 'Total pipelines', ['statut'])
-DURÉE_PIPELINE = Histogram('pipeline_duration_seconds', 'Durée d\'exécution')
+PIPELINES_TOTAL = Counter('pipelines_total', 'Total pipelines', ['status'])
+PIPELINE_DURATION = Histogram('pipeline_duration_seconds', 'Pipeline execution duration')
 
-class ExportateurPrometheus:
-    async def on_pipeline_complete(self, statut: PipelineStatus):
-        COMPT_PIPELINES.labels(statut=statut.statut).inc()
-        DURÉE_PIPELINE.observe(statut.durée_ms / 1000)
+class PrometheusExporter:
+    async def on_pipeline_complete(self, status: PipelineStatus):
+        PIPELINES_TOTAL.labels(status=status.status).inc()
+        PIPELINE_DURATION.observe(status.duration_ms / 1000)
 ```
 
 ---
@@ -329,20 +329,20 @@ class ExportateurPrometheus:
 Attacher des callbacks aux événements de suivi:
 
 ```python
-class MonÉcouteur:
+class MyListener:
     async def on_pipeline_start(self, pipeline_id: str):
-        print(f"Pipeline {pipeline_id} démarré")
-        envoyer_notification_slack(f"Pipeline {pipeline_id} démarré")
+        print(f"Pipeline {pipeline_id} started")
+        send_slack_notification(f"Pipeline {pipeline_id} started")
 
-    async def on_step_complete(self, pipeline_id: str, step_name: str, résultat: Any):
-        journal_métrique_étape(step_name, résultat)
+    async def on_step_complete(self, pipeline_id: str, step_name: str, result: Any):
+        log_step_metric(step_name, result)
 
-    async def on_pipeline_complete(self, pipeline_id: str, statut: PipelineStatus):
-        if statut.statut == "ÉCHOUÉ":
-            alerter_échec(pipeline_id)
+    async def on_pipeline_complete(self, pipeline_id: str, status: PipelineStatus):
+        if status.status == "FAILED":
+            alert_failure(pipeline_id)
 
-écouteur = MonÉcouteur()
-suivi.ajouter_écouteur(écouteur)
+listener = MyListener()
+tracking.add_listener(listener)
 ```
 
 **Méthodes d'écouteur** (toutes optionnelles):
@@ -360,23 +360,23 @@ suivi.ajouter_écouteur(écouteur)
 ### 9.1. Sortie Console
 
 ```python
-statut = await suivi.get_status(pipeline_id)
+status = await tracking.get_status(pipeline_id)
 print(f"\n{'='*60}")
-print(f"Pipeline: {statut.pipeline_id}")
-print(f"Statut: {statut.statut}")
-print(f"Durée: {statut.durée_ms:.0f}ms")
-print(f"Étapes:")
-for étape in statut.étapes:
-    barre = "█" * int(étape.durée_ms / 10)
-    print(f"  {étape.step_name:<30} {barre} {étape.durée_ms:.0f}ms")
+print(f"Pipeline: {status.pipeline_id}")
+print(f"Status: {status.status}")
+print(f"Duration: {status.duration_ms:.0f}ms")
+print(f"Steps:")
+for step in status.steps:
+    bar = "█" * int(step.duration_ms / 10)
+    print(f"  {step.step_name:<30} {bar} {step.duration_ms:.0f}ms")
 ```
 
-### 9.2. Export JSON
+### 9.2. JSON Export
 
 ```python
 import json
-statut_dict = statut.model_dump(mode="json", exclude={"résultat"})  # exclure grands résultats
-print(json.dumps(statut_dict, indent=2, default=str))
+status_dict = status.model_dump(mode="json", exclude={"result"})  # exclude large results
+print(json.dumps(status_dict, indent=2, default=str))
 ```
 
 ### 9.3. Intégration avec Tableaux de Bord
@@ -407,52 +407,52 @@ URL_REDIS = os.getenv("URL_REDIS", "redis://localhost:6379")
 
 # app.py
 from redis.asyncio import Redis
-client_redis = Redis.from_url(URL_REDIS)
-suivi = PipelineTrackingManager().with_storage(
-    RedisPipelineStorage(client_redis, ttl_secondes=2592000)  # 30 jours
+client_redis = Redis.from_url(REDIS_URL)
+tracking = PipelineTrackingManager().with_storage(
+    RedisPipelineStorage(client_redis, ttl_seconds=2592000)  # 30 days
 )
 ```
 
 ### 10.2. Configurer des Politiques de Rétention
 
 ```python
-# Job de nettoyage périodique (quotidien)
-async def nettoyer_anciens_suivis():
-    supprimés = await suivi.nettoyer_anciens(jours=7)
-    print(f"Nettoyé {supprimés} anciens enregistrements de pipeline")
+# Periodic cleanup job (daily)
+async def cleanup_old_tracking():
+    deleted = await tracking.cleanup_old(days=7)
+    print(f"Cleaned up {deleted} old pipeline records")
 
-# Utiliser APScheduler pour exécuter quotidiennement
+# Use APScheduler to run daily
 from taskiq_flow import PipelineScheduler
-planificateur = PipelineScheduler(broker)
-planificateur.schedule_at(nettoyer_anciens_suivis, run_at="0 3 * * *")  # 3h daily
+scheduler = PipelineScheduler(broker)
+scheduler.schedule_at(cleanup_old_tracking, run_at="0 3 * * *")  # 3am daily
 ```
 
-### 10.3. Surveiller la Santé du Tracker
+### 10.3. Monitor Tracking Health
 
 ```python
-# Health check pour systèmes de monitoring
-async def santé_suivi():
+# Health check for monitoring systems
+async def health_check():
     try:
-        test_pipeline = Pipeline(broker).with_tracking(suivi)
+        test_pipeline = Pipeline(broker).with_tracking(tracking)
         await test_pipeline.kiq("health_check")
-        return {"statut": "sain"}
+        return {"status": "healthy"}
     except Exception as e:
-        return {"statut": "non_sain", "erreur": str(e)}
+        return {"status": "unhealthy", "error": str(e)}
 ```
 
 ### 10.4. Limiter la Taille de l'Historique
 
 ```python
-# Garder seulement les N derniers pipelines par motif de pipeline_id
+# Keep only last N pipelines per pipeline_id pattern
 import fnmatch
 
-motifs = ["batch_job_*", "etl_*"]
-for motif in motifs:
-    anciens = await suivi.list_pipelines()
-    correspondants = [p for p in anciens if fnmatch.fnmatch(p.pipeline_id, motif)]
-    if len(correspondants) > 100:
-        for ancien_pipeline in correspondants[-100:]:
-            await suivi.supprimer_pipeline(ancien_pipeline.pipeline_id)
+patterns = ["batch_job_*", "etl_*"]
+for pattern in patterns:
+    old = await tracking.list_pipelines()
+    matches = [p for p in old if fnmatch.fnmatch(p.pipeline_id, pattern)]
+    if len(matches) > 100:
+        for old_pipeline in matches[-100:]:
+            await tracking.delete_pipeline(old_pipeline.pipeline_id)
 ```
 
 ---
@@ -463,30 +463,30 @@ for motif in motifs:
 
 **Symptôme** : `RuntimeError: No tracking storage configured`
 
-**Solution** : Ajouter le stockage avant d'utiliser le suivi:
+**Solution** : Add storage before using tracking:
 
 ```python
-suivi = PipelineTrackingManager().with_auto_storage(broker)
-# ou
-suivi = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+# or
+tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 ```
 
-### Données de Suivi Manquantes
+### Missing Tracking Data
 
-**Symptôme** : `get_status()` retourne `None` alors que le pipeline a tourné
+**Symptom**: `get_status()` returns `None` even though pipeline ran
 
-**Causes & corrections**:
+**Causes & fixes**:
 
-1. **Suivi non attaché**:
+1. **Tracking not attached**:
    ```python
-   pipeline = Pipeline(broker).with_tracking(suivi)  # Doit appeler with_tracking()
+   pipeline = Pipeline(broker).with_tracking(tracking)  # Must call with_tracking()
    ```
 
-2. **Brokers différents** — S'assurer du même instance `broker` entre tâche et pipeline.
+2. **Different brokers** — Ensure same `broker` instance between task and pipeline.
 
-3. **Durée de vie du stockage** — Le stockage mémoire est perdu au redémarrage；passer à Redis.
+3. **Storage lifetime** — In-memory storage lost on restart; switch to Redis.
 
-4. **Décalage d'ID de Pipeline** — Confirmer que `pipeline.pipeline_id` correspond à la requête.
+4. **Pipeline ID mismatch** — Confirm `pipeline.pipeline_id` matches the query.
 
 ### Dégradation des Performance avec Redis
 
@@ -529,6 +529,7 @@ pipeline = Pipeline(broker).with_tracking(suivi)
 ## Prochaines Étapes
 
 - **[Streaming WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Livraison d'événements en direct pour tableaux de bord
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Pipeline DAG complet avec parallélisme automatique
 - **[Planification]({{ '/fr/guides/scheduling/' | relative_url }})** — Exécution périodique automatique de pipelines
 - **[Performance]({{ '/fr/guides/performance/' | relative_url }})** — Optimiser la surcharge de suivi
 

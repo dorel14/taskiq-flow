@@ -5,7 +5,7 @@ Offre persistance des données et partage entre multiples instances.
 Inclut la logique de retry pour les opérations Redis.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

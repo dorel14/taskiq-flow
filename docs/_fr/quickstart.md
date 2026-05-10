@@ -309,7 +309,8 @@ Avec les bases acquises, explorez les guides approfondis :
 | Sujet | Guide |
 |-------|-------|
 | Pipelines séquentiels et dataflow | [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}) |
-| Définitions de tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}) |
+| **Approfondissement Dataflow** | **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** |
+| Définition des tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}) |
 | Modes d'exécution et gestion d'erreurs | [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}) |
 | Monitoring en temps réel | [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) |
 | Tableaux de bord en direct | [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) |

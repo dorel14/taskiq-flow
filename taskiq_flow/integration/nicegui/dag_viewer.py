@@ -4,7 +4,7 @@ Ce module fournit des composants NiceGUI pour afficher les DAG
 avec des fonctionnalités interactives.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import json

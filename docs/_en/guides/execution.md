@@ -6,7 +6,7 @@ nav_order: 22
 
 **Understanding execution models, modes, and result handling**
 
-> **Version**: {VERSION} | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce
+> **Version**: {VERSION} | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce | **See also**: [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -485,6 +485,9 @@ See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for deta
 | Tasks receive wrong inputs | Incorrect parameter naming | Ensure `@pipeline_task(output=...)` matches downstream param names |
 | Out-of-order results | Dataflow tasks finishing at different times | Results dict preserves output names, not execution order |
 | Memory explosion | Unlimited parallelism | Set `max_parallel` or process in batches |
+| Deadlock during execution | Circular dependency or missing external input | Check data flow graph for cycles; provide all external inputs |
+| `kiq_dataflow()` raises "No DAG built" | No tasks added to pipeline | Use `DataflowPipeline.from_tasks()` or `add_dataflow_task()` |
+| Partial results only | `continue_on_error=True` with failed tasks | Check `PipelineErrorAggregator` or execution report for details |
 
 ---
 
@@ -502,9 +505,10 @@ See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for deta
 ## Next Steps
 
 - **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** — Choosing between pipeline types and patterns
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — Complete guide to dataflow pipelines, DAGs, and decorators
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitoring pipeline status and history
 - **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Tuning for speed and resource usage
 
 ---
 
-*Understanding execution is key to building reliable pipelines. Next, learn about [Pipeline Types]({{ '/en/guides/pipelines/' | relative_url }}).*
+*Understanding execution is key to building reliable pipelines. Learn more about [Dataflow Pipelines]({{ '/en/guides/dataflow/' | relative_url }}) for complex workflows.*

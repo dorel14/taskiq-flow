@@ -4,7 +4,7 @@ Ce module fournit une limitation de débit pour les endpoints API,
 utilisant slowapi pour la gestion des limites.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from slowapi import Limiter

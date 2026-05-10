@@ -6,7 +6,7 @@ d'un pipeline (début, fin, erreur, etc.) via des callbacks.
 Inclut également un bridge WebSocket pour la diffusion en temps réel.
 
 Author: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from taskiq_flow.hooks.bridge import WebSocketHookBridge, setup_websocket_bridge

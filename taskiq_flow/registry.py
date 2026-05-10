@@ -5,7 +5,7 @@ accessibles via les endpoints DAG. En production, cela pourrait
 être remplacé par un backend de persistance.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from fastapi import HTTPException

@@ -19,8 +19,8 @@ Bus central d'événements qui collecte les événements d'exécution de pipelin
 ```python
 from taskiq_flow.hooks import HookManager
 
-gestionnaire_hooks = HookManager()
-pipeline = Pipeline(broker).with_hooks(gestionnaire_hooks)
+hook_manager = HookManager()
+pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 
 **Événements émis**:
@@ -43,7 +43,7 @@ class MonHook:
         print(f"Étape {event.step_name} finie en {event.duration_ms}ms")
 
 hook = MonHook()
-gestionnaire_hooks.add_hook(hook)
+hook_manager.add_hook(hook)
 ```
 
 **Méthodes hooks** (toutes optionnelles):
@@ -203,9 +203,9 @@ Connecte `HookManager` à la couche de transport WebSocket:
 ```python
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 
-gestionnaire_hooks = HookManager()
-setup_websocket_bridge(gestionnaire_hooks)
-# Maintenant tous les hooks sont transférés au serveur WebSocket
+hook_manager = HookManager()
+setup_websocket_bridge(hook_manager)
+# Now all hooks are forwarded to the WebSocket server
 ```
 
 Cela installe un pont qui transfère les événements du `HookManager` aux serveurs WebSocket connectés.
@@ -250,13 +250,13 @@ filtre = EventFilter(pipeline_ids=["pipeline_1", "pipeline_2"])
 # Seulement événements d'étape
 filtre = EventFilter(event_types=["StepStartEvent", "StepCompleteEvent"])
 
-# Les deux
-filtre = EventFilter(
-    pipeline_ids=["*"],  # tous pipelines (ou spécifiques)
+# Both
+filter = EventFilter(
+    pipeline_ids=["*"],  # all pipelines (or specific ones)
     event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
 )
 
-gestionnaire_hooks.add_filter(filtre)
+hook_manager.add_filter(filter)
 ```
 
 ### Logique EventFilter
@@ -430,14 +430,14 @@ async def ws_metrics():
 | `WebSocketServer` | Gère connexions clients |
 | `get_websocket_server()` | Factory/singleton accès |
 
-**Configuration minimale**:
+**Minimal configuration**:
 
 ```python
-crochets = HookManager()
-setup_websocket_bridge(crochets)
-pipeline = Pipeline(broker).with_hooks(crochets)
-serveur = get_websocket_server()
-await serveur.start_server()
+hooks = HookManager()
+setup_websocket_bridge(hooks)
+pipeline = Pipeline(broker).with_hooks(hooks)
+server = get_websocket_server()
+await server.start_server()
 ```
 
 ---

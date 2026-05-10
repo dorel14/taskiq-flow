@@ -5,7 +5,7 @@ WebSocket support, allowing unified HTTP/WebSocket API endpoints.
 Uses a channel registry for hierarchical subscriptions.
 
 Author: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 import logging

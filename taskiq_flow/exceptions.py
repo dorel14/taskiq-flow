@@ -8,7 +8,7 @@ taskiq-flow, including:
 - MappingError, FilterError: Erreurs spécifiques aux steps
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import ClassVar

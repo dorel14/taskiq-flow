@@ -4,7 +4,7 @@ Ce module fournit des métriques Prometheus pour le monitoring
 des pipelines, tâches et performances.
 
 Auteur: SoniqueBay Team
-Version: 0.4.5
+Version: 1.0.2
 """
 
 from prometheus_client import Counter, Gauge, Histogram

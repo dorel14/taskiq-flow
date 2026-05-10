@@ -6,7 +6,7 @@ Il encapsule la logique de stockage et fournit des méthodes
 convenientes pour marquer le début/fin des étapes.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import Any

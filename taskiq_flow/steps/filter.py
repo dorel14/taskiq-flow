@@ -5,7 +5,7 @@ sur chaque élément d'une liste en parallèle, ne conservant que les éléments
 pour lesquels le prédicat renvoie une valeur truthy.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

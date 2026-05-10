@@ -4,7 +4,7 @@ Fournit PipelineContext, un accès contexteux au broker et
 aux informations de pipeline pendant l'exécution.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 from typing import Any

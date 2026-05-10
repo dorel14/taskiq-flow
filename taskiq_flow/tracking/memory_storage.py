@@ -4,7 +4,7 @@ Implémentation de PipelineStorage utilisant un dictionnaire en mémoire.
 Destiné au développement et aux tests, non persistant.
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import asyncio

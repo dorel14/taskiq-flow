@@ -5,7 +5,7 @@ combinant des workflows séquentiels avec exécution automatique de DAG
 (dataflow).
 
 Auteur: SoniqueBay Team
-Version: 0.3.2
+Version: 1.0.2
 """
 
 import contextlib
