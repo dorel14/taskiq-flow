@@ -1,4 +1,5 @@
-"""Transport layer for real-time pipeline events.
+"""
+Transport layer for real-time pipeline events.
 
 This module provides pluggable transport implementations for streaming
 pipeline events to clients.
@@ -12,6 +13,11 @@ from typing import Any, Protocol
 from taskiq_flow.errors import ErrorHandlingMode
 from taskiq_flow.hooks.events import PipelineEvent
 from taskiq_flow.middlewares.retry import PipelineRetryMiddleware
+from taskiq_flow.transport.http_stream import (
+    EventQueue,
+    HTTPStreamTransport,
+    get_http_stream_transport,
+)
 from taskiq_flow.transport.redis_pubsub import RedisPubSubTransport
 from taskiq_flow.transport.websocket import WebSocketTransport
 
@@ -69,9 +75,12 @@ class ClientInfo:
 __all__ = [
     "ClientInfo",
     "ErrorHandlingMode",
+    "EventQueue",
+    "HTTPStreamTransport",
     "PipelineRetryMiddleware",
     "RedisPubSubTransport",
     "TransportProtocol",
     "TransportProtocolAsync",
     "WebSocketTransport",
+    "get_http_stream_transport",
 ]

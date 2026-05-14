@@ -1,4 +1,5 @@
-"""Gestionnaire de suivi (tracking) des pipelines.
+"""
+Gestionnaire de suivi (tracking) des pipelines.
 
 PipelineTrackingManager fournit une API de haut niveau pour
 initialiser et interroger le suivi d'exécution des pipelines.
@@ -34,6 +35,7 @@ class PipelineTrackingManager:
 
     Attributes:
         storage: Backend de stockage (implémentation de PipelineStorage)
+
     """
 
     def __init__(self, storage: PipelineStorage | None = None) -> None:
@@ -67,6 +69,7 @@ class PipelineTrackingManager:
 
         Example:
             tracking = PipelineTrackingManager().with_auto_storage(broker)
+
         """
         self.storage = TrackingStorageFactory.create(broker, redis_url, ttl_seconds)
         return self
@@ -81,6 +84,7 @@ class PipelineTrackingManager:
         Args:
             pipeline_id: Identifiant unique du pipeline
             total_steps: Nombre total d'étapes dans le pipeline
+
         """
         if self.storage:
             await self.storage.create_pipeline(pipeline_id, total_steps)
@@ -139,6 +143,7 @@ class PipelineTrackingManager:
 
         Returns:
             PipelineStatusInfo ou None si non trouvé
+
         """
         if self.storage:
             return await self.storage.get_pipeline_status(pipeline_id)

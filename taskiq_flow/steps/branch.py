@@ -1,4 +1,5 @@
-"""Step de branchement pour exécution parallèle de branches multiples.
+"""
+Step de branchement pour exécution parallèle de branches multiples.
 
 Exécute plusieurs branches de pipeline en parallèle et combine
 leurs résultats en ne retenant que le premier non-None.

@@ -1,4 +1,5 @@
-"""Adaptateur pour les opérations de résultat du broker.
+"""
+Adaptateur pour les opérations de résultat du broker.
 
 Fournit une interface unifiée pour les opérations sur le backend
 de résultats (is_result_ready, get_result, set_result) independent

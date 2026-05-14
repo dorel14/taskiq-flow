@@ -1,4 +1,5 @@
-"""Registre dataflow pour le suivi des métadonnées de tâches.
+"""
+Registre dataflow pour le suivi des métadonnées de tâches.
 
 Ce module contient la classe DataflowRegistry qui enregistre les tâches,
 leurs métadonnées (outputs, inputs) et construit le graphe de dépendances.
@@ -74,6 +75,7 @@ class DataflowRegistry:
         >>> print(f"Entrées externes: {external_inputs}")
         >>> outputs = registry.get_outputs()
         >>> print(f"Sorties produites: {outputs}")
+
     """
 
     def __init__(self) -> None:
@@ -130,6 +132,7 @@ class DataflowRegistry:
             - Les inputs peuvent référencer des données externes non produites
               dans le pipeline (elles seront marquées comme is_external=True)
             - L'ordre d'enregistrement n'affecte pas la construction du DAG
+
         """
         if task in self.task_metadata:
             existing_output = self.task_metadata[task]["output"]
@@ -185,6 +188,7 @@ class DataflowRegistry:
             >>> print(f"Output: {metadata.get('output')}")
             >>> print(f"Inputs: {metadata.get('inputs')}")
             >>> print(f"Version: {metadata.get('version', 'N/A')}")
+
         """
         return self.task_metadata.get(task, {})
 
@@ -206,6 +210,7 @@ class DataflowRegistry:
             >>> deps = registry.get_data_dependencies(process_task)
             >>> if "raw_data" in deps:
             ...     print("process_task dépend de raw_data")
+
         """
         metadata = self.task_metadata.get(task, {})
         return metadata.get("inputs", [])
@@ -230,6 +235,7 @@ class DataflowRegistry:
             ...     print(f"Producteur: {producer.task_name}")
             >>> else:
             ...     print("'features' est une entrée externe")
+
         """
         return self.data_producers.get(data_name)
 
@@ -252,6 +258,7 @@ class DataflowRegistry:
             >>> print(f"Nombre de consommateurs: {len(consumers)}")
             >>> for consumer in consumers:
             ...     print(f" - {consumer.task_name}")
+
         """
         node = self.data_nodes.get(data_name)
         return node.consumers if node else []
@@ -342,6 +349,7 @@ class DataflowRegistry:
             - Toutes les tâches doivent être enregistrées avant build_dag()
             - Une tâche ne peut avoir qu'un seul output primaire
             - Les entrées externes sont automatiquement détectées
+
         """
         dag = DAG()
         task_to_node: dict[Any, DAGNode] = {}
@@ -397,6 +405,7 @@ class DataflowRegistry:
             >>> registry.register_external_input("config_file")
             >>> print(registry.get_external_inputs())
             ['user_id', 'config_file']
+
         """
         return [
             name
@@ -414,6 +423,7 @@ class DataflowRegistry:
         Example:
             >>> outputs = registry.get_outputs()
             >>> print(f"Le pipeline produit {len(outputs)} sorties")
+
         """
         return list(self.data_producers.keys())
 
@@ -435,6 +445,7 @@ class DataflowRegistry:
             >>> registry.register_external_input("input_file_path")
             >>> registry.register_external_input("threshold")
             >>> registry.register_external_input("model_version")
+
         """
         if input_name not in self.data_nodes:
             self.data_nodes[input_name] = DataNode(
@@ -453,6 +464,7 @@ class DataflowRegistry:
             >>> all_tasks = registry.get_tasks()
             >>> for task in all_tasks:
             ...     print(task.task_name)
+
         """
         return self.tasks.copy()
 
@@ -468,6 +480,7 @@ class DataflowRegistry:
             >>> # ... enregistrement de tâches ...
             >>> registry.clear()
             >>> # Registry vide, prêt pour un nouveau pipeline
+
         """
         self.tasks.clear()
         self.task_metadata.clear()
@@ -488,6 +501,7 @@ class DataflowRegistry:
             >>> registry.register_task(task_a, output="data_a")
             >>> len(registry)
             1
+
         """
         return len(self.tasks)
 
@@ -507,6 +521,7 @@ class DataflowRegistry:
         Example:
             >>> if my_task in registry:
             ...     print("Tâche déjà enregistrée")
+
         """
         return task in self.task_metadata
 
@@ -520,6 +535,7 @@ class DataflowRegistry:
         Example:
             >>> print(repr(registry))
             <DataflowRegistry tasks=5, data_nodes=8, external_inputs=2>
+
         """
         external = len(self.get_external_inputs())
         return (

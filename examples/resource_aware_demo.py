@@ -1,4 +1,5 @@
-"""Resource-Aware Parallelism Demo.
+"""
+Resource-Aware Parallelism Demo.
 
 This example demonstrates dynamic parallelism adjustment based on
 CPU and memory availability using ResourceAwareExecutor.

@@ -93,7 +93,8 @@ def test_chunked_map_max_concurrency(
     broker: InMemoryBroker,
     mock_task: AsyncKicker[[list[int]], int],
 ) -> None:
-    """Test chunked_map with max concurrency.
+    """
+    Test chunked_map with max concurrency.
 
     (currently not implemented in pipeline creation).
     """

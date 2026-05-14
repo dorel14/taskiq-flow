@@ -1,4 +1,5 @@
-"""Middleware de sécurité pour Taskiq-Flow.
+"""
+Middleware de sécurité pour Taskiq-Flow.
 
 Ce module fournit un middleware FastAPI pour la sécurité globale,
 incluant l'authentification, l'autorisation et la limitation de débit.
@@ -23,7 +24,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class SecurityMiddleware(BaseHTTPMiddleware):
+class SecurityMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
     """Middleware de sécurité global."""
 
     def __init__(
@@ -43,6 +44,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             authorization: Gestionnaire d'autorisation
             rate_limiter: Limiteur de débit
             audit_logger: Enregistreur d'audit
+
         """
         super().__init__(app)
         self.auth_provider = auth_provider
@@ -62,6 +64,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Réponse
+
         """
         # Authentifier l'utilisateur via le provider
         user_context = None

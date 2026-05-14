@@ -1,4 +1,5 @@
-"""DAG Visualization Demo.
+"""
+DAG Visualization Demo.
 
 This example demonstrates the advanced DAG visualization capabilities
 using NetworkX, Mermaid, and NiceGUI integration.

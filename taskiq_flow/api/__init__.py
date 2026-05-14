@@ -1,4 +1,5 @@
-"""TaskIQ Flow API module.
+"""
+TaskIQ Flow API module.
 
 Provides REST API and WebSocket endpoints for pipeline management
 and visualization.

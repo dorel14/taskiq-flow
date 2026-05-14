@@ -1,4 +1,5 @@
-"""Resource-aware optimization for pipeline execution.
+"""
+Resource-aware optimization for pipeline execution.
 
 Author: SoniqueBay Team
 Version: 1.0.2

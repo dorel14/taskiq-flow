@@ -1,4 +1,5 @@
-"""Module de compatibilité et détection des brokers.
+"""
+Module de compatibilité et détection des brokers.
 
 Ce module centralise les outils pour détecter et adapter
 différents types de brokers TaskIQ (Redis, RabbitMQ, Kafka, InMemory).

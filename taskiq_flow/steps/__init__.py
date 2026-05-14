@@ -1,4 +1,5 @@
-"""Package contenant les steps par défaut pour les pipelines.
+"""
+Package contenant les steps par défaut pour les pipelines.
 
 Ce module expose les différents steps (sequential, mapper, filter,
 group, branch, condition, reduce) et fournit la fonction parse_step

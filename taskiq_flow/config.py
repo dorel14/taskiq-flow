@@ -1,4 +1,5 @@
-"""Configuration pour Taskiq-Flow.
+"""
+Configuration pour Taskiq-Flow.
 
 Ce module fournit une configuration centralisée pour la sécurité,
 les métriques et autres paramètres.

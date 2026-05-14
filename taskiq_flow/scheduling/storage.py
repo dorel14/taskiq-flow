@@ -1,4 +1,5 @@
-"""Job persistence for scheduled pipelines.
+"""
+Job persistence for scheduled pipelines.
 
 This module provides SQLAlchemy-based job persistence supporting
 multiple database backends: SQLite, PostgreSQL, MySQL.
@@ -115,7 +116,8 @@ class JobPersistenceManager:
 
         Args:
             db_url: SQLAlchemy database URL. Defaults to SQLite.
-                    Examples:
+
+        Examples:
                     - "sqlite:///jobs.db" (sync)
                     - "sqlite+aiosqlite:///jobs.db" (async)
                     # pragma: allowlist nextline secret
@@ -125,6 +127,7 @@ class JobPersistenceManager:
                     - "mysql+aiomysql://user:pass@localhost:3306/"
                     "taskiq_flow" (async)
             async_mode: Use async SQLAlchemy engine (recommended for production)
+
         """
         self.db_url = db_url
         self.async_mode = async_mode
@@ -138,7 +141,7 @@ class JobPersistenceManager:
             )
         else:
             sync_engine = create_engine(db_url, echo=False)
-            self.engine = sync_engine  # type: ignore[assignment]
+            self.engine = sync_engine
             self.session = sessionmaker(
                 bind=sync_engine,
                 class_=sessionmaker,
@@ -210,7 +213,7 @@ class JobPersistenceManager:
                         label=str(j.label),
                         cron=str(j.cron) if j.cron is not None else None,
                         interval_seconds=(
-                            int(j.interval_seconds)  # type: ignore[arg-type]
+                            int(j.interval_seconds)
                             if j.interval_seconds is not None
                             else None
                         ),
@@ -235,7 +238,7 @@ class JobPersistenceManager:
             with self.session() as session:
                 db_jobs = (
                     session.query(SchedulerJobModel)
-                    .filter(SchedulerJobModel.enabled == True)  # noqa: E712
+                    .filter(SchedulerJobModel.enabled)
                     .all()
                 )
                 return [
@@ -245,7 +248,7 @@ class JobPersistenceManager:
                         label=str(j.label),
                         cron=str(j.cron) if j.cron is not None else None,
                         interval_seconds=(
-                            int(j.interval_seconds)  # type: ignore[arg-type]
+                            int(j.interval_seconds)
                             if j.interval_seconds is not None
                             else None
                         ),
@@ -331,7 +334,7 @@ class JobPersistenceManager:
                             else None
                         ),
                         duration_seconds=(
-                            float(e.duration_seconds)  # type: ignore[arg-type]
+                            float(e.duration_seconds)
                             if e.duration_seconds is not None
                             else None
                         ),
@@ -363,7 +366,7 @@ class JobPersistenceManager:
                             else None
                         ),
                         duration_seconds=(
-                            float(e.duration_seconds)  # type: ignore[arg-type]
+                            float(e.duration_seconds)
                             if e.duration_seconds is not None
                             else None
                         ),
@@ -396,6 +399,7 @@ class JobPersistenceManager:
             ... )
             # pragma: allowlist nextline secret
             'postgresql+asyncpg://taskiq:password@localhost:5432/taskiq_flow'
+
         """
         drivers = {
             "sqlite": "sqlite+aiosqlite",

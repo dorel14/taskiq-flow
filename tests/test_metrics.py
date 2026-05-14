@@ -1,4 +1,5 @@
-"""Tests for metrics collection.
+"""
+Tests for metrics collection.
 
 This module tests the metrics collector and middleware.
 

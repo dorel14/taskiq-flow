@@ -1,4 +1,5 @@
-"""Configuration de logging structuré pour TaskIQ-Flow.
+"""
+Configuration de logging structuré pour TaskIQ-Flow.
 
 Fournit des utilitaires pour configurer le logging avec format JSON
 et contexte enrichi.
@@ -34,25 +35,29 @@ class StructuredFormatter(logging.Formatter):
         style: Literal["%", "{", "$"] = "%",
         config: LogConfig | None = None,
     ) -> None:
-        """Initialize the structured formatter.
+        """
+        Initialize the structured formatter.
 
         Args:
             fmt: Format string (ignored for JSON format)
             datefmt: Date format string
             style: Format style
             config: Logging configuration
+
         """
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
         self.config = config or LogConfig()
 
     def format(self, record: logging.LogRecord) -> str:
-        """Format the log record.
+        """
+        Format the log record.
 
         Args:
             record: Log record to format
 
         Returns:
             Formatted log message
+
         """
         # Extract pipeline context from record
         pipeline_id = getattr(record, "pipeline_id", None)
@@ -125,12 +130,14 @@ def setup_logging(
     format_type: str = "text",
     handlers: list[logging.Handler] | None = None,
 ) -> None:
-    """Set up structured logging for TaskIQ-Flow.
+    """
+    Set up structured logging for TaskIQ-Flow.
 
     Args:
         level: Logging level
         format_type: "text" or "json"
         handlers: Custom handlers (if None, uses StreamHandler)
+
     """
     config = LogConfig(level=level, format_type=format_type)
     formatter = StructuredFormatter(config=config)
@@ -177,13 +184,15 @@ def setup_logging(
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Get a logger with the given name.
+    """
+    Get a logger with the given name.
 
     Args:
         name: Logger name
 
     Returns:
         Configured logger instance
+
     """
     return logging.getLogger(f"taskiq_flow.{name}")
 

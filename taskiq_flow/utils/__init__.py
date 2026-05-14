@@ -1,4 +1,5 @@
-"""Module d'utilitaires.
+"""
+Module d'utilitaires.
 
 Fournit des classes utilitaires comme PipelineContext pour
 accéder au contexte d'exécution.

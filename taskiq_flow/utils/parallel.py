@@ -1,4 +1,5 @@
-"""Outils de parallélisme pour pipelines.
+"""
+Outils de parallélisme pour pipelines.
 
 Contient des fonctions utilitaires pour gérer l'exécution
 parallèle et les synchronisations.

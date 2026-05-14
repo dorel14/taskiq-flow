@@ -10,7 +10,7 @@ Auteur: SoniqueBay Team
 Version: 1.0.2
 """
 
-from logging import getLogger
+import logging
 from typing import Any, cast
 
 import pydantic
@@ -21,48 +21,50 @@ from taskiq_flow.exceptions import AbortPipeline
 from taskiq_flow.hooks.events import (
     PipelineCompleteEvent,
     PipelineErrorEvent,
+    PipelineEvent,
     StepCompleteEvent,
     StepErrorEvent,
     StepStartEvent,
 )
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    get_fastapi_ws_manager,
+)
+from taskiq_flow.integration.websocket.server import get_websocket_server
+from taskiq_flow.metrics.collector import MetricsCollector
 from taskiq_flow.pipeliner import DumpedStep
 from taskiq_flow.steps import parse_step
 
-logger = getLogger(__name__)
+try:
+    from taskiq_flow.hooks.manager import WEBSOCKET_AVAILABLE
+except ImportError:
+    WEBSOCKET_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineMiddleware(TaskiqMiddleware):
     """
     Middleware TaskIQ pour l'orchestration de pipelines.
 
-    C'est le composant cœur de taskiq-flow. Intercepte chaque
-    tâche exécutée via le broker et:
-    - Détecte si la tâche fait partie d'un pipeline (labels)
-    - Détermine l'étape suivante à exécuter
-    - Gère le tracking et les hooks
-    - Lance la tâche suivante ou termine le pipeline
-
-    Architecture:
-        post_save() est appelé après chaque tâche. Il lit
-        l'étape courante depuis les labels, exécute l'étape
-        suivante via step.act(), ou termine le pipeline.
-
-    Usage:
-        broker = InMemoryBroker().with_middlewares(PipelineMiddleware())
+    Detecte si la tâche fait partie d'un pipeline (labels),
+    determine l'etape suivante, gere le tracking et les hooks.
 
     Attributes:
         tracking_manager: Gestionnaire de suivi (optionnel)
-        hook_manager: Gestionnaire d'événements (optionnel)
+        hook_manager: Gestionnaire d'evenements (optionnel)
+        metrics_collector: Collecteur de metriques (optionnel)
 
     """
 
     def __init__(
         self,
-        tracking_manager: Any = None,  # PipelineTrackingManager | None
-        hook_manager: Any = None,  # HookManager | None
+        tracking_manager: Any = None,
+        hook_manager: Any = None,
+        metrics_collector: MetricsCollector | None = None,
     ) -> None:
         self.tracking_manager = tracking_manager
         self.hook_manager = hook_manager
+        self.metrics_collector = metrics_collector
         super().__init__()
 
     async def post_save(
@@ -70,24 +72,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         message: "TaskiqMessage",
         result: "TaskiqResult[Any]",
     ) -> None:
-        """
-        Handler principal appelé après exécution d'une tâche.
-
-        Détermine si la tâche fait partie d'un pipeline en vérifiant
-        la présence du label CURRENT_STEP. Si oui:
-        1. Notifie le démarrage de l'étape suivante (hook + tracking)
-        2. Si c'était la dernière étape: termine le pipeline
-        3. Sinon: exécute l'étape suivante via _execute_next_step()
-
-        Args:
-            message: Message de la tâche qui vient de se terminer
-            result: Résultat de cette tâche
-
-        Note:
-            Si result.is_err, l'étape est considérée échouée mais
-            le traitement d'erreur est délégué à on_error()
-
-        """
+        """Handler principal appele apres execution d'une tache."""
         if result.is_err:
             return
 
@@ -96,7 +81,6 @@ class PipelineMiddleware(TaskiqMiddleware):
             return
 
         current_step_num, pipeline_id, steps_data = pipeline_info
-
         await self._handle_step_start(current_step_num, pipeline_id, steps_data)
 
         if current_step_num + 1 >= len(steps_data):
@@ -157,6 +141,14 @@ class PipelineMiddleware(TaskiqMiddleware):
                 current_step_num,
                 pipeline_id,
                 steps_data,
+            )
+
+        if self.metrics_collector and pipeline_id:
+            step_data = steps_data[current_step_num]
+            parsed_step = parse_step(step_data.step_type, step_data.step_data)
+            self.metrics_collector.step_started(
+                pipeline_id,
+                cast(str, getattr(parsed_step, "task_name", "unknown")),
             )
 
         self._log_step_start(current_step_num, pipeline_id, steps_data)
@@ -246,6 +238,12 @@ class PipelineMiddleware(TaskiqMiddleware):
                 ),
             )
 
+        if self.metrics_collector and pipeline_id:
+            self.metrics_collector.pipeline_complete(
+                pipeline_id,
+                success=True,
+            )
+
     async def _execute_next_step(
         self,
         current_step_num: int,
@@ -316,6 +314,16 @@ class PipelineMiddleware(TaskiqMiddleware):
             await self.tracking_manager.mark_step_completed(
                 pipeline_id,
                 current_step_num,
+            )
+
+        if self.metrics_collector and pipeline_id:
+            step_data = steps_data[current_step_num]
+            parsed_step = parse_step(step_data.step_type, step_data.step_data)
+            task_name = cast(str, getattr(parsed_step, "task_name", "unknown"))
+            self.metrics_collector.task_executed(
+                task_name,
+                "success",
+                0.0,
             )
 
         self._log_step_completion(current_step_num, pipeline_id, steps_data)
@@ -392,6 +400,16 @@ class PipelineMiddleware(TaskiqMiddleware):
                 error,
             )
 
+        if self.metrics_collector and pipeline_id:
+            step_data = steps_data[current_step_num]
+            parsed_step = parse_step(step_data.step_type, step_data.step_data)
+            task_name = cast(str, getattr(parsed_step, "task_name", "unknown"))
+            self.metrics_collector.task_executed(
+                task_name,
+                "failure",
+                0.0,
+            )
+
     async def _dispatch_step_error_hook(
         self,
         current_step_num: int,
@@ -412,6 +430,8 @@ class PipelineMiddleware(TaskiqMiddleware):
                 task_name=cast(str, getattr(parsed_step, "task_name", "unknown")),
                 task_id=current_step_data.task_id,
                 error=str(error),
+                attempt=1,
+                max_attempts=1,
             ),
         )
 
@@ -421,13 +441,7 @@ class PipelineMiddleware(TaskiqMiddleware):
         result: "TaskiqResult[Any]",
         exception: BaseException,
     ) -> None:
-        """
-        Handles on_error event.
-
-        :param message: current message.
-        :param result: execution result.
-        :param exception: found exception.
-        """
+        """Handle on_error event."""
         pipeline_info = self._extract_pipeline_info(message)
         if pipeline_info[0] is None:
             return
@@ -443,7 +457,6 @@ class PipelineMiddleware(TaskiqMiddleware):
         )
 
         if current_step_num == len(steps_data) - 1:
-            # Pipeline failed
             if self.tracking_manager and pipeline_id:
                 await self.tracking_manager.mark_pipeline_failed(
                     pipeline_id,
@@ -461,22 +474,125 @@ class PipelineMiddleware(TaskiqMiddleware):
         last_task_id: str,
         abort: BaseException | None = None,
     ) -> None:
-        """
-        Function that aborts pipeline.
-
-        This is done by setting error result for
-        the last task in the pipeline.
-
-        :param last_task_id: id of the last task.
-        :param abort: caught earlier exception or default
-        """
+        """Abort pipeline by setting error result for the last task."""
         await self.broker.result_backend.set_result(
             last_task_id,
             TaskiqResult(
                 is_err=True,
-                return_value=None,  # type: ignore
+                return_value=cast(Any, None),
                 error=abort or AbortPipeline(reason="Execution aborted."),
                 execution_time=0,
                 log="Error found while executing pipeline.",
             ),
         )
+
+
+class TransportMiddleware:
+    """
+    Pluggable transport middleware for event broadcasting.
+
+    Supports multiple transport types:
+    - websocket: WebSocket broadcast
+    - http_stream: HTTP SSE streaming
+    - redis_pubsub: Redis pub/sub
+    """
+
+    def __init__(self, transport_type: str = "websocket", **kwargs: Any) -> None:
+        """
+        Initialize transport middleware.
+
+        Args:
+            transport_type: Type of transport (websocket, http_stream, redis_pubsub)
+            **kwargs: Transport-specific configuration
+
+        """
+        self.transport_type = transport_type
+        self.config = kwargs
+        self._fastapi_manager: Any = None
+        self._transport = self._create_transport()
+
+    def _create_transport(self) -> Any:
+        """Create transport instance based on type."""
+        if self.transport_type == "websocket":
+            return self._create_websocket_transport()
+        if self.transport_type == "http_stream":
+            return self._create_http_stream_transport()
+        if self.transport_type == "redis_pubsub":
+            return self._create_redis_pubsub_transport()
+        raise ValueError(f"Unsupported transport type: {self.transport_type}")
+
+    def _create_websocket_transport(self) -> Any:
+        """Create WebSocket transport."""
+        if self._try_fastapi_websocket():
+            return self._fastapi_manager
+
+        if not WEBSOCKET_AVAILABLE:
+            logger.warning("picows not available, WebSocket transport disabled")
+            return None
+        return get_websocket_server(
+            host=self.config.get("host", "127.0.0.1"),
+            port=self.config.get("port", 8765),
+        )
+
+    def _try_fastapi_websocket(self) -> bool:
+        """Try to create FastAPI WebSocket transport."""
+        try:
+            manager = get_fastapi_ws_manager()
+            self._fastapi_manager = manager
+            return True
+        except ImportError:
+            return False
+
+    def _create_http_stream_transport(self) -> Any:
+        """Create HTTP stream (SSE) transport."""
+        from taskiq_flow.transport.http_stream import get_http_stream_transport  # noqa: I001, PLC0415
+
+        transport = get_http_stream_transport()
+        logger.info("HTTP stream transport configured")
+        return transport
+
+    def _create_redis_pubsub_transport(self) -> Any:
+        """Create Redis pub/sub transport."""
+        try:
+            from taskiq_flow.transport.redis_pubsub import RedisPubSubTransport  # noqa: I001, PLC0415
+
+            transport = RedisPubSubTransport(
+                redis_client=self.config.get("redis_client"),
+                channel_prefix=self.config.get("channel_prefix", "pipeline_events"),
+            )
+            logger.info("Redis pub/sub transport configured")
+            return transport
+        except ImportError:
+            logger.warning("Redis client not available, Redis pub/sub disabled")
+            return None
+
+    async def broadcast(self, event: PipelineEvent) -> None:
+        """
+        Broadcast event through transport.
+
+        Args:
+            event: Pipeline event to broadcast.
+
+        """
+        if self._transport is None:
+            logger.debug("No transport configured, skipping broadcast")
+            return
+
+        try:
+            if self.transport_type == "websocket" and hasattr(
+                self._transport, "broadcast_event"
+            ):
+                await self._transport.broadcast_event(
+                    event.pipeline_id,
+                    event.model_dump(),
+                )
+            elif self.transport_type in {"http_stream", "redis_pubsub"}:
+                await self._transport.broadcast(event)
+        except Exception as e:
+            logger.error(f"Failed to broadcast event via {self.transport_type}: {e}")
+
+
+__all__ = [
+    "PipelineMiddleware",
+    "TransportMiddleware",
+]

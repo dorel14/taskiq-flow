@@ -1,4 +1,5 @@
-"""Composants d'intégration NiceGUI pour la visualisation des DAG.
+"""
+Composants d'intégration NiceGUI pour la visualisation des DAG.
 
 Ce module fournit des composants NiceGUI pour afficher les DAG
 avec des fonctionnalités interactives.
@@ -26,6 +27,7 @@ class DAGViewer:
 
         Args:
             dag: DAG à afficher (peut être défini plus tard)
+
         """
         self.dag = dag
         self.mermaid_gen = MermaidGenerator(dag) if dag else None
@@ -39,6 +41,7 @@ class DAGViewer:
 
         Args:
             dag: Nouveau DAG
+
         """
         self.dag = dag
         self.mermaid_gen = MermaidGenerator(dag)
@@ -50,6 +53,7 @@ class DAGViewer:
 
         Args:
             status_data: Données de statut
+
         """
         self._status_data = status_data
         self.refresh()
@@ -211,6 +215,7 @@ class LiveDAGPreview:
 
         Args:
             update_interval: Intervalle de rafraîchissement en secondes
+
         """
         self.update_interval = update_interval
         self.dag: DAG | None = None
@@ -225,6 +230,7 @@ class LiveDAGPreview:
 
         Args:
             dag: DAG à afficher
+
         """
         self.dag = dag
         self._running = True
@@ -296,6 +302,7 @@ def view_dag(dag: DAG, interactive: bool = True) -> DAGViewer:
 
     Returns:
         Visualiseur DAG
+
     """
     viewer = DAGViewer(dag)
 

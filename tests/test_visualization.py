@@ -1,4 +1,5 @@
-"""Tests for DAG visualization features.
+"""
+Tests for DAG visualization features.
 
 This module tests the DAG visualization capabilities including
 JSON export, DOT format, NetworkX conversion, critical path detection,

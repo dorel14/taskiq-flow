@@ -1,4 +1,5 @@
-"""Sécurité pour Taskiq-Flow.
+"""
+Sécurité pour Taskiq-Flow.
 
 Ce module fournit des fonctionnalités de sécurité incluant
 l'authentification, l'autorisation, le rate limiting et l'audit.

@@ -1,4 +1,5 @@
-"""Middleware components for taskiq-flow.
+"""
+Middleware components for taskiq-flow.
 
 Author: SoniqueBay Team
 Version: 1.0.2

@@ -1,4 +1,5 @@
-"""Redis PubSub transport for pipeline events.
+"""
+Redis PubSub transport for pipeline events.
 
 Author: SoniqueBay Team
 Version: 1.0.2
@@ -61,7 +62,7 @@ class RedisPubSubTransport:
         # Publish to the main channel
         channel = f"{self.channel_prefix}:broadcast"
         try:
-            await self.redis.publish(channel, event_data)  # type: ignore[misc]
+            await self.redis.publish(channel, event_data)
         except Exception as e:
             logger.error("Failed to publish event to Redis", extra={"error": str(e)})
 
@@ -69,7 +70,7 @@ class RedisPubSubTransport:
         if "pipeline_id" in event_data:
             pipeline_channel = f"{self.channel_prefix}:{event_data['pipeline_id']}"
             try:
-                await self.redis.publish(pipeline_channel, event_data)  # type: ignore[misc]
+                await self.redis.publish(pipeline_channel, event_data)
             except Exception as e:
                 logger.error(
                     "Failed to publish event to pipeline channel",
@@ -91,7 +92,7 @@ class RedisPubSubTransport:
         channel = f"{self.channel_prefix}:private:{client_id}"
 
         try:
-            await self.redis.publish(channel, event_data)  # type: ignore[misc]
+            await self.redis.publish(channel, event_data)
         except Exception as e:
             logger.error("Failed to send event to client", extra={"error": str(e)})
 

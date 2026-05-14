@@ -1,4 +1,5 @@
-"""Limitation de débit (Rate Limiting) pour Taskiq-Flow.
+"""
+Limitation de débit (Rate Limiting) pour Taskiq-Flow.
 
 Ce module fournit une limitation de débit pour les endpoints API,
 utilisant slowapi pour la gestion des limites.
@@ -20,6 +21,7 @@ class RateLimiter:
 
         Args:
             default_limits: Limites par défaut par endpoint
+
         """
         self.limiter = Limiter(key_func=get_remote_address)
         self.default_limits = default_limits or {
@@ -41,6 +43,7 @@ class RateLimiter:
 
         Returns:
             Chaîne de limite (ex: "60/minute")
+
         """
         return self.default_limits.get(endpoint, "100/minute")
 
@@ -50,6 +53,7 @@ class RateLimiter:
 
         Returns:
             Instance Limiter
+
         """
         return self.limiter
 
@@ -60,6 +64,7 @@ class RateLimiter:
         Args:
             endpoint: Nom de l'endpoint
             limit: Limite (ex: "60/minute")
+
         """
         self.default_limits[endpoint] = limit
 
@@ -69,6 +74,7 @@ class RateLimiter:
 
         Args:
             endpoint: Nom de l'endpoint
+
         """
         self.default_limits.pop(endpoint, None)
 
@@ -78,6 +84,7 @@ class RateLimiter:
 
         Returns:
             Dictionnaire des limites
+
         """
         return self.default_limits.copy()
 

@@ -1,4 +1,5 @@
-"""Classes abstraites de base pour les composants taskiq-flow.
+"""
+Classes abstraites de base pour les composants taskiq-flow.
 
 Ce module définit les classes abstraites qui servent de contrat
 pour les implémentations concrètes, notamment AbstractStep qui
@@ -32,6 +33,7 @@ class AbstractStep(ABC):
     Attributes:
         _step_name: Identifiant unique du type de step (str)
         _known_steps: Registre global de tous les steps (ClassVar)
+
     """
 
     _step_name: str
@@ -72,4 +74,5 @@ class AbstractStep(ABC):
         Important:
             La tâche créée doit hériter des labels pipe_data et
             current_step pour que le middleware puisse la chaîner.
+
         """

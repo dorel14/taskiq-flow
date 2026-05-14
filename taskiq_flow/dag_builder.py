@@ -1,4 +1,5 @@
-"""Constructeur de DAG pour la construction automatique de pipelines.
+"""
+Constructeur de DAG pour la construction automatique de pipelines.
 
 Analyse les métadonnées des tâches et construit le graphe de
 dépendances. Valide également le graphe (détection de cycles,
@@ -33,6 +34,7 @@ class DAGBuilder:
 
     Attributes:
         None (classe statique, utilitaire)
+
     """
 
     @staticmethod
@@ -68,6 +70,7 @@ class DAGBuilder:
                 [task_a, task_b, task_c],
                 external_inputs=["initial_data"]
             )
+
         """
         if registry is None:
             registry = DataflowRegistry()
@@ -110,6 +113,7 @@ class DAGBuilder:
 
         Returns:
             A DAG representing task dependencies
+
         """
         if registry is None:
             registry = DataflowRegistry()
@@ -326,6 +330,7 @@ class DAGBuilder:
         Raises:
             ValueError: Si le DAG échoue à une validation, avec
                       un message détaillé identifiant le problème
+
         """
         DAGBuilder._validate_not_empty(dag)
         DAGBuilder._validate_no_cycles(dag)
@@ -421,6 +426,7 @@ class DAGBuilder:
 
         Returns:
             Dictionary mapping task names to lists of missing input names
+
         """
         missing_deps: dict[str, list[str]] = {}
 
@@ -476,6 +482,7 @@ class PipelineDAGBuilder(DAGBuilder):
 
         Args:
             pipeline: The pipeline instance
+
         """
         self.pipeline = pipeline
         self.registry = DataflowRegistry()

@@ -1,4 +1,5 @@
-"""WebSocket transport for real-time pipeline events.
+"""
+WebSocket transport for real-time pipeline events.
 
 Author: SoniqueBay Team
 Version: 1.0.2

@@ -1,4 +1,5 @@
-"""Authentification pour Taskiq-Flow.
+"""
+Authentification pour Taskiq-Flow.
 
 Ce module fournit des fournisseurs d'authentification pour sécuriser
 l'API et les connexions WebSocket.
@@ -40,6 +41,7 @@ class AuthProvider(ABC):
 
         Returns:
             Contexte utilisateur ou None
+
         """
 
 
@@ -53,6 +55,7 @@ class APIKeyAuthProvider(AuthProvider):
         Args:
             keys: Dictionnaire des clés API
                  {clé: {role, pipeline_whitelist, permissions}}
+
         """
         self.keys = keys
 
@@ -68,6 +71,7 @@ class APIKeyAuthProvider(AuthProvider):
 
         Raises:
             HTTPException: Si la clé est invalide
+
         """
         api_key = request.headers.get("X-API-Key")
         if not api_key or api_key not in self.keys:
@@ -85,6 +89,7 @@ class JWTAuthProvider(AuthProvider):
         Args:
             secret: Secret pour signer les tokens
             algorithm: Algorithme de chiffrement
+
         """
         self.secret = secret
         self.algorithm = algorithm
@@ -101,6 +106,7 @@ class JWTAuthProvider(AuthProvider):
 
         Raises:
             HTTPException: Si le token est invalide ou expiré
+
         """
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
@@ -131,6 +137,7 @@ class JWTAuthProvider(AuthProvider):
 
         Returns:
             Token JWT
+
         """
         to_encode = {"sub": subject, "roles": roles, "iat": datetime.now(timezone.utc)}
         if expires_delta:
@@ -159,6 +166,7 @@ async def get_api_key_user(
 
     Returns:
         Contexte utilisateur
+
     """
     if not auth_provider:
         raise HTTPException(500, "AuthProvider non configuré")
@@ -190,6 +198,7 @@ async def get_jwt_user(
 
     Returns:
         Contexte utilisateur
+
     """
     if credentials is None:
         raise HTTPException(401, "Missing credentials")
@@ -223,7 +232,8 @@ __all__ = [
 
 
 def create_auth_provider(config: TaskiqFlowConfig) -> AuthProvider:
-    """Factory to create an AuthProvider based on configuration.
+    """
+    Factory to create an AuthProvider based on configuration.
 
     Args:
         config: TaskiqFlowConfig instance
@@ -233,6 +243,7 @@ def create_auth_provider(config: TaskiqFlowConfig) -> AuthProvider:
 
     Raises:
         ValueError: If auth_provider type is unknown
+
     """
     provider_type = config.auth_provider.lower()
     if provider_type == "api_key":

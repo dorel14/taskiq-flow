@@ -1,4 +1,5 @@
-"""Example: Automatic task discovery and pipeline construction using DataflowRegistry.
+"""
+Example: Automatic task discovery and pipeline construction using DataflowRegistry.
 
 This example demonstrates how to use DataflowRegistry to:
 - Manually register tasks with their data dependencies

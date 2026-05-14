@@ -1,4 +1,5 @@
-"""Backends de stockage pour l'ordonnancement.
+"""
+Backends de stockage pour l'ordonnancement.
 
 Contient les implémentations de JobStore pour APScheduler
 (par exemple SQLite, PostgreSQL, etc.)

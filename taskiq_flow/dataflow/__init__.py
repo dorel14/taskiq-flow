@@ -1,4 +1,5 @@
-"""Module Dataflow pour le suivi des dépendances de données.
+"""
+Module Dataflow pour le suivi des dépendances de données.
 
 Ce module fournit les composants de base pour la construction
 et l'exécution de pipelines basés sur un graphe orienté acyclique

@@ -1,4 +1,5 @@
-"""Exporteur Prometheus pour Taskiq-Flow.
+"""
+Exporteur Prometheus pour Taskiq-Flow.
 
 Ce module fournit un endpoint FastAPI pour exposer les métriques
 au format Prometheus.
@@ -24,7 +25,8 @@ def get_metrics_endpoint(
     registry: CollectorRegistry | None = None,
     include_defaults: bool = False,
 ) -> Callable[[], Any]:
-    """Return an async endpoint function that serves Prometheus metrics.
+    """
+    Return an async endpoint function that serves Prometheus metrics.
 
     Usage:
         ```python
@@ -38,6 +40,7 @@ def get_metrics_endpoint(
 
     Returns:
         Async callable that returns a Response with metrics payload.
+
     """
 
     async def endpoint() -> Response:

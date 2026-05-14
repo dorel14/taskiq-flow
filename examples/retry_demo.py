@@ -1,4 +1,5 @@
-"""Retry Demo.
+"""
+Retry Demo.
 
 This example demonstrates the retry middleware and error handling modes
 in Taskiq-Flow v0.4.5.

@@ -1,4 +1,5 @@
-"""Collecteur de métriques pour Taskiq-Flow.
+"""
+Collecteur de métriques pour Taskiq-Flow.
 
 Ce module fournit un collecteur de métriques qui suit les événements
 des pipelines et expose les métriques au format Prometheus.
@@ -50,6 +51,7 @@ class MetricsCollector:
 
         Args:
             pipeline_id: Identifiant du pipeline
+
         """
         PIPELINE_EXECUTIONS_TOTAL.labels(
             pipeline_id=pipeline_id, status="started"
@@ -64,6 +66,7 @@ class MetricsCollector:
         Args:
             pipeline_id: Identifiant du pipeline
             success: Succès de l'exécution
+
         """
         status = "success" if success else "failure"
         PIPELINE_EXECUTIONS_TOTAL.labels(pipeline_id=pipeline_id, status=status).inc()
@@ -82,6 +85,7 @@ class MetricsCollector:
             task_name: Nom de la tâche
             status: Statut (success/failure)
             duration: Durée d'exécution
+
         """
         TASK_EXECUTIONS_TOTAL.labels(
             task_name=task_name, status=status, queue="default"
@@ -97,10 +101,22 @@ class MetricsCollector:
         Args:
             task_name: Nom de la tâche
             exception_type: Type d'exception
+
         """
         TASK_RETRY_ATTEMPTS.labels(
             task_name=task_name, exception_type=exception_type
         ).inc()
+
+    def step_started(self, pipeline_id: str, task_name: str) -> None:
+        """
+        Enregistre le démarrage d'une étape.
+
+        Args:
+            pipeline_id: Identifiant du pipeline
+            task_name: Nom de la tâche
+
+        """
+        self.websocket_message(pipeline_id, "in", "step_start")
 
     def websocket_message(
         self, pipeline_id: str, direction: str, msg_type: str
@@ -112,6 +128,7 @@ class MetricsCollector:
             pipeline_id: Identifiant du pipeline
             direction: Direction (in/out)
             msg_type: Type de message
+
         """
         WEBSOCKET_MESSAGES_TOTAL.labels(
             pipeline_id=pipeline_id, direction=direction, type=msg_type
@@ -123,6 +140,7 @@ class MetricsCollector:
 
         Returns:
             Données métriques brutes
+
         """
         return generate_latest(REGISTRY)
 

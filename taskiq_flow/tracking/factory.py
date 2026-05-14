@@ -1,4 +1,5 @@
-"""Factory de création de stockage pour le tracking.
+"""
+Factory de création de stockage pour le tracking.
 
 Cette fabrique détecte automatiquement le type de broker et crée
 le stockage approprié (Redis ou mémoire). Elle peut également
@@ -57,7 +58,7 @@ class TrackingStorageFactory:
 
         # Then, try to import taskiq_redis and check if it's a RedisBroker
         try:
-            from taskiq_redis.broker import RedisBroker  # type: ignore
+            from taskiq_redis.broker import RedisBroker
 
             if isinstance(broker, RedisBroker):
                 # Assuming broker has a url attribute or similar

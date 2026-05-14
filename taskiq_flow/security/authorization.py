@@ -1,4 +1,5 @@
-"""Autorisation pour Taskiq-Flow.
+"""
+Autorisation pour Taskiq-Flow.
 
 Ce module gère les listes de contrôle d'accès (ACL) pour les pipelines,
 permettant de définir quels rôles peuvent accéder à quels pipelines.
@@ -25,10 +26,12 @@ class PipelineAuthorization:
     def __init__(
         self, pipeline_acls: dict[str, dict[str, list[str]]] | None = None
     ) -> None:
-        """Initialise l'autorisation.
+        """
+        Initialise l'autorisation.
 
         Args:
             pipeline_acls: ACL pré-configurées {pipeline_id: {permission: [roles]}}
+
         """
         self.acls: dict[str, dict[str, list[str]]] = {}
         if pipeline_acls:
@@ -47,6 +50,7 @@ class PipelineAuthorization:
             pipeline_id: Identifiant du pipeline
             permission: Permission à définir
             roles: Rôles autorisés
+
         """
         if pipeline_id not in self.acls:
             self.acls[pipeline_id] = {}
@@ -68,6 +72,7 @@ class PipelineAuthorization:
 
         Returns:
             True si l'utilisateur a la permission
+
         """
         user_roles = user_context.get("roles", [])
         acl = self.acls.get(pipeline_id, {})
@@ -90,6 +95,7 @@ class PipelineAuthorization:
 
         Returns:
             True si l'utilisateur peut lire
+
         """
         return self.can(pipeline_id, Permission.READ, user_context)
 
@@ -103,6 +109,7 @@ class PipelineAuthorization:
 
         Returns:
             True si l'utilisateur peut exécuter
+
         """
         return self.can(pipeline_id, Permission.EXECUTE, user_context)
 
@@ -116,6 +123,7 @@ class PipelineAuthorization:
 
         Returns:
             True si l'utilisateur a les droits admin
+
         """
         return self.can(pipeline_id, Permission.ADMIN, user_context)
 
@@ -131,6 +139,7 @@ class PipelineAuthorization:
 
         Returns:
             Liste des identifiants de pipeline
+
         """
         user_roles = user_context.get("roles", [])
         allowed = []
@@ -148,6 +157,7 @@ class PipelineAuthorization:
 
         Args:
             pipeline_id: Identifiant du pipeline
+
         """
         self.acls.pop(pipeline_id, None)
 
@@ -158,6 +168,7 @@ class PipelineAuthorization:
         Args:
             pipeline_id: Identifiant du pipeline
             acls: Dictionnaire des permissions et rôles
+
         """
         for permission, roles in acls.items():
             self.set_acl(pipeline_id, permission, roles)

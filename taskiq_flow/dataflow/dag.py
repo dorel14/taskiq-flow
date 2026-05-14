@@ -1,4 +1,5 @@
-"""Graphe Orienté Acyclique (DAG) pour l'exécution de pipeline.
+"""
+Graphe Orienté Acyclique (DAG) pour l'exécution de pipeline.
 
 Ce module définit les classes DAG et DAGNode pour représenter
 la structure de dépendances entre tâches. Le DAG permet de
@@ -34,6 +35,7 @@ class DAGNode:
         >>> node = DAGNode(task=my_task)
         >>> print(f"Tâche: {node.task_name}")
         >>> print(f"Niveau initial: {node.level}")
+
     """
 
     task: Any
@@ -54,7 +56,8 @@ class DAGNode:
     @property
     def task_name(self) -> str:
         """Nom de la tâche (propriété de convenance)."""
-        return self.task.task_name
+        task_name: str = self.task.task_name
+        return task_name
 
 
 @dataclass
@@ -108,6 +111,7 @@ class DAG:
         >>> ordered = dag.topological_sort()
         >>> for i, node in enumerate(ordered):
         ...     print(f"{i}: {node.task_name}")
+
     """
 
     nodes: list[DAGNode] = field(default_factory=list)
@@ -129,6 +133,7 @@ class DAG:
             >>> dag.add_node(my_node)
             >>> len(dag.nodes)
             1
+
         """
         if node not in self.nodes:
             self.nodes.append(node)
@@ -156,6 +161,7 @@ class DAG:
             >>> dag.add_edge(node_a, node_b)
             >>> len(dag.edges)
             1
+
         """
         if from_node not in self.nodes:
             raise ValueError(f"from_node {from_node} not in DAG")
@@ -183,6 +189,7 @@ class DAG:
             >>> node = dag.get_node_by_task(my_task)
             >>> if node:
             ...     print(f"Tâche trouvée: {node.task_name}")
+
         """
         for node in self.nodes:
             if node.task == task:
@@ -212,6 +219,7 @@ class DAG:
             >>> # Vérifier l'ordre: node_a doit venir avant node_b, etc.
             >>> assert order.index(node_a) < order.index(node_b)
             >>> assert order.index(node_b) < order.index(node_c)
+
         """
         # Use index-based tracking instead of node as dict key
         in_degree = [len(node.dependencies) for node in self.nodes]
@@ -262,6 +270,7 @@ class DAG:
         Note:
             Cette méthode appelle `topological_sort()` en interne.
             Si une dépendance circulaire est détectée, une ValueError est levée.
+
         """
         sorted_nodes = self.topological_sort()
 
@@ -307,6 +316,7 @@ class DAG:
             >>> assert node_b.task in ready_tasks
             >>> assert node_c.task in ready_tasks
             >>> print(f"Tâches prêtes: {[n.task_name for n in ready]}")
+
         """
         ready = []
         for node in self.nodes:

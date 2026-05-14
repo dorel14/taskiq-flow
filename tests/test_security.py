@@ -1,4 +1,5 @@
-"""Tests for security features.
+"""
+Tests for security features.
 
 This module tests authentication, authorization, rate limiting,
 and audit logging.

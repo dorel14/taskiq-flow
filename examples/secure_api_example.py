@@ -1,4 +1,5 @@
-"""Secure API Example.
+"""
+Secure API Example.
 
 This example demonstrates how to secure your Taskiq-Flow API with
 authentication, authorization, rate limiting, and audit logging.

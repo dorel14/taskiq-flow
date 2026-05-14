@@ -1,4 +1,5 @@
-"""WebSocket routes for real-time pipeline events.
+"""
+WebSocket routes for real-time pipeline events.
 
 This module provides FastAPI WebSocket endpoints for real-time
 pipeline event streaming with authentication and authorization.
@@ -25,7 +26,8 @@ async def websocket_endpoint(
     websocket: WebSocket,
     pipeline_id: str,
 ) -> None:
-    """WebSocket endpoint for real-time pipeline events.
+    """
+    WebSocket endpoint for real-time pipeline events.
 
     Connect to stream pipeline events in real-time.
     Requires authentication (API key or JWT) and authorization
@@ -43,6 +45,7 @@ async def websocket_endpoint(
             console.log("Pipeline event:", JSON.parse(event.data));
         };
         ```
+
     """
     manager = get_fastapi_ws_manager()
     await fastapi_websocket_endpoint(websocket, pipeline_id, manager)
@@ -53,7 +56,8 @@ async def get_clients(
     pipeline_id: str,
     user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
 ) -> dict[str, Any]:
-    """Get the number of clients subscribed to a pipeline.
+    """
+    Get the number of clients subscribed to a pipeline.
 
     Args:
         pipeline_id: The pipeline ID
@@ -61,6 +65,7 @@ async def get_clients(
 
     Returns:
         Dictionary with client count
+
     """
     manager = get_fastapi_ws_manager()
     return {
@@ -73,13 +78,15 @@ async def get_clients(
 async def list_pipelines(
     user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
 ) -> dict[str, Any]:
-    """List all pipelines with active WebSocket subscriptions.
+    """
+    List all pipelines with active WebSocket subscriptions.
 
     Args:
         user: Authenticated user (injected)
 
     Returns:
         Dictionary with list of pipeline IDs
+
     """
     manager = get_fastapi_ws_manager()
     return {"pipelines": manager.get_channel_ids()}

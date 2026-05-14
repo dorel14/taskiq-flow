@@ -1,4 +1,5 @@
-"""Example demonstrating WebSocket integration for real-time pipeline tracking.
+"""
+Example demonstrating WebSocket integration for real-time pipeline tracking.
 
 This example shows both FastAPI and picows WebSocket implementations:
 - FastAPI WebSocket: Integrated with FastAPI routes (preferred)

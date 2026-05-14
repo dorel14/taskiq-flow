@@ -1,4 +1,5 @@
-"""Représentation d'un nœud de données dans le graphe dataflow.
+"""
+Représentation d'un nœud de données dans le graphe dataflow.
 
 Ce module définit DataNode qui représente un artifact de données
 produit ou consommé par les tâches du pipeline. Un DataNode suit
@@ -47,6 +48,7 @@ class DataNode:
         >>> node.add_consumer(task_process)
         >>> assert task_process in node.consumers
         >>> assert node.producer_task is None
+
     """
 
     name: str
@@ -71,6 +73,7 @@ class DataNode:
             >>> node.add_consumer(task_evaluate)
             >>> len(node.consumers)
             2
+
         """
         if task not in self.consumers:
             self.consumers.append(task)
@@ -89,5 +92,6 @@ class DataNode:
             >>> node = DataNode(name="result")
             >>> node.set_producer(task_compute)
             >>> assert node.producer_task == task_compute
+
         """
         self.producer_task = task

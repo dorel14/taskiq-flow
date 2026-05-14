@@ -1,4 +1,5 @@
-"""Error handling for pipeline execution.
+"""
+Error handling for pipeline execution.
 
 This module provides configurable failure behavior modes and error aggregation.
 

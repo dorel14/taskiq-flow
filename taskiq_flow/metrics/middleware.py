@@ -1,4 +1,5 @@
-"""Metrics collection via HookManager events.
+"""
+Metrics collection via HookManager events.
 
 This module provides a subscriber that collects metrics from pipeline
 events (start, step completion, errors, retries, WebSocket messages)
@@ -22,7 +23,8 @@ from taskiq_flow.metrics.collector import MetricsCollector
 
 
 class MetricsMiddleware:
-    """Collects metrics by subscribing to pipeline events.
+    """
+    Collects metrics by subscribing to pipeline events.
 
     Must be registered with a HookManager to receive events.
     Handles:
@@ -34,10 +36,12 @@ class MetricsMiddleware:
     """
 
     def __init__(self, hook_manager: HookManager | None = None) -> None:
-        """Initialize metrics collector and optionally register to hook manager.
+        """
+        Initialize metrics collector and optionally register to hook manager.
 
         Args:
             hook_manager: Optional HookManager to subscribe to events
+
         """
         self.collector = MetricsCollector()
         self._hook_manager = hook_manager
@@ -68,7 +72,8 @@ class MetricsMiddleware:
         self.collector.pipeline_complete(event.pipeline_id, success=True)
 
     async def on_step_start(self, event: PipelineEvent) -> None:
-        """Handle step start event.
+        """
+        Handle step start event.
 
         Records start timestamp in a per-step context.
         Pipeline ID available via event.pipeline_id.

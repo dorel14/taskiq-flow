@@ -1,4 +1,5 @@
-"""Retry middleware for pipeline execution.
+"""
+Retry middleware for pipeline execution.
 
 This module provides retry functionality leveraging TaskIQ's RetryMiddleware.
 
@@ -49,6 +50,7 @@ class PipelineRetryMiddleware:
 
         Returns:
             True if task should be retried, False otherwise
+
         """
         if attempt > self.max_retries:
             logger.error(

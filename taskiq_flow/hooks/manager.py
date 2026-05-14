@@ -1,4 +1,5 @@
-"""Gestionnaire de hooks pour les événements de pipeline.
+"""
+Gestionnaire de hooks pour les événements de pipeline.
 
 Ce module fournit HookManager qui permet d'enregistrer des callbacks
 sur les événements de cycle de vie des pipelines. Il gère un
@@ -40,7 +41,8 @@ class _FastAPITransportWrapper:
 
 
 class TransportMiddleware:
-    """Pluggable transport middleware for event broadcasting.
+    """
+    Pluggable transport middleware for event broadcasting.
 
     Supports multiple transport types:
     - websocket: WebSocket broadcast
@@ -49,11 +51,13 @@ class TransportMiddleware:
     """
 
     def __init__(self, transport_type: str = "websocket", **kwargs: Any) -> None:
-        """Initialize transport middleware.
+        """
+        Initialize transport middleware.
 
         Args:
             transport_type: Type of transport (websocket, http_stream, redis_pubsub)
             **kwargs: Transport-specific configuration
+
         """
         self.transport_type = transport_type
         self.config = kwargs
@@ -146,12 +150,14 @@ class HookManager:
         ),
         filter_fn: Callable[[PipelineEvent], bool] | None = None,
     ) -> None:
-        """Register a callback for an event type with optional filtering.
+        """
+        Register a callback for an event type with optional filtering.
 
         Args:
             event_type: Type of event to register for
             callback: Callback function to invoke
             filter_fn: Optional filter function to apply before invoking callback
+
         """
         if event_type not in self._callbacks:
             self._callbacks[event_type] = weakref.WeakSet()
@@ -191,19 +197,23 @@ class HookManager:
                 pass  # Callback not found or not weakref-able
 
     def add_transport(self, transport: TransportMiddleware) -> None:
-        """Add a transport middleware for event broadcasting.
+        """
+        Add a transport middleware for event broadcasting.
 
         Args:
             transport: Transport middleware to add
+
         """
         self._transports.append(transport)
         logger.info(f"Added {transport.transport_type} transport")
 
     def remove_transport(self, transport: TransportMiddleware) -> None:
-        """Remove a transport middleware.
+        """
+        Remove a transport middleware.
 
         Args:
             transport: Transport middleware to remove
+
         """
         if transport in self._transports:
             self._transports.remove(transport)

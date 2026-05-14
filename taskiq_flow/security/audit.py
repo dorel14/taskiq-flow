@@ -1,4 +1,5 @@
-"""Journalisation d'audit pour Taskiq-Flow.
+"""
+Journalisation d'audit pour Taskiq-Flow.
 
 Ce module fournit un système de journalisation d'audit pour suivre
 les accès et les actions sur les pipelines.
@@ -21,6 +22,7 @@ class AuditLogger:
 
         Args:
             logger_name: Nom du logger
+
         """
         self.logger = logging.getLogger(logger_name)
 
@@ -43,6 +45,7 @@ class AuditLogger:
             success: Succès de l'action
             ip: Adresse IP
             details: Détails supplémentaires
+
         """
         self.logger.info(
             "AUDIT",
@@ -74,6 +77,7 @@ class AuditLogger:
             success: Succès de l'authentification
             ip: Adresse IP
             details: Détails supplémentaires
+
         """
         self.logger.info(
             "AUTHENTICATION",
@@ -102,6 +106,7 @@ class AuditLogger:
             action: Action effectuée
             pipeline_id: Identifiant du pipeline
             details: Détails supplémentaires
+
         """
         self.logger.info(
             "PIPELINE_ACTION",
@@ -129,6 +134,7 @@ class AuditLogger:
             severity: Sévérité (low, medium, high, critical)
             message: Message
             details: Détails supplémentaires
+
         """
         self.logger.warning(
             "SECURITY_EVENT: %s",

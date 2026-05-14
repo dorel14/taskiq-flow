@@ -14,21 +14,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - French dataflow guide with examples and API references
 - Detailed error handling documentation for dataflow pipelines (deadlock, missing inputs, circular dependencies)
 - Performance tips section in dataflow guide
+- **HTTP Streaming Transport** (`HTTPStreamTransport`, `EventQueue`, `get_http_stream_transport()`) — SSE endpoint with Prometheus metrics
+- **WebSocket auth fix** — requires auth message before subscribe, proper token validation via `AuthProvider.verify()`
+- **MetricsMiddleware integration** — `MetricsCollector` now tracks WebSocket subscribe/broadcast events and pipeline step execution
+- TransportMiddleware now supports `http_stream` and `redis_pubsub` types
+- `PipelineMiddleware` integrates `MetricsCollector` for step/task tracking
 
 ### Changed
 
 - Updated module docstrings from 0.3.2/0.4.5 to 1.0.2
 - Improved dataflow execution guide sections with dataflow-specific troubleshooting
 - Enhanced Next Steps navigation across all guides for better discoverability
+- WebSocket transport rewritten with proper auth flow + MetricsCollector
+- Updated `taskiq_flow/transport/__init__.py` — new exports: `HTTPStreamTransport`, `EventQueue`, `get_http_stream_transport`
+- Updated `taskiq_flow/metrics/collector.py` — added `step_started()` method, async-safe singleton
+- Updated `taskiq_flow/integration/websocket/fastapi_ws.py` — fixed import to use `MetricsCollector` directly
+- Removed spurious `type: ignore` comments across `redis_pubsub.py`, `storage.py`, `triggers.py`
 
-## [1.0.1] - 2026-05-08
+### Fixed
 
-### Changed
-
-- Documentation improvements and cross-references between guides
-- Updated `{VERSION}` placeholders in all .md guides to `1.0.2`
-- Added dataflow references to pipelines, execution, tracking, websocket, and API guides (EN + FR)
-- Added dataflow-specific pitfalls and troubleshooting sections
+- 63 ruff linting errors
+- Type checking errors in scheduler module
+- Test failures in tracking factory
+- Missing exports for PipelineTrackingManager and LabelBasedScheduler
 
 ## [1.0.0] - 2026-05-07
 

@@ -1,4 +1,5 @@
-"""Visualiseur de DAG avec NetworkX.
+"""
+Visualiseur de DAG avec NetworkX.
 
 Ce module fournit des fonctionnalités avancées de visualisation
 utilisant NetworkX pour l'analyse de graphes.
@@ -27,6 +28,7 @@ class DAGVisualizer:
 
         Returns:
             Dictionnaire sérialisable en JSON
+
         """
         nodes = []
         for node in dag.nodes:
@@ -63,6 +65,7 @@ class DAGVisualizer:
 
         Returns:
             Dictionnaire sérialisable en JSON avec métadonnées
+
         """
         base_json = DAGVisualizer.to_json(dag)
         graph = DAGVisualizer.to_networkx(dag)
@@ -82,6 +85,7 @@ class DAGVisualizer:
 
         Returns:
             Dictionnaire au format Cytoscape.js
+
         """
         elements: dict[str, list[Any]] = {"nodes": [], "edges": []}
 
@@ -123,6 +127,7 @@ class DAGVisualizer:
 
         Raises:
             ValueError: Si le DAG contient des cycles
+
         """
         graph = nx.DiGraph()
         for node in dag.nodes:
@@ -163,6 +168,7 @@ class DAGVisualizer:
 
         Raises:
             ValueError: Si le DAG contient des cycles
+
         """
         graph = nx.DiGraph()
         for node in dag.nodes:
@@ -198,6 +204,7 @@ class DAGVisualizer:
 
         Returns:
             NetworkX DiGraph object
+
         """
         graph = nx.DiGraph()
 
@@ -222,6 +229,7 @@ class DAGVisualizer:
 
         Returns:
             DOT format string
+
         """
         lines = ["digraph DAG {"]
         lines.append("  rankdir=LR;")
@@ -251,6 +259,7 @@ class DAGVisualizer:
 
         Args:
             dag: DAG to print
+
         """
         if not dag.levels:
             dag.compute_levels()
@@ -275,13 +284,15 @@ __all__ = ["DAGVisualizer", "visualize_pipeline"]
 
 
 def visualize_pipeline(pipeline: Any) -> dict[str, Any]:
-    """Visualize a pipeline's DAG.
+    """
+    Visualize a pipeline's DAG.
 
     Args:
         pipeline: Pipeline instance
 
     Returns:
         JSON representation of DAG
+
     """
     if hasattr(pipeline, "dag") and pipeline.dag:
         dag = pipeline.dag

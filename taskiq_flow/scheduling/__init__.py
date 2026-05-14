@@ -1,4 +1,5 @@
-"""Module d'ordonnancement pour les pipelines.
+"""
+Module d'ordonnancement pour les pipelines.
 
 Fournit les classes et fonctions pour planifier l'exécution
 des pipelines via APScheduler ou le système de labels TaskIQ.

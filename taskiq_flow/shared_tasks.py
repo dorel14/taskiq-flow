@@ -1,4 +1,5 @@
-"""Tâches utilitaires partagées pour les opérations de pipeline.
+"""
+Tâches utilitaires partagées pour les opérations de pipeline.
 
 Contient des tâches communes comme identity_task utilisées
 par divers steps.

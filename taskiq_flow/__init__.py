@@ -1,4 +1,5 @@
-"""TaskIQ Flow - Orchestration de pipelines basée sur les flux de données.
+"""
+TaskIQ Flow - Orchestration de pipelines basée sur les flux de données.
 
 Ce package fournit des capacités d'orchestration de pipelines pour TaskIQ,
 combinant des workflows séquentiels avec exécution automatique de DAG
