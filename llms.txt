@@ -30,6 +30,7 @@
 - [Execution](https://dorel14.github.io/taskiq-flow/_en/guides/execution)
 - [Index](https://dorel14.github.io/taskiq-flow/_en/guides/index)
 - [Installation](https://dorel14.github.io/taskiq-flow/_en/guides/installation)
+- [Migration](https://dorel14.github.io/taskiq-flow/_en/guides/migration)
 - [Performance](https://dorel14.github.io/taskiq-flow/_en/guides/performance)
 - [Pipelines](https://dorel14.github.io/taskiq-flow/_en/guides/pipelines)
 - [Retry](https://dorel14.github.io/taskiq-flow/_en/guides/retry)
