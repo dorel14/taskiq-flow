@@ -877,6 +877,8 @@ results = await engine.execute(inputs={"audio_files": files})
 - **[Tracking API]({{ '/en/api/tracking/' | relative_url }})** — Monitor execution with PipelineTrackingManager
 - **[WebSocket API]({{ '/en/api/websocket/' | relative_url }})** — HookManager and event system
 - **[Core API]({{ '/en/api/core/' | relative_url }})** — Pipeline and middleware reference
+- **[Dataflow Audio Pipeline Example]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})** — See ExecutionEngine used in a real DAG pipeline
+- **[Registry Discovery Example]({{ '/en/examples/registry-discovery/' | relative_url }})** — Manual DAG construction and ExecutionEngine usage
 
 ---
 
@@ -1896,6 +1898,15 @@ sample_pipeline = DataflowPipeline.from_tasks(
 sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
 ```
 
+**Pipeline DAG structure:**
+
+```mermaid
+flowchart TD
+    A[fetch_user_data<br/>output: user_data] --> B[fetch_orders<br/>output: order_history]
+    A --> C[generate_recommendations<br/>output: recommendations]
+    B --> C
+```
+
 ### 2. Create FastAPI App with Visualization API
 
 ```python
@@ -2092,9 +2103,47 @@ from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != os.getenv("API_SECRET"):
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    return api_key
+
 @app.post("/pipelines/{pipeline_id}/execute")
 async def execute(..., api_key: str = Security(verify_api_key)):
     # ...
+```
+
+### 2b. Add JWT Authentication
+```python
+from jose import jwt
+from fastapi import Depends
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute(..., user: str = Depends(get_current_user)):
+    logger.info(f"User {user} executed {pipeline_id}")
+    # ...
+```
+
+### 2c. Add Pipeline-Level Authorization
+```python
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*"], "write": []},
+})
+
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user
 ```
 
 ### 3. Add Rate Limiting
@@ -2508,11 +2557,16 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 ```
 
 The pipeline automatically builds this DAG:
+
+```mermaid
+flowchart TD
+    A[extract_audio_features] --> B[compute_mir_features]
+    A --> C[generate_tags]
+    B --> D[create_embedding]
+    C --> D
 ```
-extract_audio_features → compute_mir_features → generate_tags
-                                 ↓
-                              create_embedding (runs after compute_mir_features, in parallel with generate_tags)
-```
+
+**Note**: `create_embedding` depends on both `mir_features` (output of `compute_mir_features`) and `tags` (output of `generate_tags`), so it executes after both parallel tasks complete.
 
 ---
 
@@ -2716,13 +2770,13 @@ This gallery provides in-depth walkthroughs of the example scripts included in t
 
 | Example | Description | Key Concepts |
 |---------|-------------|--------------|
-| [Basic Pipeline](quickstart.md) | Simple sequential pipeline with map, filter, and group operations | SequentialPipeline, basic steps |
-| [Tracking Demo](tracking-demo.md) | Real-time pipeline monitoring with PipelineTrackingManager | Tracking, status storage, visualization |
-| [Scheduled Pipeline](scheduled-pipeline.md) | Cron-based recurring pipeline execution | PipelineScheduler, APScheduler, timezones |
-| [Dataflow Audio Pipeline](dataflow-audio-pipeline.md) | Full DAG with parallelism, map-reduce, and visualization | DataflowPipeline, automatic DAG, parallelism |
-| [Registry Discovery](registry-discovery.md) | Manual DataflowRegistry construction, DAG inspection, and low-level execution | DataflowRegistry, ExecutionEngine, DAG introspection |
-| [WebSocket Demo](websocket-demo.md) | Real-time event streaming via WebSockets | HookManager, WebSocket transport, live tracking |
-| [REST API](api-example.md) | FastAPI integration for remote pipeline management | PipelineVisualizationAPI, custom endpoints |
+| [Basic Pipeline]({{ '/en/examples/quickstart/' | relative_url }}) | Simple sequential pipeline with map, filter, and group operations | SequentialPipeline, basic steps |
+| [Tracking Demo]({{ '/en/examples/tracking-demo/' | relative_url }}) | Real-time pipeline monitoring with PipelineTrackingManager | Tracking, status storage, visualization |
+| [Scheduled Pipeline]({{ '/en/examples/scheduled-pipeline/' | relative_url }}) | Cron-based recurring pipeline execution | PipelineScheduler, APScheduler, timezones |
+| [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }}) | Full DAG with parallelism, map-reduce, and visualization | DataflowPipeline, automatic DAG, parallelism |
+| [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }}) | Manual DataflowRegistry construction, DAG inspection, and low-level execution | DataflowRegistry, ExecutionEngine, DAG introspection |
+| [WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }}) | Real-time event streaming via WebSockets | HookManager, WebSocket transport, live tracking |
+| [REST API]({{ '/en/examples/api-example/' | relative_url }}) | FastAPI integration for remote pipeline management | PipelineVisualizationAPI, custom endpoints |
 
 ---
 
@@ -2758,19 +2812,19 @@ Some examples require additional services (Redis, etc.). See individual example 
 ## Example Categories
 
 ### Getting Started
-- [Basic Pipeline](quickstart.md) — Start here if you're new
+- [Basic Pipeline]({{ '/en/examples/quickstart/' | relative_url }}) — Start here if you're new
 
 ### Monitoring & Operations
-- [Tracking Demo](tracking-demo.md)
-- [Scheduled Pipeline](scheduled-pipeline.md)
-- [WebSocket Demo](websocket-demo.md)
+- [Tracking Demo]({{ '/en/examples/tracking-demo/' | relative_url }})
+- [Scheduled Pipeline]({{ '/en/examples/scheduled-pipeline/' | relative_url }})
+- [WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }})
 
 ### Advanced Workflows
-- [Dataflow Audio Pipeline](dataflow-audio-pipeline.md)
-- [Registry Discovery](registry-discovery.md)
+- [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }})
 
 ### Integration
-- [REST API](api-example.md)
+- [REST API]({{ '/en/examples/api-example/' | relative_url }})
 
 ---
 
@@ -4660,7 +4714,7 @@ After this example:
 
 **FastAPI-based pipeline management, visualization, and remote execution**
 
-> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}), [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}), [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -5048,6 +5102,88 @@ async def execute(
     return await run_pipeline(pipeline_id, parameters)
 ```
 
+### 5.3. Pipeline-Level Authorization
+
+Use the built-in `PipelineAuthorization` with FastAPI dependencies to control per-pipeline access:
+
+```python
+from fastapi import Depends
+from taskiq_flow.security.authorization import PipelineAuthorization
+from taskiq_flow.security.dependencies import verify_pipeline_access
+
+# Create authorization instance
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*", "report_*"], "write": []},
+})
+
+# FastAPI dependency that checks both authentication AND authorization
+async def authorized_pipeline_access(
+    pipeline_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Verify user can access the specific pipeline."""
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/dag")
+async def get_pipeline_dag(
+    pipeline_id: str,
+    user: dict = Depends(authorized_pipeline_access),
+):
+    # user is now authenticated AND authorized for this pipeline
+    return viz_api.get_dag(pipeline_id)
+
+@app.get("/pipelines/{pipeline_id}/status")
+async def get_pipeline_status(
+    pipeline_id: str,
+    user: dict = Depends(authorized_pipeline_access),
+):
+    return viz_api.get_status(pipeline_id)
+```
+
+### 5.4. Combined Security Middleware + Route Dependencies
+
+For production, combine the global `SecurityMiddleware` (authentication) with per-route dependencies (authorization):
+
+```python
+from taskiq_flow.security.middleware import SecurityMiddleware
+from taskiq_flow.security.auth import TokenAuthProvider
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+# 1. Global middleware handles authentication only
+auth_provider = TokenAuthProvider(secret_key=os.getenv("SECRET_KEY"))
+app.add_middleware(
+    SecurityMiddleware,
+    auth_provider=auth_provider,
+    # Authorization is handled by route dependencies (not middleware)
+    # to access FastAPI path params properly
+)
+
+# 2. Per-route dependencies handle authorization
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Pipeline access denied")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/visualize")
+async def visualize_pipeline(
+    pipeline_id: str,
+    user: dict = Depends(check_pipeline_access),
+):
+    return viz_api.visualize(pipeline_id)
+```
+
+**Why this hybrid approach?**
+- Middleware runs **before** routing → `path_params` is empty there
+- Route dependencies run **after** routing → `pipeline_id` is available
+- Middleware sets `request.state.user` for all routes
+- Dependencies read `request.state.user` and check ACL per-pipeline
+
 ---
 
 ## 6. Rate Limiting
@@ -5290,7 +5426,7 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 ---
 
-## 12. Summary
+## 13. Summary
 
 | Feature | Endpoint | Method |
 |---------|----------|--------|
@@ -5307,9 +5443,10 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 ---
 
-## Next Steps
+## 14. Next Steps
 
 - **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event streaming for live updates
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG pipelines with automatic parallelism and DataflowPipeline
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Historical execution data for analytics
 - **[Example: API Server]({{ '/en/examples/api-example/' | relative_url }})** — Complete working FastAPI app
 
@@ -5326,12 +5463,16 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 
 > **Version**: {VERSION}
 
+---
+
 ## Overview
 
 Taskiq-Flow is built on two core models:
 
 1. **SequentialPipeline** — Linear step-by-step execution
 2. **DataflowPipeline** — Automatic DAG construction from dependencies
+
+For a deep dive into the dataflow model, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 Understanding these models helps you choose the right approach for your workflow.
 
@@ -5472,13 +5613,737 @@ Now that you understand the concepts:
 *Concepts clear? Move on to [Installation]({{ '/en/guides/installation/' | relative_url }}) or [Quick Start]({{ '/en/quickstart/' | relative_url }}).*
 
 
+## DOCUMENT: Dataflow
+
+# Dataflow Guide
+
+**Build complex, parallel pipelines using data-driven DAG orchestration**
+
+> **Version**: {VERSION} | **Related**: [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}), [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Core Concepts]({{ '/en/guides/core-concepts/' | relative_url }})
+
+---
+
+## Overview
+
+Taskiq-Flow's **dataflow** system is the most powerful way to orchestrate complex workflows. Unlike sequential pipelines where you manually chain steps, dataflow pipelines automatically construct a Directed Acyclic Graph (DAG) from your task declarations, enabling:
+
+- **Automatic dependency resolution** — tasks declare what they produce and consume
+- **Automatic parallelism** — independent tasks run concurrently without manual configuration
+- **Data-driven execution** — the flow of data determines the order of execution
+- **Dynamic pipeline construction** — add tasks flexibly at runtime
+
+This guide covers the complete dataflow system: the DAG, the registry, decorators, the execution engine, and advanced patterns.
+
+---
+
+## 1. Core Concepts
+
+### 1.1. The Dataflow Paradigm
+
+In a dataflow pipeline, tasks are connected by **data dependencies** rather than explicit ordering:
+
+```
+Sequential:              Dataflow:
+task1 → task2 → task3    task1 ──→ task2
+                              └──→ task3  (parallel!)
+```
+
+Each task declares:
+- **`output`**: What data it produces (e.g., `"features"`)
+- **`inputs`**: What data it consumes (e.g., `["features", "config"]`)
+
+The library automatically resolves dependencies and builds the execution graph.
+
+### 1.2. Key Components
+
+| Component | Purpose | Module |
+|-----------|---------|--------|
+| `@pipeline_task` | Decorator to declare task I/O | `taskiq_flow.decorators` |
+| `DataNode` | Represents a data artifact in the graph | `taskiq_flow.dataflow.node` |
+| `DAG` / `DAGNode` | Graph structure for dependency tracking | `taskiq_flow.dataflow.dag` |
+| `DataflowRegistry` | Central registry for task metadata and DAG building | `taskiq_flow.dataflow.registry` |
+| `DataCache` | Stores intermediate results during execution | `taskiq_flow.dataflow.cache` |
+| `DataflowPipeline` | High-level pipeline using dataflow orchestration | `taskiq_flow.pipeline` |
+| `ExecutionEngine` | Low-level DAG executor with parallelism | `taskiq_flow.execution_engine` |
+
+---
+
+## 2. Declaring Dataflow Tasks
+
+### 2.1. The `@pipeline_task` Decorator
+
+Mark a function as a pipeline task with explicit output:
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import pipeline_task, DataflowPipeline
+
+broker = InMemoryBroker()
+
+@broker.task
+@pipeline_task(output="features")
+async def extract_features(paths: list[str]) -> dict:
+    """Extract audio features from file paths."""
+    return {"tempo": 120.0, "energy": 0.8}
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `output` | `str` | **required** | Name of the data this task produces |
+| `inputs` | `list[str]` | `None` (auto-inferred) | Names of data consumed |
+| `retries` | `int` | `0` | Number of retry attempts on failure |
+| `retry_delay` | `float` | `1.0` | Initial delay between retries (seconds) |
+| `retry_backoff` | `float` | `2.0` | Multiplier for delay between retries |
+| `retry_jitter` | `bool` | `True` | Add randomness to retry delays |
+| `max_retry_time` | `int` | `300` | Maximum total time for retries (seconds) |
+| `resources` | `dict` | `{}` | Estimated resource usage (memory, cpu) |
+
+### 2.2. Automatic Input Inference
+
+If you don't specify `inputs`, they're inferred from the function signature:
+
+```python
+@broker.task
+@pipeline_task(output="stats")
+def compute_stats(features: dict, config: dict) -> dict:
+    # Automatically inferred: inputs=["features", "config"]
+    return {"count": len(features)}
+```
+
+Parameters named `self`, `cls`, or those with default values are excluded from inference.
+
+### 2.3. Multiple Outputs
+
+Use `@pipeline_task_multi_output` when a task produces multiple data artifacts:
+
+```python
+from taskiq_flow.decorators import pipeline_task_multi_output
+
+@broker.task
+@pipeline_task_multi_output(
+    outputs={"features": dict, "metadata": dict},
+    retries=2
+)
+async def process_audio(path: str) -> dict:
+    features = extract(path)
+    meta = get_metadata(path)
+    return {
+        "features": features,   # → output "features"
+        "metadata": meta,       # → output "metadata"
+    }
+```
+
+The **first key** is the primary output; all keys are registered as named outputs.
+
+---
+
+## 3. Building Dataflow Pipelines
+
+### 3.1. Using `DataflowPipeline.from_tasks()`
+
+The recommended approach for most use cases:
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [extract_features, compute_stats, generate_report]
+)
+```
+
+The DAG is built automatically:
+- `extract_features` produces `"features"` — no dependencies → Level 0
+- `compute_stats` consumes `"features"` → depends on `extract_features` → Level 1
+- `generate_report` consumes `"stats"` → depends on `compute_stats` → Level 2
+
+### 3.2. Adding Tasks Dynamically
+
+```python
+pipeline = DataflowPipeline(broker)
+pipeline.add_dataflow_task(extract_features)
+pipeline.add_dataflow_task(compute_stats)
+pipeline.add_dataflow_task(generate_report)
+
+# DAG is rebuilt lazily on first execution
+results = await pipeline.kiq_dataflow(paths=["song.mp3"])
+```
+
+### 3.3. Fan-Out / Fan-In (Multiple Dependencies)
+
+Tasks can consume multiple outputs, and multiple tasks can share a dependency:
+
+```python
+@broker.task
+@pipeline_task(output="audio")
+def load_audio(path: str) -> dict: ...
+
+@broker.task
+@pipeline_task(output="transcription")
+def transcribe(audio: dict) -> str: ...
+
+@broker.task
+@pipeline_task(output="tags")
+def generate_tags(audio: dict) -> list[str]: ...  # parallel with transcribe
+
+@broker.task
+@pipeline_task(output="report")
+def create_report(
+    transcription: str,
+    tags: list[str]
+) -> dict: ...  # fan-in: waits for both
+
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_audio, transcribe, generate_tags, create_report]
+)
+# DAG:
+#   load_audio → (transcribe ∥ generate_tags) → create_report
+```
+
+### 3.4. External Inputs
+
+Pass data at execution time that isn't produced by any task:
+
+```python
+results = await pipeline.kiq_dataflow(
+    user_id="user_123",      # external input
+    config={"mode": "fast"}  # external input
+)
+```
+
+External inputs are automatically identified — they're parameters with no corresponding producer task.
+
+---
+
+## 4. DAG Construction & Inspection
+
+### 4.1. The `DataflowRegistry`
+
+For advanced use cases, build DAGs manually:
+
+```python
+from taskiq_flow import DataflowRegistry
+
+registry = DataflowRegistry()
+
+# Register tasks with explicit I/O
+registry.register_task(
+    task=load_data,
+    output="raw_data",
+    inputs=["source_url"]  # external input
+)
+registry.register_task(
+    task=clean_data,
+    output="clean_data",
+    inputs=["raw_data"]
+)
+registry.register_task(
+    task=save_data,
+    output="saved",
+    inputs=["clean_data"]
+)
+
+# Inspect the graph
+print("Tasks:", [t.task_name for t in registry.get_tasks()])
+print("Outputs:", registry.get_outputs())
+print("External inputs:", registry.get_external_inputs())
+
+# Build DAG
+dag = registry.build_dag()
+dag.print()
+```
+
+### 4.2. DAG Inspection Methods
+
+```python
+from taskiq_flow.dataflow import DAG, DAGNode
+
+# Get topological order
+ordered = dag.topological_sort()
+for node in ordered:
+    print(f"Level {node.level}: {node.task_name}")
+
+# Get parallel execution groups
+dag.compute_levels()
+for i, level in enumerate(dag.levels):
+    names = [n.task_name for n in level]
+    print(f"Level {i} (parallel): {names}")
+
+# Find ready tasks given completed set
+ready = dag.get_ready_tasks(completed={node_a})
+
+# Visualize DAG (requires networkx)
+from taskiq_flow.visualization import DAGVisualizer
+viz = DAGVisualizer(dag)
+print(viz.to_json())
+print(viz.to_graphviz())
+print(viz.visualize_ascii())
+```
+
+### 4.3. Detecting Critical Path & Parallel Groups
+
+```python
+from taskiq_flow.visualization import DAGVisualizer
+
+viz = DAGVisualizer(dag)
+
+# Critical path = longest execution chain
+critical = viz.detect_critical_path()
+print(f"Critical path: {' → '.join(critical)}")
+
+# Groups of tasks that can run in parallel
+groups = viz.find_parallelizable_groups()
+for i, group in enumerate(groups):
+    print(f"Parallel group {i}: {group}")
+```
+
+---
+
+## 5. Execution
+
+### 5.1. Running Dataflow Pipelines
+
+```python
+# Execute and get all outputs
+results = await pipeline.kiq_dataflow(track_paths=["song1.mp3", "song2.mp3"])
+print(results)
+# {"audio_features": {...}, "mir_features": {...}, "tags": [...], "embedding": [...]}
+```
+
+### 5.2. The Execution Engine
+
+`DataflowPipeline` uses `ExecutionEngine` internally for DAG-based execution:
+
+```python
+from taskiq_flow import ExecutionEngine
+
+# Custom execution with fine-grained control
+engine = ExecutionEngine(
+    broker=broker,
+    dag=dag,
+    max_parallel=10,
+    error_mode=ErrorHandlingMode.CONTINUE_ON_ERROR,
+    resource_aware=True,
+)
+
+outputs = await engine.execute(
+    inputs={"source_file": "data.csv"},
+    pipeline_id="my_pipeline"
+)
+```
+
+**Execution features:**
+- Topological ordering — tasks execute after their dependencies
+- Parallel execution — independent tasks run concurrently
+- Retry per task — configured via `@pipeline_task(retries=N)`
+- Error modes — `FAIL_FAST`, `CONTINUE_ON_ERROR`, `SKIP_FAILED`
+- Resource-aware parallelism — adjusts concurrency based on CPU/memory
+
+### 5.3. Map-Reduce Operations
+
+For batch processing within pipelines:
+
+```python
+from taskiq_flow import MapReduce
+
+# Parallel map
+mapped = await MapReduce.map(
+    broker,
+    process_item,
+    items=list(range(100)),
+    output="processed",
+    max_parallel=10,
+)
+
+# Reduce results
+result = await MapReduce.reduce(
+    broker,
+    aggregate_results,
+    mapped.results,
+    output="final",
+    initial=0,
+)
+
+# Combined map-reduce
+final = await MapReduce.map_reduce(
+    broker,
+    map_task=process_item,
+    reduce_task=aggregate_results,
+    items=list(range(1000)),
+    max_parallel=20,
+    reduce_chunk_size=100,
+)
+```
+
+**Map features:**
+- Automatic parallelism with `asyncio`
+- Intelligent chunking for large datasets
+- Progress callbacks
+- Error collection with success rate reporting
+
+### 5.4. Pipeline-Level Map/Reduce
+
+`DataflowPipeline` integrates map-reduce as pipeline operations:
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker, [extract_features]
+)
+
+# Add map operation (process many items in parallel)
+pipeline.map(
+    process_track,
+    track_list,
+    output="track_features",
+    max_parallel=10,
+)
+
+# Add reduce operation (aggregate results)
+pipeline.reduce(
+    aggregate_features,
+    input_name="track_features",
+    output="playlist_stats",
+)
+
+# Execute
+results = await pipeline.kiq_map_reduce(track_list=tracks)
+```
+
+---
+
+## 6. Combining Sequential and Dataflow Pipelines
+
+### 6.1. Hybrid Pattern
+
+Use sequential pipelines for linear flows and dataflow for complex sub-workflows:
+
+```python
+# Sequential outer shell
+main_pipeline = Pipeline(broker)
+
+@broker.task
+async def run_dataflow_subset(data: list) -> dict:
+    # Inner dataflow pipeline
+    sub_pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [task_a, task_b, task_c]
+    )
+    return await sub_pipeline.kiq_dataflow(data=data)
+
+main_pipeline.call_next(run_dataflow_subset).call_next(finalize)
+```
+
+### 6.2. Pipeline Scheduling
+
+Schedule dataflow pipelines with cron or intervals:
+
+```python
+from taskiq_flow import PipelineScheduler
+
+scheduler = PipelineScheduler(broker)
+
+# Cron-based scheduling
+await scheduler.schedule(
+    pipeline,
+    cron="0 2 * * *",  # Daily at 2 AM
+    kwargs={"paths": ["daily_files/*.mp3"]}
+)
+
+# Interval-based
+await scheduler.schedule(
+    pipeline,
+    interval_seconds=3600,  # Every hour
+    label="hourly_analysis"
+)
+```
+
+---
+
+## 7. Caching & Intermediate Results
+
+### 7.1. `DataCache`
+
+The `DataCache` stores intermediate results during pipeline execution:
+
+```python
+from taskiq_flow.dataflow.cache import DataCache
+
+cache = DataCache()
+
+# Store results
+cache.set("features", {"tempo": 120.0})
+cache.set("tags", ["electronic", "dance"])
+
+# Retrieve
+features = cache.get("features")
+
+# Check existence
+if cache.has("embedding"):
+    embedding = cache.get("embedding")
+
+# Inject dependencies for tasks
+inputs = cache.inject(["features", "tags"])
+# → {"features": {...}, "tags": [...]}
+
+# Clear between runs
+cache.clear()
+```
+
+---
+
+## 8. Error Handling in Dataflow
+
+### 8.1. Error Modes
+
+```python
+from taskiq_flow.errors import ErrorHandlingMode
+
+# Fail on first error (default)
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.FAIL_FAST)
+
+# Continue despite errors
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.CONTINUE_ON_ERROR)
+
+# Skip failed tasks
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.SKIP_FAILED)
+```
+
+### 8.2. Retry Configuration
+
+Configure retries at the task level:
+
+```python
+@broker.task
+@pipeline_task(
+    output="reliable_feature",
+    retries=3,
+    retry_delay=2.0,
+    retry_backoff=2.0,
+)
+def fetch_with_retry(url: str) -> dict:
+    # Will be retried up to 3 times with exponential backoff
+    ...
+```
+
+---
+
+## 9. Resource Management
+
+### 9.1. Resource-Aware Parallelism
+
+Control parallelism based on estimated task resource usage:
+
+```python
+from taskiq_flow.optimization.parallel import ResourceAwareExecutor
+
+executor = ResourceAwareExecutor(
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=10,
+)
+
+engine = ExecutionEngine(
+    broker,
+    dag,
+    resource_aware=True,
+    resource_profiles={
+        "heavy_task": {"estimated_memory_mb": 500, "estimated_cpu_cores": 2.0},
+        "light_task": {"estimated_memory_mb": 50, "estimated_cpu_cores": 0.5},
+    },
+)
+```
+
+---
+
+## 10. Visualization
+
+### 10.1. Built-in Visualization
+
+```python
+# ASCII in console
+pipeline.print_dag()
+
+# JSON for web UIs
+viz = pipeline.visualize()  # → {"nodes": [...], "edges": [...], "levels": [...]}
+
+# DOT for Graphviz
+dot = pipeline.visualize_dot()
+# Render: dot -Tpng pipeline.dot -o pipeline.png
+```
+
+### 10.2. Advanced Visualization (requires networkx)
+
+```python
+from taskiq_flow.visualization import DAGVisualizer
+
+viz = DAGVisualizer(dag)
+
+# Export formats
+viz.to_json()           # JSON for frontend
+viz.to_cytoscape_json() # Cytoscape.js format
+viz.to_graphviz()       # DOT format
+viz.visualize_ascii()   # ASCII art
+
+# Analysis
+viz.detect_critical_path()      # Longest execution path
+viz.find_parallelizable_groups()  # Tasks that can run in parallel
+```
+
+### 10.3. Mermaid Diagrams
+
+```python
+from taskiq_flow.visualization import MermaidGenerator
+
+mermaid = MermaidGenerator(dag)
+print(mermaid.to_mermaid())           # Basic diagram
+print(mermaid.to_mermaid_with_styling())  # Styled with colors
+```
+
+---
+
+## 11. Full Example: Audio Processing Pipeline
+
+```python
+import asyncio
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker()
+
+@broker.task
+@pipeline_task(output="audio_features")
+async def extract_audio(paths: list[str]) -> dict:
+    return {"duration": 180.0, "tempo": 120.0}
+
+@broker.task
+@pipeline_task(output="mir_features")
+async def compute_mir(audio_features: dict) -> dict:
+    return {"key": "C major", "loudness": -12.5}
+
+@broker.task
+@pipeline_task(output="tags")
+async def generate_tags(mir_features: dict) -> list[str]:
+    return ["electronic", "dance"]
+
+@broker.task
+@pipeline_task(output="embedding")
+async def create_embedding(
+    mir_features: dict,
+    tags: list[str]
+) -> list[float]:
+    return [0.1, 0.2, 0.3, 0.4, 0.5]
+
+async def main():
+    pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [extract_audio, compute_mir, generate_tags, create_embedding]
+    )
+
+    # Inspect before execution
+    pipeline.print_dag()
+
+    # Execute
+    results = await pipeline.kiq_dataflow(
+        paths=["track1.mp3", "track2.mp3"]
+    )
+
+    print(results)
+    # {
+    #   "audio_features": {"duration": 180.0, "tempo": 120.0},
+    #   "mir_features": {"key": "C major", "loudness": -12.5},
+    #   "tags": ["electronic", "dance"],
+    #   "embedding": [0.1, 0.2, 0.3, 0.4, 0.5]
+    # }
+
+asyncio.run(main())
+```
+
+---
+
+## 12. Common Pitfalls
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| All tasks run sequentially | Using `Pipeline` instead of `DataflowPipeline` | Switch to `DataflowPipeline` |
+| Missing output errors | `@pipeline_task(output=...)` doesn't match downstream param name | Align output name with parameter name |
+| "No DAG built" error | Called `kiq_dataflow()` without adding tasks | Add tasks via `from_tasks()` or `add_dataflow_task()` |
+| Tasks run twice | Mixed `.call_next()` and `@pipeline_task` dependencies | Use one approach consistently |
+| Deadlock detected | Circular dependency in data flow | Redesign with forward data flow only |
+| Memory explosion | Too many parallel tasks | Set `max_parallel` or use resource-aware mode |
+
+---
+
+## 13. Performance Tips
+
+1. **Limit parallelism** — Use `max_parallel` to control concurrent task count
+2. **Use map-reduce for batches** — `MapReduce.map()` with chunking for large datasets
+3. **Profile resource usage** — Set `resource_profiles` for adaptive parallelism
+4. **Avoid large intermediate results** — Stream data when possible
+5. **Reuse DAG** — Build DAG once, execute multiple times with different inputs
+
+---
+
+## 14. API Reference Summary
+
+### `DataflowPipeline`
+
+| Method | Description |
+|--------|-------------|
+| `from_tasks(broker, tasks)` | Create pipeline from task list |
+| `add_dataflow_task(task)` | Add task dynamically |
+| `kiq_dataflow(**inputs)` | Execute pipeline with dataflow orchestration |
+| `kiq_map_reduce(**inputs)` | Execute map-reduce pipeline |
+| `kiq_map_reduce_advanced(...)` | Execute with full map-reduce options |
+| `kiq_map_sweep(task, param_values, ...)` | Multi-dimensional parameter sweep |
+| `visualize()` | Get DAG as JSON dict |
+| `visualize_dot()` | Get DAG as DOT string |
+| `print_dag()` | Print ASCII representation |
+| `schedule_with_cron(scheduler, label, cron, **inputs)` | Schedule with cron expression |
+| `schedule_with_labels(scheduler, label, ...)` | Schedule with label-based scheduler |
+| `map(task, items, output, ...)` | Add map operation |
+| `reduce(task, input_name, output, ...)` | Add reduce operation |
+
+### `DataflowRegistry`
+
+| Method | Description |
+|--------|-------------|
+| `register_task(task, output, inputs, **meta)` | Register task with I/O metadata |
+| `build_dag()` | Construct DAG from registered tasks |
+| `get_producer(data_name)` | Find producer task for data |
+| `get_consumers(data_name)` | Find consumer tasks for data |
+| `get_external_inputs()` | List external input names |
+| `get_outputs()` | List all output names |
+| `get_tasks()` | List all registered tasks |
+
+### `ExecutionEngine`
+
+| Method | Description |
+|--------|-------------|
+| `execute(inputs, pipeline_id)` | Execute DAG with inputs |
+| `get_execution_report()` | Get execution statistics |
+
+### `MapReduce`
+
+| Method | Description |
+|--------|-------------|
+| `map(broker, task, items, output, ...)` | Parallel map operation |
+| `reduce(broker, task, inputs, output, ...)` | Reduction operation |
+| `map_reduce(broker, map_task, reduce_task, items, ...)` | Combined map+reduce |
+| `map_sweep(broker, task, param_values, output, ...)` | Multi-dimensional sweep |
+
+
+*Master dataflow to build complex, parallel workflows. For sequential patterns, see [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}).*
+
+
 ## DOCUMENT: Execution
 
 # Pipeline Execution Guide
 
 **Understanding execution models, modes, and result handling**
 
-> **Version**: {VERSION} | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce
+> **Version**: {VERSION} | **Applies to**: SequentialPipeline, DataflowPipeline, MapReduce | **See also**: [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -5957,6 +6822,9 @@ See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for deta
 | Tasks receive wrong inputs | Incorrect parameter naming | Ensure `@pipeline_task(output=...)` matches downstream param names |
 | Out-of-order results | Dataflow tasks finishing at different times | Results dict preserves output names, not execution order |
 | Memory explosion | Unlimited parallelism | Set `max_parallel` or process in batches |
+| Deadlock during execution | Circular dependency or missing external input | Check data flow graph for cycles; provide all external inputs |
+| `kiq_dataflow()` raises "No DAG built" | No tasks added to pipeline | Use `DataflowPipeline.from_tasks()` or `add_dataflow_task()` |
+| Partial results only | `continue_on_error=True` with failed tasks | Check `PipelineErrorAggregator` or execution report for details |
 
 ---
 
@@ -5974,12 +6842,13 @@ See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for deta
 ## Next Steps
 
 - **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** — Choosing between pipeline types and patterns
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — Complete guide to dataflow pipelines, DAGs, and decorators
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitoring pipeline status and history
 - **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Tuning for speed and resource usage
 
 ---
 
-*Understanding execution is key to building reliable pipelines. Next, learn about [Pipeline Types]({{ '/en/guides/pipelines/' | relative_url }}).*
+*Understanding execution is key to building reliable pipelines. Learn more about [Dataflow Pipelines]({{ '/en/guides/dataflow/' | relative_url }}) for complex workflows.*
 
 
 ## DOCUMENT: Index
@@ -6613,6 +7482,7 @@ Performance optimization is iterative:
 ## Next Steps
 
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Monitor pipeline metrics
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — Complete guide to DAG pipelines and dataflow architecture
 - **[API Guide]({{ '/en/guides/api/' | relative_url }})** — Build custom dashboards for performance
 - **[Example: Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})** — See optimization in action
 
@@ -6627,7 +7497,7 @@ Performance optimization is iterative:
 
 **Sequential and Dataflow pipeline patterns, configurations, and best practices**
 
-> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})
+> **Version**: {VERSION} | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }}), [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -6637,6 +7507,8 @@ Taskiq-Flow provides two main pipeline types for orchestrating task workflows:
 
 1. **SequentialPipeline** — Manual step chaining for linear workflows
 2. **DataflowPipeline** — Automatic DAG construction from task dependencies
+
+For a comprehensive deep-dive into dataflow patterns, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 This guide explores both types, their use cases, and how to choose between them.
 
@@ -6740,6 +7612,8 @@ pipeline.group(
 ---
 
 ## 2. Dataflow Pipeline
+
+> For a comprehensive guide on dataflow patterns, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
 Automatic DAG construction using `@pipeline_task(output=...)` annotations.
 
@@ -7726,13 +8600,18 @@ scheduler = PipelineScheduler(
 |-------|-------------|--------------|----------|
 | `"memory"` | ❌ No | ❌ No | Development, single-process |
 | `"sqlite"` | ✅ Yes | ⚠️ Limited* | Single-worker production, simple persistence |
+| `"postgresql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, HA |
+| `"mysql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, alternative |
+| `"redis"` | ❌ | ❌ | **Not implemented** (raises `NotImplementedError`) |
 
-*SQLite store works with single scheduler instance; multiple workers need external DB.
+*SQLite store works with single scheduler instance; multiple workers need PostgreSQL/MySQL.
 
 **Recommendation**:
 - Development/mocks → `store="memory"`
-- Single-worker production → `store="sqlite"`
-- Distributed → Use external job store (PostgreSQL, Redis) — future enhancement
+- Single-worker production → `store="sqlite"` with persistent path
+- Production multi-worker → `store="postgresql://user:pass@host/dbname"` (recommended) # pragma: allowlist secret
+
+> **Note**: PostgreSQL and MySQL support is **already implemented** in `JobPersistenceManager` and works via SQLAlchemy async engine. See [Advanced Storage (PostgreSQL/MySQL)](#advanced-storage-postgresqlmysql) below.
 
 ### 2.2. Starting & Stopping
 
@@ -8196,22 +9075,27 @@ class MetricsScheduler(PipelineScheduler):
 
 ### 12.1. High Availability
 
-For production HA deployments, run multiple scheduler instances with a shared job store (PostgreSQL recommended):
+For production HA deployments, run multiple scheduler instances with a shared job store:
 
 ```python
 # Scheduler 1
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
+    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
 )
 
 # Scheduler 2 (identical config) — only one will acquire jobs
-scheduler2 = PipelineScheduler(...)
+scheduler2 = PipelineScheduler(
+    broker,
+    store="postgresql",
+    # pragma: allownextline secret
+    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
+)
 # APScheduler's job stores use row-level locking; one scheduler per job
 ```
 
-**Note**: Currently only memory and sqlite stores are implemented; PostgreSQL/Redis support planned.
+See [Advanced Storage (PostgreSQL/MySQL)](#advanced-storage-postgresqlmysql) for detailed configuration.
 
 ### 12.2. Long-Running Jobs
 
@@ -8248,6 +9132,120 @@ for job in old_jobs:
     if job.next_run_time < datetime.now() - timedelta(days=30):
         await scheduler.remove_job(job.id)
 ```
+
+### 12.5. Advanced Storage (PostgreSQL/MySQL)
+
+`JobPersistenceManager` natively supports PostgreSQL and MySQL via SQLAlchemy AsyncEngine.
+
+#### PostgreSQL Configuration (Recommended for Production)
+
+```python
+from taskiq_flow.scheduling.storage import JobPersistenceManager
+
+# PostgreSQL with asyncpg
+storage = JobPersistenceManager(
+    # pragma: allownextline secret
+    db_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+
+# Using the URL helper
+storage = JobPersistenceManager(
+    db_url=JobPersistenceManager.get_connection_url(
+        "postgresql",
+        host="localhost",
+        port=5432,
+        user="taskiq",
+        # pragma: allownextline secret
+        password="secret",        # pragma: allowlist secret
+        database="taskiq_flow",
+    ),
+    async_mode=True,
+)
+```
+
+#### MySQL Configuration
+
+```python
+storage = JobPersistenceManager(
+    # pragma: allownextline secret
+    db_url="mysql+aiomysql://user:pass@localhost:3306/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+```
+
+#### SQLite Configuration (Development)
+
+```python
+# Sync (development only)
+storage = JobPersistenceManager(
+    db_url="sqlite:///jobs.db",
+    async_mode=False,
+)
+
+# Async (recommended even for SQLite)
+storage = JobPersistenceManager(
+    db_url="sqlite+aiosqlite:///jobs.db",
+    async_mode=True,
+)
+```
+
+#### Integration with PipelineScheduler
+
+```python
+from taskiq_flow.scheduling.scheduler import PipelineScheduler
+
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+)
+```
+
+#### CRUD Operations with JobPersistenceManager
+
+```python
+from datetime import datetime, timezone
+from taskiq_flow.scheduling.storage import JobPersistenceManager, SchedulerJob, PipelineExecution
+
+storage = JobPersistenceManager(db_url="sqlite:///test.db")
+
+# Save a job
+job = SchedulerJob(
+    id="job_001",
+    pipeline_id="etl_daily",
+    label="Daily ETL",
+    cron="0 2 * * *",
+    timezone="UTC",
+)
+await storage.save_job(job)
+
+# Load all jobs
+jobs = await storage.load_jobs()
+for j in jobs:
+    print(f"{j.id}: {j.cron} - {j.pipeline_id}")
+
+# Save execution history
+execution = PipelineExecution(
+    job_id="job_001",
+    pipeline_id="etl_daily",
+    status="success",
+    started_at=datetime.now(timezone.utc),
+    completed_at=datetime.now(timezone.utc),
+    duration_seconds=45.2,
+)
+await storage.save_execution_history("job_001", execution)
+
+# Retrieve history
+history = await storage.get_execution_history("job_001", limit=10)
+for run in history:
+    print(f"  {run.status} - {run.duration_seconds}s at {run.started_at}")
+```
+
+| Backend | Async | Multi-worker | Production |
+|---------|-------|--------------|------------|
+| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / small projects |
+| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommended |
+| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supported |
 
 ---
 
@@ -8361,7 +9359,7 @@ PipelineScheduler provides robust, production-ready scheduling:
 | **Interval** | `scheduler.schedule_interval(pipeline, minutes=5)` |
 | **One-off** | `scheduler.schedule_at(pipeline, run_at=datetime)` |
 | **Management** | `list_jobs()`, `remove_job()`, `pause_job()` |
-| **Persistence** | SQLite (single-worker) |
+| **Persistence** | SQLite (single-worker), PostgreSQL/MySQL (multi-worker) |
 | **Tracking** | Automatic with `PipelineTrackingManager` |
 | **Concurrency** | `max_instances`, `coalesce` controls |
 
@@ -8371,7 +9369,10 @@ PipelineScheduler provides robust, production-ready scheduling:
 tracking = PipelineTrackingManager().with_storage(RedisPipelineStorage(redis))
 pipeline = Pipeline(broker).with_tracking(tracking)
 
-scheduler = PipelineScheduler(broker, store="sqlite", store_path="./jobs.db")
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@host/taskiq_flow",  # pragma: allowlist secret
+)
 await scheduler.start()
 
 # Schedule your jobs...
@@ -9410,6 +10411,7 @@ pipeline = Pipeline(broker).with_tracking(tracking)
 ## Next Steps
 
 - **[WebSocket Streaming]({{ '/en/guides/websocket/' | relative_url }})** — Real-time event delivery for dashboards
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — Full DAG pipelines with automatic parallelism
 - **[Scheduling]({{ '/en/guides/scheduling/' | relative_url }})** — Automated recurring pipeline execution
 - **[Performance Tuning]({{ '/en/guides/performance/' | relative_url }})** — Optimize tracking overhead
 
@@ -10049,6 +11051,50 @@ class RateLimiter:
         return False
 ```
 
+### 10.4. SSL/TLS Encryption (WSS)
+
+Enable encrypted WebSocket connections for production:
+
+```python
+from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
+
+# With SSL certificates
+server = PipelineWebSocketServer(
+    host="0.0.0.0",
+    port=8765,
+    ssl_cert="/path/to/cert.pem",
+    ssl_key="/path/to/key.pem",
+)
+
+# Connect with wss://
+# Client: new WebSocket("wss://your-domain.com/ws")
+```
+
+**Using a reverse proxy (recommended):**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
+
+    location /ws {
+        proxy_pass http://localhost:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+```javascript
+// Client connects via wss through the proxy
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
+
 ---
 
 ## 11. Troubleshooting
@@ -10118,6 +11164,7 @@ await server.start_server()
 ## Next Steps
 
 - **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** — Backend storage and historical queries
+- **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG pipelines with automatic parallelism and WebSocket-compatible events
 - **[API Guide]({{ '/en/guides/api/' | relative_url }})** — REST endpoints for dashboard backends
 - **[Examples: WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }})** — Complete working code
 
@@ -10488,6 +11535,7 @@ With the basics under your belt, explore the deeper guides:
 | Topic | Guide |
 |-------|-------|
 | Sequential & Dataflow Pipelines | [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}) |
+| **Dataflow Deep Dive** | **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** |
 | Task definitions & decorators | [Tasks Guide]({{ '/en/guides/tasks/' | relative_url }}) |
 | Execution modes & error handling | [Execution Guide]({{ '/en/guides/execution/' | relative_url }}) |
 | Real-time monitoring | [Tracking Guide]({{ '/en/guides/tracking/' | relative_url }}) |
@@ -10597,17 +11645,17 @@ Pipeline(
 | `with_timeout` | `with_timeout(seconds) -> Pipeline` | Définit timeout |
 | `with_context` | `with_context(enable=True) -> Pipeline` | Active passage PipelineContext aux tâches |
 
-**Exemple**:
+**Example**:
 ```python
 pipeline = (
     Pipeline(broker)
-    .call_next(tache1)
-    .call_next(tache2, facteur=2)
-    .map(tache3, max_parallel=10)
-    .filter(valider)
-    .with_tracking(suivi)
+    .call_next(task1)
+    .call_next(task2, factor=2)
+    .map(task3, max_parallel=10)
+    .filter(validate)
+    .with_tracking(tracking)
 )
-résultat = await pipeline.kiq(entrée_initiale)
+result = await pipeline.kiq(initial_input)
 ```
 
 ---
@@ -10621,7 +11669,7 @@ from taskiq_flow import DataflowPipeline
 
 pipeline = DataflowPipeline.from_tasks(
     broker,
-    [tache_a, tache_b, tache_c]
+    [task_a, task_b, task_c]
 )
 ```
 
@@ -10703,10 +11751,10 @@ Métadonnées passées aux tâches quand `with_context(enable=True)` est défini
 from taskiq_flow import PipelineContext
 
 @broker.task
-async def ma_tache(données: str, context: PipelineContext):
+async def my_task(data: str, context: PipelineContext):
     print(f"Pipeline: {context.pipeline_id}")
-    print(f"Étape: {context.step_index}")
-    print(f"Tâche ID: {context.task_id}")
+    print(f"Step: {context.step_index}")
+    print(f"Task ID: {context.task_id}")
 ```
 
 **Champs**:
@@ -10914,59 +11962,62 @@ Obtenir clés sortie déclarées pour une tâche:
 ```python
 from taskiq_flow import get_task_outputs
 
-sorties = get_task_outputs(tache_extract)
-print(sorties)  # ['features']
+outputs = get_task_outputs(extract_task)
+print(outputs)  # ['features']
 ```
 
 ### get_task_inputs(task: Callable) -> list[str]
 
-Obtenir dépendances entrée déclarées:
+Get declared input dependencies:
 
 ```python
 from taskiq_flow import get_task_inputs
 
-entrées = get_task_inputs(tache_tag)
-print(entrées)  # ['features']
+inputs = get_task_inputs(tag_task)
+print(inputs)  # ['features']
 ```
 
 ### is_pipeline_task(task: Callable) -> bool
 
-Vérifier si fonction décorée avec `@pipeline_task`:
+Check if function is decorated with `@pipeline_task`:
 
 ```python
 from taskiq_flow import is_pipeline_task
 
-if is_pipeline_task(ma_fonction):
-    print("Ceci est une tâche pipeline avec déclarations sortie")
+if is_pipeline_task(my_function):
+    print("This is a pipeline task with output declarations")
 ```
 
 ### resolve_task_dependencies(tasks: list[Callable]) -> dict
 
-Construire carte dépendances:
+Build dependency map:
 
 ```python
 from taskiq_flow import resolve_task_dependencies
 
-deps = resolve_task_dependencies([tache_a, tache_b, tache_c])
-# Retourne: {tache_a: [], tache_b: ['features'], tache_c: ['tags']}
+deps = resolve_task_dependencies([task_a, task_b, task_c])
+# Returns: {task_a: [], task_b: ['features'], task_c: ['tags']}
 ```
 
 ---
 
-## Ordre des Décorateurs
+## Decorator Order
 
-L'ordre des décorateurs compte: `@broker.task` doit être le plus externe (appliqué en dernier), `@pipeline_task` interne (appliqué en premier):
+The order of decorators matters: `@broker.task` must be the outermost (applied last), `@pipeline_task` inner (applied first):
 
 ```python
 # CORRECT
 @broker.task
-@pipeline_task(output="resultat")
-def ma_tache(): ...
+@pipeline_task(output="result")
+def my_task(): ...
 
-# INCORRECT (échouera)
-@pipeline_task(output="resultat")
+# INCORRECT (will fail)
+@pipeline_task(output="result")
 @broker.task
-def ma_tache(): ...
+def my_task(): ...
+```
+
+Why: `@broker.task` wraps the function; `@pipeline_task` attaches metadata to the original function. Python applies decorators bottom-to-top.
 ```
 
 Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métadonnées à la fonction originale. Python applique décorateurs bas-vers-haut.
@@ -11329,6 +12380,8 @@ results = await engine.execute(inputs={"audio_files": files})
 - **[API Suivi]({{ '/fr/api/tracking/' | relative_url }})** — Surveiller l'exécution avec PipelineTrackingManager
 - **[API WebSocket]({{ '/fr/api/websocket/' | relative_url }})** — HookManager et système d'événements
 - **[API Core]({{ '/fr/api/core/' | relative_url }})** — Référence Pipeline et middleware
+- **[Exemple Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Voir ExecutionEngine utilisé dans un pipeline DAG réel
+- **[Exemple Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})** — Construction manuelle de DAG et utilisation d'ExecutionEngine
 
 ---
 
@@ -11528,19 +12581,19 @@ Coordinateur central pour enregistrer et récupérer les données d'exécution d
 ```python
 from taskiq_flow import PipelineTrackingManager
 
-suivi = PipelineTrackingManager()
-suivi = suivi.with_auto_storage(broker)
-# ou
-suivi = suivi.with_storage(InMemoryPipelineStorage())
+tracking = PipelineTrackingManager()
+tracking = tracking.with_auto_storage(broker)
+# or
+tracking = tracking.with_storage(InMemoryPipelineStorage())
 ```
 
 **Configuration**:
 
 ```python
-suivi = PipelineTrackingManager(
-    storage=None,         # Stockage pré-configuré optionnel
-    max_history=1000,    # Max enregistrements pipelines (store mémoire seulement)
-    auto_cleanup=True    # Purge automatique anciens enregistrements
+tracking = PipelineTrackingManager(
+    storage=None,         # Optional pre-configured storage
+    max_history=1000,    # Max pipeline records (memory store only)
+    auto_cleanup=True    # Auto-purge old records
 )
 ```
 
@@ -11559,29 +12612,29 @@ suivi = PipelineTrackingManager(
 ### Attacher aux Pipelines
 
 ```python
-pipeline = Pipeline(broker).with_tracking(suivi)
-# ou
-pipeline.with_tracking(suivi)  # modification in-place
+pipeline = Pipeline(broker).with_tracking(tracking)
+# or
+pipeline.with_tracking(tracking)  # in-place modification
 ```
 
-Le gestionnaire de suivi **doit** être attaché **avant** l'appel à `pipeline.kiq()`.
+The tracking manager **must** be attached **before** calling `pipeline.kiq()`.
 
 ### Interroger les Statuts
 
 ```python
-# Obtenir statut d'une exécution pipeline spécifique
-statut = await suivi.get_status(pipeline_id: str) -> PipelineStatus | None
+# Get status of specific pipeline execution
+status = await tracking.get_status(pipeline_id: str) -> PipelineStatus | None
 
-# Lister tous les pipelines suivis
-tous_statuts = await suivi.list_pipelines(
-    filtre_statut: str | None = None,  # Filtrer par statut
+# List all tracked pipelines
+all_statuses = await tracking.list_pipelines(
+    filter_status: str | None = None,  # Filter by status
     limit: int = 100
 ) -> list[PipelineStatus]
 
-# Obtenir historique exécutions
-historique = await suivi.get_historique(
-    depuis: datetime | None = None,
-    jusqu_à: datetime | None = None,
+# Get execution history
+history = await tracking.get_history(
+    since: datetime | None = None,
+    until: datetime | None = None,
     limit: int = 100
 ) -> list[PipelineStatus]
 ```
@@ -11589,30 +12642,30 @@ historique = await suivi.get_historique(
 ### Maintenance
 
 ```python
-# Supprimer enregistrement pipeline spécifique
-await suivi.delete_pipeline(pipeline_id: str)
+# Delete specific pipeline record
+await tracking.delete_pipeline(pipeline_id: str)
 
-# Supprimer enregistrements plus vieux que N jours
-supprimés = await suivi.cleanup_older_than(days: int = 30) -> int
+# Delete records older than N days
+deleted = await tracking.cleanup_older_than(days: int = 30) -> int
 
-# Obtenir métriques agrégées
-métriques = await suivi.get_metrics(
+# Get aggregated metrics
+metrics = await tracking.get_metrics(
     days: int = 7
 ) -> TrackingMetrics
 ```
 
-### Écouteurs d'Événements
+### Event Listeners
 
 ```python
-class MonÉcouteur:
+class MyListener:
     async def on_pipeline_start(self, pipeline_id: str):
         print(f"Pipeline {pipeline_id} démarré")
 
-    async def on_pipeline_complete(self, pipeline_id: str, statut: PipelineStatus):
-        alerter_si_échec(statut)
+    async def on_pipeline_complete(self, pipeline_id: str, status: PipelineStatus):
+        alert_if_failed(status)
 
-écouteur = MonÉcouteur()
-suivi.add_listener(écouteur)
+listener = MyListener()
+tracking.add_listener(listener)
 ```
 
 **Hooks écouteur** (tous optionnels):
@@ -11632,8 +12685,55 @@ suivi.add_listener(écouteur)
 ```python
 from taskiq_flow.tracking import InMemoryPipelineStorage
 
-stockage = InMemoryPipelineStorage(max_records=1000)
-suivi = PipelineTrackingManager().with_storage(stockage)
+storage = InMemoryPipelineStorage(max_records=1000)
+tracking = PipelineTrackingManager().with_storage(storage)
+```
+
+**Characteristics**:
+- Zero configuration
+- Fast (no I/O)
+- **Not shared between workers**
+- Lost on process restart
+- Good for: development, testing, single-process
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_records` | `int` | 1000 | Maximum pipeline records to keep (LRU eviction) |
+
+---
+
+### RedisPipelineStorage
+
+```python
+from taskiq_flow.tracking import RedisPipelineStorage
+import redis.asyncio as redis
+
+redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+storage = RedisPipelineStorage(
+    redis_client,
+    key_prefix="taskiq_flow:tracking:",
+    ttl_seconds=604800  # 7 days
+)
+tracking = PipelineTrackingManager().with_storage(storage)
+```
+
+**Characteristics**:
+- Shared between multiple workers
+- Survives restarts
+- Scalable (Redis cluster)
+- TTL-based expiration
+- Good for: production, distributed deployments
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `redis_client` | `Redis` | **required** | Connected Redis client |
+| `key_prefix` | `str` | `"taskiq_flow:tracking:"` | Prefix for all keys |
+| `ttl_seconds` | `int` | 604800 (7d) | Automatic expiration after N seconds |
+| `serializer` | `Callable` | `json.dumps` | Custom serialization function |
 ```
 
 **Caractéristiques**:
@@ -11663,7 +12763,7 @@ stockage = RedisPipelineStorage(
     key_prefix="taskiq_flow:tracking:",
     ttl_seconds=604800  # 7 jours
 )
-suivi = PipelineTrackingManager().with_storage(stockage)
+tracking = PipelineTrackingManager().with_storage(storage)
 ```
 
 **Caractéristiques**:
@@ -11775,32 +12875,27 @@ Implémenter protocole `TrackingStorage` pour backend personnalisé:
 from taskiq_flow.tracking.storage import TrackingStorage
 from taskiq_flow.tracking.models import PipelineStatus
 
-class StockagePostgres(TrackingStorage):
-    async def save_status(self, statut: PipelineStatus):
-        """Sauvegarder ou mettre à jour statut pipeline."""
+class PostgresStorage(TrackingStorage):
+    async def save_status(self, status: PipelineStatus):
+        """Save status to PostgreSQL."""
         ...
 
     async def get_status(self, pipeline_id: str) -> PipelineStatus | None:
-        """Récupérer statut pipeline par ID."""
+        """Fetch from DB."""
         ...
 
-    async def list_pipelines(self, filtre_statut: str | None = None,
-                             limit: int = 100) -> list[PipelineStatus]:
-        """Lister pipelines, optionnellement filtrés par statut."""
+    async def list_pipelines(self, filter_status: str | None = None):
+        """Query with optional filter."""
         ...
 
     async def delete_pipeline(self, pipeline_id: str):
-        """Supprimer enregistrement pipeline."""
+        """Remove record."""
         ...
 
-    async def cleanup_older_than(self, days: int) -> int:
-        """Supprimer enregistrements plus vieux que N jours. Retourne compte supprimés."""
-        ...
-
-suivi = PipelineTrackingManager().with_storage(StockagePostgres())
+tracking = PipelineTrackingManager().with_storage(PostgresStorage())
 ```
 
-Toutes méthodes stockage doivent être async.
+All storage methods must be async.
 
 ---
 
@@ -11818,10 +12913,10 @@ Toutes méthodes stockage doivent être async.
 
 | Problème | Cause Probable | Solution |
 |----------|----------------|----------|
-| `get_status()` retourne `None` | Suivi non attaché, ou `pipeline_id` incorrect | S'assurer `pipeline.with_tracking(suivi)` appelé avant `kiq()` |
-| Erreurs de stockage | Connexion Redis échouée | Vérifier Redis tourne, chaîne connexion valide |
-| Croissance mémoire (store mémoire) | Pas de purge anciens enregistrements | Définir `max_records` ou utiliser Redis avec TTL |
-| Écouteurs ne se déclenchent pas | Non ajoutés avant démarrage pipeline | Appeler `suivi.add_listener()` avant `pipeline.kiq()` |
+| `get_status()` returns `None` | Tracking not attached, or wrong `pipeline_id` | Ensure `pipeline.with_tracking(tracking)` called before `kiq()` |
+| Storage errors | Redis connection failed | Check Redis is running, connection string valid |
+| Memory growth (memory store) | No old record cleanup | Set `max_records` or use Redis with TTL |
+| Listeners not firing | Not added before pipeline start | Call `tracking.add_listener()` before `pipeline.kiq()` |
 
 ---
 
@@ -11845,8 +12940,8 @@ Bus central d'événements qui collecte les événements d'exécution de pipelin
 ```python
 from taskiq_flow.hooks import HookManager
 
-gestionnaire_hooks = HookManager()
-pipeline = Pipeline(broker).with_hooks(gestionnaire_hooks)
+hook_manager = HookManager()
+pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 
 **Événements émis**:
@@ -11869,7 +12964,7 @@ class MonHook:
         print(f"Étape {event.step_name} finie en {event.duration_ms}ms")
 
 hook = MonHook()
-gestionnaire_hooks.add_hook(hook)
+hook_manager.add_hook(hook)
 ```
 
 **Méthodes hooks** (toutes optionnelles):
@@ -12029,9 +13124,9 @@ Connecte `HookManager` à la couche de transport WebSocket:
 ```python
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 
-gestionnaire_hooks = HookManager()
-setup_websocket_bridge(gestionnaire_hooks)
-# Maintenant tous les hooks sont transférés au serveur WebSocket
+hook_manager = HookManager()
+setup_websocket_bridge(hook_manager)
+# Now all hooks are forwarded to the WebSocket server
 ```
 
 Cela installe un pont qui transfère les événements du `HookManager` aux serveurs WebSocket connectés.
@@ -12076,13 +13171,13 @@ filtre = EventFilter(pipeline_ids=["pipeline_1", "pipeline_2"])
 # Seulement événements d'étape
 filtre = EventFilter(event_types=["StepStartEvent", "StepCompleteEvent"])
 
-# Les deux
-filtre = EventFilter(
-    pipeline_ids=["*"],  # tous pipelines (ou spécifiques)
+# Both
+filter = EventFilter(
+    pipeline_ids=["*"],  # all pipelines (or specific ones)
     event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
 )
 
-gestionnaire_hooks.add_filter(filtre)
+hook_manager.add_filter(filter)
 ```
 
 ### Logique EventFilter
@@ -12256,14 +13351,14 @@ async def ws_metrics():
 | `WebSocketServer` | Gère connexions clients |
 | `get_websocket_server()` | Factory/singleton accès |
 
-**Configuration minimale**:
+**Minimal configuration**:
 
 ```python
-crochets = HookManager()
-setup_websocket_bridge(crochets)
-pipeline = Pipeline(broker).with_hooks(crochets)
-serveur = get_websocket_server()
-await serveur.start_server()
+hooks = HookManager()
+setup_websocket_bridge(hooks)
+pipeline = Pipeline(broker).with_hooks(hooks)
+server = get_websocket_server()
+await server.start_server()
 ```
 
 ---
@@ -12312,6 +13407,8 @@ pip install fastapi uvicorn[standard]
 
 ### 1. Définir Tâches et Pipeline
 
+Le pipeline suivant illustre un cas d'usage commun de recommandation:
+
 ```python
 from fastapi import FastAPI, HTTPException
 from taskiq import InMemoryBroker
@@ -12347,6 +13444,15 @@ sample_pipeline = DataflowPipeline.from_tasks(
     [fetch_user_data, fetch_orders, generate_recommendations],
 )
 sample_pipeline.pipeline_id = "sample_recommendation_pipeline"
+```
+
+**Structure du DAG:**
+
+```mermaid
+flowchart TD
+    A[fetch_user_data<br/>output: user_data] --> B[fetch_orders<br/>output: order_history]
+    A --> C[generate_recommendations<br/>output: recommendations]
+    B --> C
 ```
 
 ### 2. Créer App FastAPI avec Visualization API
@@ -12512,16 +13618,16 @@ from taskiq_flow.api import PipelineVisualizationAPI
 app = FastAPI()
 viz_api = PipelineVisualizationAPI(broker, app)
 
-# Enregistrer pipeline
-viz_api.add_pipeline("mon_pipe", mon_pipeline)
+# Register pipeline
+viz_api.add_pipeline("my_pipe", my_pipeline)
 
-# Lister pipelines enregistrés
+# List registered pipelines
 for pid, p in viz_api.pipelines.items():
     print(f"Pipeline: {pid}, tasks: {len(p.visualize()['nodes'])}")
 
-# Obtenir visualization
-dag_json = mon_pipeline.visualize()
-dot = mon_pipeline.visualize_dot()
+# Get visualization
+dag_json = my_pipeline.visualize()
+dot = my_pipeline.visualize_dot()
 ```
 
 Utile pour construire backends dashboard personnalisés ou outils CLI.
@@ -12543,9 +13649,47 @@ from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != os.getenv("API_SECRET"):
+        raise HTTPException(status_code=403, detail="Clé API invalide")
+    return api_key
+
 @app.post("/pipelines/{pipeline_id}/execute")
 async def execute(..., api_key: str = Security(verify_api_key)):
     # ...
+```
+
+### 2b. Ajouter Authentification JWT
+```python
+from jose import jwt
+from fastapi import Depends
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    return payload["sub"]
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute(..., user: str = Depends(get_current_user)):
+    logger.info(f"Utilisateur {user} a exécuté {pipeline_id}")
+    # ...
+```
+
+### 2c. Ajouter Autorisation au Niveau Pipeline
+```python
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*"], "write": []},
+})
+
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return user
 ```
 
 ### 3. Ajouter Rate Limiting
@@ -12959,10 +14103,16 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 ```
 
 Le pipeline construit automatiquement ce DAG:
+
+```mermaid
+flowchart TD
+    A[extract_audio_features] --> B[compute_mir_features]
+    A --> C[generate_tags]
+    B --> D[create_embedding]
+    C --> D
 ```
-extract_audio_features → compute_mir_features → generate_tags
-                            ↓
-                         create_embedding (après compute_mir_features, parallèle à generate_tags)
+
+**Note**: `create_embedding` dépend à la fois de `mir_features` (sortie de `compute_mir_features`) et `tags` (sortie de `generate_tags`), donc il s'exécute après que les deux tâches parallèles sont terminées.
 ```
 
 ---
@@ -13092,21 +14242,21 @@ Le pipeline fournit multiples formats de visualisation:
 # ASCII art (console)
 pipeline.print_dag()
 
-# JSON (pour UIs web)
+# JSON (for web UIs)
 viz_json = pipeline.visualize()
 # Structure:
 # {
-#   "nodes": [{"id": "nom_tache", "outputs": [...], "inputs": [...]}, ...],
-#   "edges": [{"from": "tache_a", "to": "tache_b"}],
-#   "levels": [["tache1"], ["tache2", "tache3"], ...]
+#   "nodes": [{"id": "task_name", "outputs": [...], "inputs": [...]}, ...],
+#   "edges": [{"from": "task_a", "to": "task_b"}],
+#   "levels": [["task1"], ["task2", "task3"], ...]
 # }
 
-# Format DOT (pour Graphviz)
+# DOT format (for Graphviz)
 dot = pipeline.visualize_dot()
-# Sauvegarder et rendre:
+# Save and render:
 # with open("pipeline.dot", "w") as f:
 #     f.write(dot)
-# Exécuter: dot -Tpng pipeline.dot -o pipeline.png
+# Run: dot -Tpng pipeline.dot -o pipeline.png
 ```
 
 ---
@@ -13167,13 +14317,13 @@ Cette galerie propose des parcours détaillés des scripts d'exemple inclus dans
 
 | Exemple | Description | Concepts Clés |
 |---------|-------------|---------------|
-| [Pipeline Basique](quickstart.md) | Pipeline séquentiel simple avec opérations map, filter, group | SequentialPipeline, étapes de base |
-| [Démonstration Suivi](tracking-demo.md) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
-| [Pipeline Planifié](scheduled-pipeline.md) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
-| [Pipeline Audio Dataflow](dataflow-audio-pipeline.md) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
-| [Découverte Registry](registry-discovery.md) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
-| [Démo WebSocket](websocket-demo.md) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
-| [API REST](api-example.md) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
+| [Pipeline Basique]({{ '/fr/examples/quickstart/' | relative_url }}) | Pipeline séquentiel simple avec opérations map, filter, group | SequentialPipeline, étapes de base |
+| [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }}) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
+| [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }}) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
+| [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }}) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
+| [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }}) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
+| [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }}) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
+| [API REST]({{ '/fr/examples/api-example/' | relative_url }}) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
 
 ---
 
@@ -13209,19 +14359,19 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 ## Catégories d'Exemples
 
 ### Démarrage
-- [Pipeline Basique](quickstart.md) — Commencez ici si vous êtes novice
+- [Pipeline Basique]({{ '/fr/examples/quickstart/' | relative_url }}) — Commencez ici si vous êtes novice
 
 ### Monitoring & Opérations
-- [Démonstration Suivi](tracking-demo.md)
-- [Pipeline Planifié](scheduled-pipeline.md)
-- [Démo WebSocket](websocket-demo.md)
+- [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }})
+- [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }})
+- [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }})
 
 ### Workflows Avancés
-- [Pipeline Audio Dataflow](dataflow-audio-pipeline.md)
-- [Découverte Registry](registry-discovery.md)
+- [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})
 
 ### Intégration
-- [API REST](api-example.md)
+- [API REST]({{ '/fr/examples/api-example/' | relative_url }})
 
 ---
 
@@ -13375,16 +14525,16 @@ pipeline = (
 
 ```python
 @broker.task
-def tache_a(x: int) -> int: return x * 2
+def task_a(x: int) -> int: return x * 2
 @broker.task
-def tache_b(x: int) -> int: return x + 10
+def task_b(x: int) -> int: return x + 10
 @broker.task
-def tache_c(x: int) -> int: return x ** 2
+def task_c(x: int) -> int: return x ** 2
 
 pipeline = Pipeline(broker).call_next(add_one)  # 1 → 2
-pipeline.group([tache_a, tache_b, tache_c], param_names=["x"])
-# Les trois reçoivent 2 et s'exécutent en parallèle
-# Résultat: [4, 12, 4]
+pipeline.group([task_a, task_b, task_c], param_names=["x"])
+# All three receive 2 and execute in parallel
+# Result: [4, 12, 4]
 ```
 
 ---
@@ -14075,16 +15225,8 @@ from taskiq_flow.errors import PipelineErrorAggregator
 
 aggregator = PipelineErrorAggregator()
 
-# Pendant/après exécution, erreurs collectées :
-aggregator.add_error(task=tache Echouee, error=exc, context={...})
-
-# Plus tard, analyser :
-print(f"Total erreurs: {len(aggregator.errors)}")
-print(f"Tâches échouées: {aggregator.failed_tasks}")
-print(f"Tâches skipées: {aggregator.skipped_tasks}")
-
-for err in aggregator.errors:
-    print(f"  {err.task_name}: {type(err.error).__name__}: {err.error}")
+# During/after execution, errors are collected:
+aggregator.add_error(task=failed_task, error=exc, context={...})
 ```
 
 Utile pour générer rapports d'erreur et alertes.
@@ -14894,10 +16036,10 @@ from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 from taskiq_flow.integration.websocket import get_websocket_server
 from taskiq_flow.middleware import PipelineMiddleware
 
-# Créer broker
+# Create broker
 broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
 
-# Définir tâches simples
+# Define simple tasks
 @broker.task
 def add_one(x: int) -> int:
     return x + 1
@@ -14907,18 +16049,18 @@ def multiply_by_two(x: int) -> int:
     return x * 2
 
 async def main():
-    # 1. Configurer hook manager et pont WebSocket
+    # 1. Configure hook manager and WebSocket bridge
     hook_manager = HookManager()
     setup_websocket_bridge(hook_manager)
 
-    # 2. Créer pipeline et attacher hooks
+    # 2. Create pipeline and attach hooks
     pipeline = Pipeline(broker)
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(add_one, param_name="x")
     pipeline.call_next(multiply_by_two, param_name="x")
     pipeline.with_hooks(hook_manager)
 
-    # 3. Démarrer serveur WebSocket en arrière-plan
+    # 3. Start WebSocket server in background
     websocket_server = get_websocket_server()
     _ = asyncio.create_task(
         websocket_server.start_server("127.0.0.1", 8765),
@@ -14929,14 +16071,14 @@ async def main():
     print(f"Connect a WebSocket client and subscribe with: {msg}")
     print("Then run the pipeline to see real-time events...")
 
-    # Attendre que serveur démarre
+    # Wait for server to start
     await asyncio.sleep(1)
 
-    # 4. Exécuter le pipeline
+    # 4. Execute the pipeline
     result = await pipeline.kiq(5)  # Start with 5 → 6 → 12
     print(f"Pipeline result: {result}")
 
-    # Garder serveur actif brièvement
+    # Keep server alive briefly
     await asyncio.sleep(5)
     print("Demo complete. Server will shut down.")
 
@@ -15030,26 +16172,62 @@ pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 Sans ceci, le pipeline n'émettra pas événements vers WebSocket.
 
-### 4. Définir pipeline_id
+### 4. Define pipeline_id
 ```python
-pipeline.pipeline_id = "mon_pipeline"
+pipeline.pipeline_id = "my_pipeline"
 ```
-Nécessaire pour que clients s'abonnent à pipelines spécifiques.
+Necessary for clients to subscribe to specific pipelines.
 
-### 5. Démarrer Serveur
+### 5. Start Server
 ```python
-serveur = get_websocket_server(host="127.0.0.1", port=8765)
-await serveur.start_server()
+server = get_websocket_server(host="127.0.0.1", port=8765)
+await server.start_server()
 ```
 
 ---
 
 ## Personnalisation
 
-### Changer Port
+### Change Port
 ```python
-serveur = get_websocket_server(port=9000)
+server = get_websocket_server(port=9000)
 ```
+
+### Multiple Pipelines
+```python
+pipeline1 = Pipeline(broker).with_hooks(hook_manager)
+pipeline1.pipeline_id = "pipeline_1"
+
+pipeline2 = Pipeline(broker).with_hooks(hook_manager)
+pipeline2.pipeline_id = "pipeline_2"
+```
+
+Clients can subscribe to specific pipeline IDs.
+
+### Event Filtering
+```python
+from taskiq_flow.hooks import EventFilter
+
+# Only send step completion events
+filter = EventFilter(
+    pipeline_ids=["*"],
+    event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
+)
+hook_manager.add_filter(filter)
+```
+
+### Multiple Pipelines
+```python
+pipeline1 = Pipeline(broker).with_hooks(hook_manager)
+pipeline1.pipeline_id = "pipeline_1"
+
+pipeline2 = Pipeline(broker).with_hooks(hook_manager)
+pipeline2.pipeline_id = "pipeline_2"
+```
+
+Clients can subscribe to specific pipeline IDs.
+
+### Event Filtering
 
 ### Multiples Pipelines
 ```python
@@ -15066,12 +16244,12 @@ Les clients peuvent s'abonner à IDs pipeline spécifiques.
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Seulement envoyer événements complétion étape
-filtre = EventFilter(
+# Only send step completion events
+filter = EventFilter(
     pipeline_ids=["*"],
     event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
 )
-gestionnaire_hooks.add_filter(filtre)
+hook_manager.add_filter(filter)
 ```
 
 ---
@@ -15111,7 +16289,7 @@ Après cet exemple:
 
 **Gestion de pipelines via FastAPI : exécution distante, visualisation, tableaux de bord**
 
-> **Version** : {VERSION} | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}), [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -15138,24 +16316,24 @@ from fastapi import FastAPI
 from taskiq import InMemoryBroker
 from taskiq_flow import DataflowPipeline, pipeline_task, create_visualization_api
 
-# 1. Créer broker et tâches
+# 1. Create broker and tasks
 broker = InMemoryBroker(await_inplace=True)
 
 @broker.task
-@pipeline_task(output="resultat")
-async def process(données: str) -> dict:
-    return {"traité": données.upper()}
+@pipeline_task(output="result")
+async def process(data: str) -> dict:
+    return {"processed": data.upper()}
 
-# 2. Construire pipeline
+# 2. Build pipeline
 pipeline = DataflowPipeline.from_tasks(broker, [process])
-pipeline.pipeline_id = "mon_pipeline"
+pipeline.pipeline_id = "my_pipeline"
 
-# 3. Créer app FastAPI avec API de visualisation
-app = FastAPI(title="API Taskiq-Flow", version="{VERSION}")
+# 3. Create FastAPI app with visualization API
+app = FastAPI(title="Taskiq-Flow API", version="{VERSION}")
 viz_api = create_visualization_api(broker, app)
-viz_api.add_pipeline("mon_pipeline", pipeline)
+viz_api.add_pipeline("my_pipeline", pipeline)
 
-# 4. Lancer avec uvicorn
+# 4. Run with uvicorn
 # uvicorn main:app --reload --port 8000
 ```
 
@@ -15232,11 +16410,11 @@ Retourne statut d'exécution courant si un run est actif:
 
 ```json
 {
-  "pipeline_id": "mon_pipeline_123",
-  "statut": "RUNNING",
-  "étapes_complétées": 3,
-  "total_étapes": 5,
-  "démarré_à": "2026-05-05T12:00:00Z"
+  "pipeline_id": "my_pipeline_123",
+  "status": "RUNNING",
+  "steps_completed": 3,
+  "total_steps": 5,
+  "started_at": "2026-05-05T12:00:00Z"
 }
 ```
 
@@ -15271,7 +16449,7 @@ GET /pipelines/{pipeline_id}/dag/dot
 Retourne chaîne DOT compatible Graphviz:
 
 ```
-digraph "mon_pipeline" {
+digraph "my_pipeline" {
   node [shape=box];
   extract -> tag;
   extract -> embed;
@@ -15288,20 +16466,20 @@ Retourne métadonnées complètes du pipeline:
 
 ```json
 {
-  "pipeline_id": "mon_pipeline",
+  "pipeline_id": "my_pipeline",
   "type": "dataflow",
   "tasks": [
     {
       "name": "extract",
       "outputs": ["features"],
       "inputs": [],
-      "description": "Extraire caractéristiques audio"
+      "description": "Extract audio features"
     },
     {
       "name": "tag",
       "inputs": ["features"],
       "outputs": ["tags"],
-      "description": "Générer tags"
+      "description": "Generate tags"
     }
   ],
   "execution_levels": [
@@ -15376,29 +16554,29 @@ async def get_result(task_id: str):
 ### 3.1. Exécution Async (Fire-and-Forget)
 
 ```bash
-curl -X POST "http://localhost:8000/pipelines/mon_pipeline/execute" \
+curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
-  -d '{"parameters": {"données": "valeur"}, "wait": false}'
+  -d '{"parameters": {"data": "value"}, "wait": false}'
 
-# Réponse:
+# Response:
 {
   "task_id": "abc123def456",
-  "statut": "STARTED"
+  "status": "STARTED"
 }
 ```
 
-### 3.2. Exécution Synchrone (Attendre Résultat)
+### 3.2. Synchronous Execution (Wait for Result)
 
 ```bash
-curl -X POST "http://localhost:8000/pipelines/mon_pipeline/execute" \
+curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
-  -d '{"parameters": {"données": "valeur"}, "wait": true, "timeout": 60}'
+  -d '{"parameters": {"data": "value"}, "wait": true, "timeout": 60}'
 
-# Réponse (après complétion pipeline):
+# Response (after pipeline completion):
 {
   "task_id": "abc123def456",
-  "statut": "COMPLETED",
-  "resultat": {"traité": "VALEUR"}
+  "status": "COMPLETED",
+  "result": {"processed": "VALUE"}
 }
 ```
 
@@ -15615,9 +16793,144 @@ location / {
 
 ---
 
-## 9. Monitoring de Santé API
+## 9. Sécurité de l'API
 
-### 9.1. Endpoint Health Check
+### 9.1. Authentification par Clé API
+
+```python
+from fastapi import Security, HTTPException
+from fastapi.security import APIKeyHeader
+
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != os.getenv("API_SECRET"):
+        raise HTTPException(status_code=403, detail="Clé API invalide")
+    return api_key
+
+@app.get("/pipelines")
+async def list_pipelines(api_key: str = Security(verify_api_key)):
+    return viz_api.list_pipelines()
+```
+
+### 9.2. Authentification JWT
+
+```python
+from jose import jwt
+from fastapi import Depends
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload["sub"]
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Token invalide")
+
+@app.post("/pipelines/{pipeline_id}/execute")
+async def execute(
+    pipeline_id: str,
+    parameters: dict,
+    user: str = Depends(get_current_user)
+):
+    logger.info(f"Utilisateur {user} a exécuté {pipeline_id}")
+    return await run_pipeline(pipeline_id, parameters)
+```
+
+### 9.3. Autorisation au Niveau Pipeline
+
+Utilisez `PipelineAuthorization` avec des dépendances FastAPI pour contrôler l'accès par pipeline :
+
+```python
+from fastapi import Depends
+from taskiq_flow.security.authorization import PipelineAuthorization
+from taskiq_flow.security.dependencies import verify_pipeline_access
+
+authorization = PipelineAuthorization(rules={
+    "admin": {"read": ["*"], "write": ["*"]},
+    "viewer": {"read": ["audio_*", "report_*"], "write": []},
+})
+
+async def authorized_pipeline_access(
+    pipeline_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    if not authorization.can_read(pipeline_id, user):
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/dag")
+async def get_pipeline_dag(
+    pipeline_id: str,
+    user: dict = Depends(authorized_pipeline_access),
+):
+    return viz_api.get_dag(pipeline_id)
+```
+
+### 9.4. Combinaison Middleware + Dépendances de Route
+
+Pour la production, combinez le middleware global (authentification) avec les dépendances de route (autorisation) :
+
+```python
+from taskiq_flow.security.middleware import SecurityMiddleware
+from taskiq_flow.security.auth import TokenAuthProvider
+from taskiq_flow.security.authorization import PipelineAuthorization
+
+# 1. Middleware global : authentification uniquement
+auth_provider = TokenAuthProvider(secret_key=os.getenv("SECRET_KEY"))
+app.add_middleware(
+    SecurityMiddleware,
+    auth_provider=auth_provider,
+)
+
+# 2. Dépendances de route : autorisation par pipeline
+async def check_pipeline_access(
+    pipeline_id: str = Path(...),
+    user: dict = Depends(get_current_user),
+):
+    if not authorization.can_read(pipeline_id, user.get("roles", [])):
+        raise HTTPException(status_code=403, detail="Accès au pipeline refusé")
+    return user
+
+@app.get("/pipelines/{pipeline_id}/visualize")
+async def visualize_pipeline(
+    pipeline_id: str,
+    user: dict = Depends(check_pipeline_access),
+):
+    return viz_api.visualize(pipeline_id)
+```
+
+**Pourquoi cette approche hybride ?**
+- Le middleware s'exécute **avant** le routage → `path_params` est vide
+- Les dépendances de route s'exécutent **après** le routage → `pipeline_id` est disponible
+- Le middleware définit `request.state.user` pour toutes les routes
+- Les dépendances lisent `request.state.user` et vérifient l'ACL par pipeline
+
+---
+
+## 10. Limitation de Débit
+
+Protégez l'API contre les abus:
+
+```python
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.post("/pipelines/{pipeline_id}/execute")
+@limiter.limit("10/minute")  # Max 10 exécutions par minute par IP
+async def execute_pipeline(pipeline_id: str, parameters: dict):
+    # ...
+```
+
+---
+
+## 11. Monitoring de Santé API
+
+### 11.1. Endpoint Health Check
 
 ```python
 from datetime import datetime, timezone
@@ -15636,7 +16949,7 @@ async def health():
     }
 ```
 
-### 9.2. Métriques avec Prometheus
+### 11.2. Métriques avec Prometheus
 
 ```python
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -15646,7 +16959,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 Expose `/metrics` avec métriques Prometheus standard (compte requêtes, latence, etc.).
 
-### 9.3. Versionnement API
+### 11.3. Versionnement API
 
 ```python
 app = FastAPI(
@@ -15665,7 +16978,7 @@ app.include_router(api_router)
 
 ---
 
-## 10. Gestion des Erreurs
+## 12. Gestion des Erreurs
 
 Gestion centralisée erreurs:
 
@@ -15700,7 +17013,7 @@ Réponses d'erreur standardisées:
 
 ---
 
-## 11. Exemple Client API
+## 13. Exemple Client API
 
 Client Python pour interagir avec l'API:
 
@@ -15734,15 +17047,15 @@ class ClientTaskiqFlow:
             resp.raise_for_status()
             return resp.json()
 
-# Utilisation
+# Usage
 client = ClientTaskiqFlow("http://localhost:8000")
 pipelines = await client.list_pipelines()
-résultat = await client.execute("mon_pipeline", {"données": "test"}, wait=True)
+result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 ```
 
 ---
 
-## 12. Résumé
+## 14. Résumé
 
 | Fonctionnalité | Endpoint | Méthode |
 |----------------|----------|---------|
@@ -15762,6 +17075,7 @@ résultat = await client.execute("mon_pipeline", {"données": "test"}, wait=True
 ## Prochaines Étapes
 
 - **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Streaming d'événements en temps réel pour mises à jour live
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Pipeline DAG complet avec DataflowPipeline
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Données historiques d'exécution pour analytics
 - **[Exemple: Serveur API]({{ '/fr/examples/api-example/' | relative_url }})** — App FastAPI complète fonctionnelle
 
@@ -15778,12 +17092,16 @@ résultat = await client.execute("mon_pipeline", {"données": "test"}, wait=True
 
 > **Version** : {VERSION}
 
+---
+
 ## Aperçu
 
 Taskiq-Flow est basé sur deux modèles principaux :
 
 1. **SequentialPipeline** — Exécution linéaire étape par étape
 2. **DataflowPipeline** — Construction automatique de DAG à partir des dépendances
+
+Pour une compréhension approfondie du modèle dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Comprendre ces modèles vous aide à choisir la bonne approche pour votre workflow.
 
@@ -15924,13 +17242,738 @@ Maintenant que vous comprenez les concepts :
 *Concepts clairs ? Passez à l'[Installation]({{ '/fr/guides/installation/' | relative_url }}) ou au [Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }}).*
 
 
+## DOCUMENT: Dataflow
+
+# Guide Dataflow
+
+**Construire des pipelines complexes et parallèles grâce à l'orchestration basée sur les données**
+
+> **Version** : {VERSION} | **Lié** : [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}), [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Concepts Fondamentaux]({{ '/fr/guides/core-concepts/' | relative_url }})
+
+---
+
+## Aperçu
+
+Le système **dataflow** de Taskiq-Flow est la méthode la plus puissante pour orchestrer des workflows complexes. Contrairement aux pipelines séquentiels où vous enchaînez manuellement les étapes, les pipelines dataflow construisent automatiquement un Graphe Orienté Acyclique (DAG) à partir de vos déclarations de tâches, permettant :
+
+- **Résolution automatique des dépendances** — les tâches déclarent ce qu'elles produisent et consomment
+- **Parallélisme automatique** — les tâches indépendantes s'exécutent simultanément sans configuration manuelle
+- **Exécution pilotée par les données** — le flux de données détermine l'ordre d'exécution
+- **Construction dynamique de pipelines** — ajouter des tâches flexiblement à l'exécution
+
+Ce guide couvre l'ensemble du système dataflow : le DAG, le registre, les décorateurs, le moteur d'exécution et les patterns avancés.
+
+---
+
+## 1. Concepts Fondamentaux
+
+### 1.1. Le paradigme Dataflow
+
+Dans un pipeline dataflow, les tâches sont connectées par **dépendances de données** plutôt que par un ordre explicite :
+
+```
+Séquentiel :              Dataflow :
+task1 → task2 → task3     task1 ──→ task2
+                              └──→ task3  (parallèle !)
+```
+
+Chaque tâche déclare :
+- **`output`** : La donnée produite (ex : `"features"`)
+- **`inputs`** : Les données consommées (ex : `["features", "config"]`)
+
+La bibliothèque résout automatiquement les dépendances et construit le graphe d'exécution.
+
+### 1.2. Composants Clés
+
+| Composant | Rôle | Module |
+|-----------|------|--------|
+| `@pipeline_task` | Décorateur pour déclarer les E/S d'une tâche | `taskiq_flow.decorators` |
+| `DataNode` | Représente un artefact de données dans le graphe | `taskiq_flow.dataflow.node` |
+| `DAG` / `DAGNode` | Structure de graphe pour le suivi des dépendances | `taskiq_flow.dataflow.dag` |
+| `DataflowRegistry` | Registre central pour la construction du DAG | `taskiq_flow.dataflow.registry` |
+| `DataCache` | Stocke les résultats intermédiaires pendant l'exécution | `taskiq_flow.dataflow.cache` |
+| `DataflowPipeline` | Pipeline de haut niveau avec orchestration dataflow | `taskiq_flow.pipeline` |
+| `ExecutionEngine` | Exécuteur DAG bas niveau avec parallélisme | `taskiq_flow.execution_engine` |
+
+---
+
+## 2. Déclaration des Tâches Dataflow
+
+### 2.1. Le décorateur `@pipeline_task`
+
+Marquez une fonction comme tâche de pipeline avec un output explicite :
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import pipeline_task, DataflowPipeline
+
+broker = InMemoryBroker()
+
+@broker.task
+@pipeline_task(output="features")
+async def extract_features(paths: list[str]) -> dict:
+    """Extrait les caractéristiques audio depuis des chemins de fichiers."""
+    return {"tempo": 120.0, "energy": 0.8}
+```
+
+**Paramètres :**
+
+| Paramètre | Type | Défaut | Description |
+|------------|------|--------|-------------|
+| `output` | `str` | **requis** | Nom de la donnée produite par cette tâche |
+| `inputs` | `list[str]` | `None` (inféré) | Noms des données consommées |
+| `retries` | `int` | `0` | Nombre de tentatives en cas d'échec |
+| `retry_delay` | `float` | `1.0` | Délai initial entre les essais (secondes) |
+| `retry_backoff` | `float` | `2.0` | Multiplicateur du délai entre les essais |
+| `retry_jitter` | `bool` | `True` | Ajouter un jitter aléatoire aux délais |
+| `max_retry_time` | `int` | `300` | Temps maximum total pour les retries (secondes) |
+| `resources` | `dict` | `{}` | Estimation des ressources (memory, cpu) |
+
+### 2.2. Inférence automatique des entrées
+
+Si `inputs` n'est pas spécifié, les noms sont inférés depuis la signature de la fonction :
+
+```python
+@broker.task
+@pipeline_task(output="stats")
+def compute_stats(features: dict, config: dict) -> dict:
+    # inputs automatiquement inférés : ["features", "config"]
+    return {"count": len(features)}
+```
+
+Les paramètres nommés `self`, `cls`, ou ceux ayant une valeur par défaut sont exclus.
+
+### 2.3. Sorties Multiples
+
+Utilisez `@pipeline_task_multi_output` lorsqu'une tâche produit plusieurs artefacts :
+
+```python
+from taskiq_flow.decorators import pipeline_task_multi_output
+
+@broker.task
+@pipeline_task_multi_output(
+    outputs={"features": dict, "metadata": dict},
+    retries=2
+)
+async def process_audio(path: str) -> dict:
+    features = extract(path)
+    meta = get_metadata(path)
+    return {
+        "features": features,  # → sortie "features"
+        "metadata": meta,       # → sortie "metadata"
+    }
+```
+
+La **première clé** est la sortie principale ; toutes les clés sont enregistrées comme sorties nommées.
+
+---
+
+## 3. Construction des Pipelines Dataflow
+
+### 3.1. `DataflowPipeline.from_tasks()`
+
+L'approche recommandée pour la plupart des cas :
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [extract_features, compute_stats, generate_report]
+)
+```
+
+Le DAG est construit automatiquement :
+- `extract_features` produit `"features"` — aucune dépendance → Niveau 0
+- `compute_stats` consomme `"features"` → dépend de `extract_features` → Niveau 1
+- `generate_report` consomme `"stats"` → dépend de `compute_stats` → Niveau 2
+
+### 3.2. Ajout dynamique de tâches
+
+```python
+pipeline = DataflowPipeline(broker)
+pipeline.add_dataflow_task(extract_features)
+pipeline.add_dataflow_task(compute_stats)
+pipeline.add_dataflow_task(generate_report)
+
+# Le DAG est reconstruit paresseusement à la première exécution
+results = await pipeline.kiq_dataflow(paths=["chanson.mp3"])
+```
+
+### 3.3. Fan-Out / Fan-In (Dépendances Multiples)
+
+Des tâches peuvent consommer plusieurs sorties, et plusieurs tâches peuvent partager une dépendance :
+
+```python
+@broker.task
+@pipeline_task(output="audio")
+def load_audio(path: str) -> dict: ...
+
+@broker.task
+@pipeline_task(output="transcription")
+def transcribe(audio: dict) -> str: ...
+
+@broker.task
+@pipeline_task(output="tags")
+def generate_tags(audio: dict) -> list[str]: ...  # parallèle avec transcribe
+
+@broker.task
+@pipeline_task(output="report")
+def create_report(
+    transcription: str,
+    tags: list[str]
+) -> dict: ...  # fan-in : attend les deux
+
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_audio, transcribe, generate_tags, create_report]
+)
+# DAG :
+#   load_audio → (transcribe ∥ generate_tags) → create_report
+```
+
+### 3.4. Entrées Externes
+
+Passez des données à l'exécution qui ne sont produites par aucune tâche :
+
+```python
+results = await pipeline.kiq_dataflow(
+    user_id="user_123",        # entrée externe
+    config={"mode": "fast"}    # entrée externe
+)
+```
+
+Les entrées externes sont identifiées automatiquement — ce sont les paramètres sans producteur correspondant.
+
+---
+
+## 4. Construction et Inspection du DAG
+
+### 4.1. Le `DataflowRegistry`
+
+Pour des cas avancés, construisez des DAGs manuellement :
+
+```python
+from taskiq_flow import DataflowRegistry
+
+registry = DataflowRegistry()
+
+# Enregistrez les tâches avec leurs E/S explicites
+registry.register_task(
+    task=load_data,
+    output="raw_data",
+    inputs=["source_url"]  # entrée externe
+)
+registry.register_task(
+    task=clean_data,
+    output="clean_data",
+    inputs=["raw_data"]
+)
+registry.register_task(
+    task=save_data,
+    output="saved",
+    inputs=["clean_data"]
+)
+
+# Inspectez le graphe
+print("Tâches:", [t.task_name for t in registry.get_tasks()])
+print("Sorties:", registry.get_outputs())
+print("Entrées externes:", registry.get_external_inputs())
+
+# Construisez le DAG
+dag = registry.build_dag()
+dag.print()
+```
+
+### 4.2. Méthodes d'Inspection du DAG
+
+```python
+from taskiq_flow.dataflow import DAG, DAGNode
+
+# Ordre topologique
+ordered = dag.topological_sort()
+for node in ordered:
+    print(f"Niveau {node.level}: {node.task_name}")
+
+# Groupes d'exécution parallèle
+dag.compute_levels()
+for i, level in enumerate(dag.levels):
+    names = [n.task_name for n in level]
+    print(f"Niveau {i} (parallèle): {names}")
+
+# Tâches prêtes étant donné un ensemble complété
+ready = dag.get_ready_tasks(completed={node_a})
+
+# Visualisation (nécessite networkx)
+from taskiq_flow.visualization import DAGVisualizer
+viz = DAGVisualizer(dag)
+print(viz.to_json())
+print(viz.to_graphviz())
+print(viz.visualize_ascii())
+```
+
+### 4.3. Chemin Critique et Groupes Parallèles
+
+```python
+from taskiq_flow.visualization import DAGVisualizer
+
+viz = DAGVisualizer(dag)
+
+# Chemin critique = chaîne d'exécution la plus longue
+critical = viz.detect_critical_path()
+print(f"Chemin critique: {' → '.join(critical)}")
+
+# Groupes de tâches pouvant s'exécuter en parallèle
+groups = viz.find_parallelizable_groups()
+for i, group in enumerate(groups):
+    print(f"Groupe parallèle {i}: {group}")
+```
+
+---
+
+## 5. Exécution
+
+### 5.1. Lancer des Pipelines Dataflow
+
+```python
+# Exécuter et récupérer toutes les sorties
+results = await pipeline.kiq_dataflow(track_paths=["chanson1.mp3", "chanson2.mp3"])
+print(results)
+# {"audio_features": {...}, "mir_features": {...}, "tags": [...], "embedding": [...]}
+```
+
+### 5.2. Le Moteur d'Exécution
+
+`DataflowPipeline` utilise `ExecutionEngine` en interne pour l'exécution basée sur le DAG :
+
+```python
+from taskiq_flow import ExecutionEngine
+
+# Exécution personnalisée avec contrôle fin
+engine = ExecutionEngine(
+    broker=broker,
+    dag=dag,
+    max_parallel=10,
+    error_mode=ErrorHandlingMode.CONTINUE_ON_ERROR,
+    resource_aware=True,
+)
+
+outputs = await engine.execute(
+    inputs={"source_file": "data.csv"},
+    pipeline_id="mon_pipeline"
+)
+```
+
+**Fonctionnalités d'exécution :**
+- Ordre topologique — les tâches s'exécutent après leurs dépendances
+- Exécution parallèle — les tâches indépendantes tournent simultanément
+- Retry par tâche — configuré via `@pipeline_task(retries=N)`
+- Modes d'erreur — `FAIL_FAST`, `CONTINUE_ON_ERROR`, `SKIP_FAILED`
+- Parallélisme basé sur les ressources — ajuste la concurrence selon CPU/mémoire
+
+### 5.3. Opérations Map-Reduce
+
+Pour le traitement par lots dans les pipelines :
+
+```python
+from taskiq_flow import MapReduce
+
+# Map parallèle
+mapped = await MapReduce.map(
+    broker,
+    process_item,
+    items=list(range(100)),
+    output="processed",
+    max_parallel=10,
+)
+
+# Agrégation
+result = await MapReduce.reduce(
+    broker,
+    aggregate_results,
+    mapped.results,
+    output="final",
+    initial=0,
+)
+
+# Map-reduce combiné
+final = await MapReduce.map_reduce(
+    broker,
+    map_task=process_item,
+    reduce_task=aggregate_results,
+    items=list(range(1000)),
+    max_parallel=20,
+    reduce_chunk_size=100,
+)
+```
+
+**Fonctionnalités map :**
+- Parallélisme automatique avec `asyncio`
+- Chunking intelligent pour les grands ensembles
+- Callbacks de progression
+- Collecte des erreurs avec taux de réussite
+
+### 5.4. Map/Reduce au Niveau Pipeline
+
+`DataflowPipeline` intègre les opérations map-reduce :
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker, [extract_features]
+)
+
+# Ajouter une opération map (traitement parallèle de nombreux éléments)
+pipeline.map(
+    process_track,
+    track_list,
+    output="track_features",
+    max_parallel=10,
+)
+
+# Ajouter une opération reduce (agrégation)
+pipeline.reduce(
+    aggregate_features,
+    input_name="track_features",
+    output="playlist_stats",
+)
+
+# Exécuter
+results = await pipeline.kiq_map_reduce(track_list=tracks)
+```
+
+---
+
+## 6. Combiner Pipelines Séquentiels et Dataflow
+
+### 6.1. Pattern Hybride
+
+Utilisez des pipelines séquentiels pour les flux linéaires et dataflow pour les sous-workflows complexes :
+
+```python
+# Coquille séquentielle
+main_pipeline = Pipeline(broker)
+
+@broker.task
+def run_dataflow_subset(data: list) -> dict:
+    # Pipeline dataflow interne
+    sub_pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [task_a, task_b, task_c]
+    )
+    return await sub_pipeline.kiq_dataflow(data=data)
+
+main_pipeline.call_next(run_dataflow_subset).call_next(finalize)
+```
+
+### 6.2. Planification de Pipelines
+
+Planifiez des pipelines dataflow avec cron ou intervalles :
+
+```python
+from taskiq_flow import PipelineScheduler
+
+scheduler = PipelineScheduler(broker)
+
+# Planification cron
+await scheduler.schedule(
+    pipeline,
+    cron="0 2 * * *",  # Quotidien à 2h du matin
+    kwargs={"paths": ["daily_files/*.mp3"]}
+)
+
+# Planification par intervalle
+await scheduler.schedule(
+    pipeline,
+    interval_seconds=3600,  # Toutes les heures
+    label="hourly_analysis"
+)
+```
+
+---
+
+## 7. Cache et Résultats Intermédiaires
+
+### 7.1. `DataCache`
+
+Le `DataCache` stocke les résultats intermédiaires pendant l'exécution du pipeline :
+
+```python
+from taskiq_flow.dataflow.cache import DataCache
+
+cache = DataCache()
+
+# Stocker des résultats
+cache.set("features", {"tempo": 120.0})
+cache.set("tags", ["electronic", "dance"])
+
+# Récupérer
+features = cache.get("features")
+
+# Vérifier l'existence
+if cache.has("embedding"):
+    embedding = cache.get("embedding")
+
+# Injection automatique de dépendances pour les tâches
+inputs = cache.inject(["features", "tags"])
+# → {"features": {...}, "tags": [...]}
+
+# Effacer entre les exécutions
+cache.clear()
+```
+
+---
+
+## 8. Gestion des Erreurs dans Dataflow
+
+### 8.1. Modes d'Erreur
+
+```python
+from taskiq_flow.errors import ErrorHandlingMode
+
+# Arrêter au premier erreur (défaut)
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.FAIL_FAST)
+
+# Continuer malgré les erreurs
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.CONTINUE_ON_ERROR)
+
+# Ignorer les tâches échouées
+engine = ExecutionEngine(broker, dag, error_mode=ErrorHandlingMode.SKIP_FAILED)
+```
+
+### 8.2. Configuration des Retries
+
+Configurez les retries au niveau de chaque tâche :
+
+```python
+@broker.task
+@pipeline_task(
+    output="reliable_feature",
+    retries=3,
+    retry_delay=2.0,
+    retry_backoff=2.0,
+)
+def fetch_with_retry(url: str) -> dict:
+    # Sera réessayé jusqu'à 3 fois avec backoff exponentiel
+    ...
+```
+
+---
+
+## 9. Gestion des Ressources
+
+### 9.1. Parallélisme Basé sur les Ressources
+
+Contrôlez le parallélisme en fonction de l'utilisation estimée des ressources :
+
+```python
+from taskiq_flow.optimization.parallel import ResourceAwareExecutor
+
+executor = ResourceAwareExecutor(
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=10,
+)
+
+engine = ExecutionEngine(
+    broker,
+    dag,
+    resource_aware=True,
+    resource_profiles={
+        "heavy_task": {"estimated_memory_mb": 500, "estimated_cpu_cores": 2.0},
+        "light_task": {"estimated_memory_mb": 50, "estimated_cpu_cores": 0.5},
+    },
+)
+```
+
+---
+
+## 10. Visualisation
+
+### 10.1. Visualisation Intégrée
+
+```python
+# ASCII dans la console
+pipeline.print_dag()
+
+# JSON pour interfaces web
+viz = pipeline.visualize()  # → {"nodes": [...], "edges": [...], "levels": [...]}
+
+# DOT pour Graphviz
+dot = pipeline.visualize_dot()
+# Rendu : dot -Tpng pipeline.dot -o pipeline.png
+```
+
+### 10.2. Visualisation Avancée (nécessite networkx)
+
+```python
+from taskiq_flow.visualization import DAGVisualizer
+
+viz = DAGVisualizer(dag)
+
+# Formats d'exportation
+viz.to_json()           # JSON pour frontend
+viz.to_cytoscape_json() # Format Cytoscape.js
+viz.to_graphviz()       # Format DOT
+viz.visualize_ascii()   # Art ASCII
+
+# Analyse
+viz.detect_critical_path()      # Chemin d'exécution le plus long
+viz.find_parallelizable_groups()  # Tâches exécutables en parallèle
+```
+
+### 10.3. Diagrammes Mermaid
+
+```python
+from taskiq_flow.visualization import MermaidGenerator
+
+mermaid = MermaidGenerator(dag)
+print(mermaid.to_mermaid())           # Diagramme basique
+print(mermaid.to_mermaid_with_styling())  # Stylisé avec couleurs
+```
+
+---
+
+## 11. Exemple Complet : Pipeline de Traitement Audio
+
+```python
+import asyncio
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker()
+
+@broker.task
+@pipeline_task(output="audio_features")
+async def extract_audio(paths: list[str]) -> dict:
+    return {"duration": 180.0, "tempo": 120.0}
+
+@broker.task
+@pipeline_task(output="mir_features")
+async def compute_mir(audio_features: dict) -> dict:
+    return {"key": "C major", "loudness": -12.5}
+
+@broker.task
+@pipeline_task(output="tags")
+async def generate_tags(mir_features: dict) -> list[str]:
+    return ["electronic", "dance"]
+
+@broker.task
+@pipeline_task(output="embedding")
+async def create_embedding(
+    mir_features: dict,
+    tags: list[str]
+) -> list[float]:
+    return [0.1, 0.2, 0.3, 0.4, 0.5]
+
+async def main():
+    pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [extract_audio, compute_mir, generate_tags, create_embedding]
+    )
+
+    # Inspecter avant exécution
+    pipeline.print_dag()
+
+    # Exécuter
+    results = await pipeline.kiq_dataflow(
+        paths=["track1.mp3", "track2.mp3"]
+    )
+
+    print(results)
+    # {
+    #   "audio_features": {"duration": 180.0, "tempo": 120.0},
+    #   "mir_features": {"key": "C major", "loudness": -12.5},
+    #   "tags": ["electronic", "dance"],
+    #   "embedding": [0.1, 0.2, 0.3, 0.4, 0.5]
+    # }
+
+asyncio.run(main())
+```
+
+---
+
+## 12. Pièges Courants
+
+| Symptôme | Cause | Solution |
+|----------|-------|----------|
+| Toutes les tâches s'exécutent séquentiellement | Utilisation de `Pipeline` au lieu de `DataflowPipeline` | Passer à `DataflowPipeline` |
+| Erreurs "sortie manquante" | `@pipeline_task(output=...)` ne correspond pas au paramètre en aval | Aligner le nom de sortie avec le nom du paramètre |
+| "No DAG built" | `kiq_dataflow()` appelé sans tâches ajoutées | Ajouter des tâches via `from_tasks()` ou `add_dataflow_task()` |
+| Tâches exécutées deux fois | Mélange de `.call_next()` et dépendances `@pipeline_task` | Utiliser une seule approche de manière cohérente |
+| Deadlock détecté | Dépendance circulaire dans le flux de données | Redéfinir avec un flux de données avant uniquement |
+| Explosion mémoire | Trop de tâches parallèles | Définir `max_parallel` ou utiliser le mode resource-aware |
+
+---
+
+## 13. Conseils de Performance
+
+1. **Limiter le parallélisme** — Utiliser `max_parallel` pour contrôler le nombre de tâches simultanées
+2. **Utiliser map-reduce pour les lots** — `MapReduce.map()` avec chunking pour les grands ensembles
+3. **Profiler l'utilisation des ressources** — Définir `resource_profiles` pour le parallélisme adaptatif
+4. **Éviter les résultats intermédiaires volumineux** — Streamer les données quand c'est possible
+5. **Réutiliser le DAG** — Construire le DAG une fois, exécuter plusieurs fois avec des entrées différentes
+
+---
+
+## 14. Résumé de l'API
+
+### `DataflowPipeline`
+
+| Méthode | Description |
+|---------|-------------|
+| `from_tasks(broker, tasks)` | Créer un pipeline à partir d'une liste de tâches |
+| `add_dataflow_task(task)` | Ajouter une tâche dynamiquement |
+| `kiq_dataflow(**inputs)` | Exécuter le pipeline avec orchestration dataflow |
+| `kiq_map_reduce(**inputs)` | Exécuter en mode map-reduce |
+| `kiq_map_reduce_advanced(...)` | Exécution map-reduce avancée avec options complètes |
+| `kiq_map_sweep(task, param_values, ...)` | Balayage multi-dimensionnel de paramètres |
+| `visualize()` | Obtenir le DAG en JSON |
+| `visualize_dot()` | Obtenir le DAG au format DOT |
+| `print_dag()` | Affichage ASCII dans la console |
+| `schedule_with_cron(scheduler, label, cron, **inputs)` | Planification avec expression cron |
+| `schedule_with_labels(scheduler, label, ...)` | Planification avec LabelBasedScheduler |
+| `map(task, items, output, ...)` | Ajouter une opération map |
+| `reduce(task, input_name, output, ...)` | Ajouter une opération reduce |
+
+### `DataflowRegistry`
+
+| Méthode | Description |
+|---------|-------------|
+| `register_task(task, output, inputs, **meta)` | Enregistrer une tâche avec ses métadonnées E/S |
+| `build_dag()` | Construire le DAG à partir des tâches enregistrées |
+| `get_producer(data_name)` | Trouver la tâche productrice pour une donnée |
+| `get_consumers(data_name)` | Trouver les tâches consommatrices d'une donnée |
+| `get_external_inputs()` | Lister les entrées externes |
+| `get_outputs()` | Lister toutes les sorties |
+| `get_tasks()` | Lister toutes les tâches enregistrées |
+
+### `ExecutionEngine`
+
+| Méthode | Description |
+|---------|-------------|
+| `execute(inputs, pipeline_id)` | Exécuter le DAG avec les entrées fournies |
+| `get_execution_report()` | Obtenir les statistiques d'exécution |
+
+### `MapReduce`
+
+| Méthode | Description |
+|---------|-------------|
+| `map(broker, task, items, output, ...)` | Opération map en parallèle |
+| `reduce(broker, task, inputs, output, ...)` | Opération de réduction |
+| `map_reduce(broker, map_task, reduce_task, items, ...)` | Map + reduce combinés |
+| `map_sweep(broker, task, param_values, output, ...)` | Balayage multi-dimensionnel |
+
+---
+
+*Maîtrisez le dataflow pour construire des workflows complexes et parallèles. Pour les patterns séquentiels, voir le [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*
+
+
 ## DOCUMENT: Execution
 
 # Guide d'Exécution des Pipelines
 
 **Comprendre les modèles d'exécution, les modes et la gestion des résultats**
 
-> **Version** : {VERSION} | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce
+> **Version** : {VERSION} | **S'applique à** : SequentialPipeline, DataflowPipeline, MapReduce | **Voir aussi** : [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -16160,9 +18203,9 @@ pipeline = Pipeline(broker)
 # Timeout global pour tout le pipeline (secondes)
 pipeline.with_timeout(60)
 
-# Ou timeout par tâche via le décorateur taskiq
+# Or per-task timeout via the taskiq decorator
 @broker.task(timeout=30)
-def tache_lente(): ...
+def slow_task(): ...
 ```
 
 **Comportement des timeouts**：
@@ -16180,11 +18223,11 @@ Chaque tâche reçoit un paramètre optionnel `context` contenant des métadonn�
 from taskiq_flow import PipelineContext
 
 @broker.task
-async def ma_tache(données: str, context: PipelineContext):
-    print(f"ID Pipeline: {context.pipeline_id}")
-    print(f"Index d'étape: {context.step_index}")
-    print(f"ID Tâche: {context.task_id}")
-    return données.upper()
+async def my_task(data: str, context: PipelineContext):
+    print(f"Pipeline ID: {context.pipeline_id}")
+    print(f"Step index: {context.step_index}")
+    print(f"Task ID: {context.task_id}")
+    return data.upper()
 ```
 
 **Champs du contexte**：
@@ -16340,10 +18383,10 @@ pipeline.print_dag()
 
 ```python
 @broker.task
-async def tache_debug(données, context: PipelineContext):
-    print(f"Reçu: {données}")
-    print(f"Contexte: pipeline={context.pipeline_id}, étape={context.step_index}")
-    return données
+async def debug_task(data, context: PipelineContext):
+    print(f"Received: {data}")
+    print(f"Context: pipeline={context.pipeline_id}, step={context.step_index}")
+    return data
 ```
 
 ### 10.4. Middleware de Traçage
@@ -16409,6 +18452,9 @@ Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour
 | Tâches reçoivent de mauvaises entrées | Nommage incorrect des paramètres | S'assurer que `@pipeline_task(output=...)` correspond aux noms de paramètres en aval |
 | Résultats dans le désordre | Tâches dataflow finissant à des moments différents | Le dict des résultats préserve les noms de sortie, pas l'ordre d'exécution |
 | Explosion mémoire | Parallélisme illimité | Définir `max_parallel` ou traiter par lots |
+| Deadlock détecté | Dépendance circulaire ou entrée externe manquante | Vérifier le graphe de flux de données pour les cycles ; fournir toutes les entrées externes |
+| `kiq_dataflow()` lève "No DAG built" | Aucune tâche ajoutée au pipeline | Utiliser `DataflowPipeline.from_tasks()` ou `add_dataflow_task()` |
+| Résultats partiels uniquement | `continue_on_error=True` avec des tâches échouées | Vérifier `PipelineErrorAggregator` ou le rapport d'exécution |
 
 ---
 
@@ -16426,12 +18472,13 @@ Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour
 ## Prochaines Étapes
 
 - **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Choisir entre types de pipelines et motifs
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Guide complet sur les pipelines dataflow, DAGs et décorateurs
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveillance du statut et historique des pipelines
 - **[Guide de Performance]({{ '/fr/guides/performance/' | relative_url }})** — Réglage pour vitesse et ressources
 
 ---
 
-*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Ensuite, apprenez sur les [Types de Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}).*
+*Comprendre l'exécution est essentiel pour construire des pipelines fiables. Découvrez les [Pipelines Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}) pour des workflows complexes.*
 
 
 ## DOCUMENT: Index
@@ -17065,6 +19112,7 @@ L'optimisation des performances est itérative :
 ## Prochaines Étapes
 
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Surveiller les métriques des pipelines
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Guide complet sur les pipelines DAG et l'architecture dataflow
 - **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Construire des tableaux de bord pour la performance
 - **[Exemple : Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Voir l'optimisation en action
 
@@ -17079,7 +19127,7 @@ L'optimisation des performances est itérative :
 
 **Motifs de pipelines séquentiels et dataflow, configurations et bonnes pratiques**
 
-> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}), [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})
 
 ---
 
@@ -17089,6 +19137,8 @@ Taskiq-Flow propose deux types principaux de pipelines pour orchestrer des workf
 
 1. **SequentialPipeline** — Enchaînement manuel des étapes pour des workflows linéaires
 2. **DataflowPipeline** — Construction automatique de DAG depuis les dépendances entre tâches
+
+Pour une exploration approfondie des patterns dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Ce guide explore les deux types, leurs cas d'usage, et comment choisir entre eux.
 
@@ -17120,78 +19170,80 @@ pipeline = (
 Exécute une tâche, passant le résultat précédent comme premier argument：
 
 ```python
-pipeline.call_next(traiter_données).call_next(sauvegarder_résultat)
-# traiter_données reçoit la sortie de l'étape précédente
-# sauvegarder_résultat reçoit la sortie de traiter_données
+pipeline.call_next(process_data).call_next(save_result)
+# process_data receives output of previous step
+# save_result receives output of process_data
 ```
 
-**Liaison de paramètres**：
-- Par position : le résultat devient le premier argument
-- Par nom : `pipeline.call_next(tache, nom_param=résultat_précédent)`
+**Parameter binding**:
+- By position: result becomes first argument
+- By name: `pipeline.call_next(task, param_name=previous_result)`
 
-Exemple：
+Example:
 ```python
 @broker.task
-def multiplieur(valeur: int, facteur: int) -> int:
-    return valeur * facteur
+def multiply(value: int, factor: int) -> int:
+    return value * factor
 
-pipeline.call_next(additionner).call_next(multiplieur, facteur=3)
-# sortie de additionner → multiplieur(valeur=...), facteur=3
+pipeline.call_next(add_one).call_next(multiply, factor=3)
+# add_one output → multiply(value=...), factor=3
 ```
 
 #### `.call_after(task, *args, **kwargs)`
 
-Exécute une tâche **sans** consommer le résultat précédent (fire-and-forget dans le pipeline)：
+Execute a task **without** consuming the previous result (fire-and-forget within pipeline):
 
 ```python
-pipeline.call_next(processus).call_after(journaliser)
-# journaliser s'exécute après processus mais ne reçoit pas sa sortie
+pipeline.call_next(process).call_after(log_completion)
+# log_completion runs after process but doesn't receive process's output
 ```
 
-Utile pour les effets de bord (logs, notifications) qui ne devraient pas transformer le flux de données。
+Useful for side effects (logging, notifications) that shouldn't transform the data flow.
 
 #### `.map(task, max_parallel=None)`
 
-Applique une tâche à chaque élément d'un résultat itérable en parallèle：
+Apply a task to each element of an iterable result in parallel:
 
 ```python
-# L'étape précédente a retourné : [1, 2, 3, 4]
-pipeline.map(processer_élément)
-# Exécute processer_élément(1), processer_élément(2), ... concurremment
-# Collecte les résultats: [traité1, traité2, ...]
+# Previous step returned: [1, 2, 3, 4]
+pipeline.map(process_item)
+# Runs process_item(1), process_item(2), ... concurrently
+# Collects results: [processed1, processed2, ...]
 ```
 
-**Options**：
-- `max_parallel=10` — limiter les exécutions concurrentes
-- `output_name="résultats"` — clé de sortie personnalisée (défaut : nom de sortie de tâche)
+**Options**:
+- `max_parallel=10` — limit concurrent executions
+- `output_name="results"` — custom output key (default: task output name)
 
 #### `.filter(task)`
 
-Conserve les éléments où la tâche renvoie une valeur vraie：
+Keep elements where the task returns truthy:
 
 ```python
-# L'étape précédente a retourné : [1, 2, 3, 4]
-pipeline.filter(est_pair)
-# Garde les éléments où est_pair(élément) renvoie True
-# Résultat: [2, 4]
+# Previous step returned: [1, 2, 3, 4]
+pipeline.filter(is_even)
+# Keeps elements where is_even(element) returns True
+# Result: [2, 4]
 ```
 
-#### `.group(tâches, param_names=None)`
+#### `.group(tasks, param_names=None)`
 
-Exécute plusieurs tâches indépendantes en parallèle, à partir de la même entrée：
+Execute multiple independent tasks in parallel, starting from the same input:
 
 ```python
 pipeline.group(
-    [tache_a, tache_b, tache_c],
-    param_names=["x", "y", "z"]  # lier l'entrée à ces paramètres
+    [task_a, task_b, task_c],
+    param_names=["x", "y", "z"]  # bind input to these parameters
 )
-# Toutes les trois tâches reçoivent le même résultat précédent
-# Retourne : [résultat_a, résultat_b, résutlat_c]
+# All three tasks receive the same previous result
+# Returns: [result_a, result_b, result_c]
 ```
 
 ---
 
 ## 2. Pipeline Dataflow
+
+> Pour un guide complet sur les patterns dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
 Construction automatique de DAG via annotations `@pipeline_task(output=...)`.
 
@@ -17202,18 +19254,58 @@ from taskiq_flow import pipeline_task, DataflowPipeline
 
 @broker.task
 @pipeline_task(output="features")
-def extraire_features(données: list[str]) -> dict:
-    return {"count": len(données)}
+def extract_features(data: list[str]) -> dict:
+    return {"count": len(data)}
 
 @broker.task
 @pipeline_task(output="stats")
-def calculer_stats(features: dict) -> dict:
+def compute_stats(features: dict) -> dict:
     return {"entries": features["count"] * 2}
 
 @broker.task
 @pipeline_task(output="report")
-def générer_rapport(stats: dict) -> str:
+def generate_report(stats: dict) -> str:
     return f"Stats: {stats}"
+```
+
+**Key**: The `output` parameter declares what this task produces. Downstream tasks declare matching parameter names to consume those outputs.
+
+### 2.2. Building the Pipeline
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [extract_features, compute_stats, generate_report]
+)
+```
+
+**Automatic dependency resolution**:
+
+1. `extract_features` produces `features` — no dependencies
+2. `compute_stats` needs `features` — depends on `extract_features`
+3. `generate_report` needs `stats` — depends on `compute_stats`
+
+**Resulting DAG**:
+```
+extract_features → compute_stats → generate_report
+```
+
+### 2.3. Multiple Consumers
+
+Multiple tasks can consume the same output; they'll all wait for the producer:
+
+```python
+@broker.task
+@pipeline_task(output="features")
+def extract(data): ...
+
+@broker.task
+@pipeline_task(output="tags")
+def tag(features: dict): ...   # consumer 1 of features
+
+@broker.task
+@pipeline_task(output="embedding")
+def embed(features: dict): ... # consumer 2 of features
 ```
 
 **Clé** : Le paramètre `output` déclare ce que cette tâche produit. Les tâches en aval déclarent des noms de paramètres correspondants pour consommer ces sorties.
@@ -17223,8 +19315,18 @@ def générer_rapport(stats: dict) -> str:
 ```python
 pipeline = DataflowPipeline.from_tasks(
     broker,
-    [extraire_features, calculer_stats, générer_rapport]
+    [extract_features, compute_stats, generate_report]
 )
+
+**Automatic dependency resolution**:
+
+1. `extract_features` produces `features` — no dependencies
+2. `compute_stats` needs `features` — depends on `extract_features`
+3. `generate_report` needs `stats` — depends on `compute_stats`
+
+**Resulting DAG**:
+```
+extract_features → compute_stats → generate_report
 ```
 
 **Résolution automatique des dépendances**：
@@ -17240,22 +19342,20 @@ extraire_features → calculer_stats → générer_rapport
 
 ### 2.3. Multiple Consommateurs
 
-Plusieurs tâches peuvent consommer la même sortie ; elles attendront toutes le producteur：
+Multiple tasks can consume the same output; they'll all wait for the producer:
 
 ```python
 @broker.task
 @pipeline_task(output="features")
-def extraire(données): ...
+def extract(data): ...
 
 @broker.task
 @pipeline_task(output="tags")
-def tagger(features: dict): ...   # consommateur 1 de features
+def tag(features: dict): ...   # consumer 1 of features
 
 @broker.task
 @pipeline_task(output="embedding")
-def embeder(features: dict): ...  # consommateur 2 de features
-
-# tagger et embeder s'exécutent en parallèle après completion de extraire
+def embed(features: dict): ... # consumer 2 of features
 ```
 
 ### 2.4. Paramètres d'Entrée
@@ -17286,8 +19386,8 @@ Voir [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour plus de 
 ### 3.2. Définition d'un ID de Pipeline Personnalisé
 
 ```python
-pipeline.pipeline_id = "mon_workflow_001"
-# Si non défini, un UUID est généré automatiquement
+pipeline.pipeline_id = "my_workflow_001"
+# If not set, a UUID is automatically generated
 ```
 
 Important pour le suivi et les abonnements WebSocket.
@@ -17297,8 +19397,8 @@ Important pour le suivi et les abonnements WebSocket.
 ```python
 from taskiq_flow.hooks import HookManager
 
-crochets = HookManager()
-pipeline = Pipeline(broker).with_hooks(crochets)
+hooks = HookManager()
+pipeline = Pipeline(broker).with_hooks(hooks)
 ```
 
 Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}).
@@ -17340,15 +19440,10 @@ pipeline.with_timeout(seconds=60)
 Les objets Pipeline sont **à usage unique**. Pour des exécutions répétées, créez un nouveau pipeline ou utilisez `PipelineScheduler`：
 
 ```python
-# Correct: Créer un pipeline frais à chaque fois
-async def exécuter_workflow(données):
-    pipeline = Pipeline(broker).call_next(étape1).call_next(étape2)
-    return await pipeline.kiq(données)
-
-# Pour des schedules récurrents, utiliser PipelineScheduler
-from taskiq_flow import PipelineScheduler
-planificateur = PipelineScheduler(broker)
-await planificateur.schedule(pipeline, cron="* * * * *")
+# Correct: create a fresh pipeline each time
+async def execute_workflow(data):
+    pipeline = Pipeline(broker).call_next(step1).call_next(step2)
+    return await pipeline.kiq(data)
 ```
 
 ---
@@ -17361,29 +19456,29 @@ await planificateur.schedule(pipeline, cron="* * * * *")
 pipeline.print_dag()
 ```
 
-Exemple de sortie：
+Example output:
 ```
-Ordre d'Exécution DAG:
-  Niveau 0: tache_a
-  Niveau 1: tache_b, tache_c
-  Niveau 2: tache_d
+Execution Order DAG:
+  Level 0: task_a
+  Level 1: task_b, task_c
+  Level 2: task_d
 ```
 
-### 5.2. JSON pour Interfaces Web
+### 5.2. JSON for Web UIs
 
 ```python
-viz = pipeline.visualize()  # retourne un dict
+viz = pipeline.visualize()  # returns a dict
 print(viz)
 ```
 
-Structure：
+Structure:
 ```json
 {
   "nodes": [
-    {"id": "tache_a", "outputs": ["x", "y"]},
-    {"id": "tache_b", "inputs": ["x"]}
+    {"id": "task_a", "outputs": ["x", "y"]},
+    {"id": "task_b", "inputs": ["x"]}
   ],
-  "edges": [{"from": "tache_a", "to": "tache_b"}]
+  "edges": [{"from": "task_a", "to": "task_b"}]
 }
 ```
 
@@ -17402,44 +19497,44 @@ Le diagramme résultant montre les nœuds, liens et ordre d'exécution.
 
 ## 6. Inspection du Pipeline (DataflowRegistry)
 
-Pour des cas avancés, construire et inspecter manuellement le graphe de dataflow:
+For advanced use cases, manually construct and inspect the dataflow graph:
 
 ```python
 from taskiq_flow import DataflowRegistry
 
 registry = DataflowRegistry()
 
-# Enregistrer les tâches avec E/S explicites
+# Register tasks with explicit I/O
 registry.register_task(
-    task=charger_données,
-    output="brut",
-    inputs=["source"]  # entrée externe
+    task=load_data,
+    output="raw",
+    inputs=["source"]  # external input
 )
 registry.register_task(
-    task=nettoyer,
-    output="propre",
-    inputs=["brut"]
+    task=clean,
+    output="clean",
+    inputs=["raw"]
 )
 registry.register_task(
-    task=sauvegarder,
-    output="sauvé",
-    inputs=["propre"]
+    task=save,
+    output="saved",
+    inputs=["clean"]
 )
 
-# Inspecter la structure
-print("Tâches:", [t.nom_tâche for t in registry.get_tasks()])
-print("Sorties:", registry.get_sorties())           # ["brut", "propre", "sauvé"]
-print("Entrées externes:", registry.get_entrées_externes())  # ["source"]
+# Inspect structure
+print("Tasks:", [t.task_name for t in registry.get_tasks()])
+print("Outputs:", registry.get_outputs())           # ["raw", "clean", "saved"]
+print("External inputs:", registry.get_external_inputs())  # ["source"]
 
-# Trouver les dépendances
-producteur = registry.get_producer("propre")   # retourne TaskNode pour 'propre'
-consommateurs = registry.get_consumers("brut") # liste des tâches nécessitant 'brut'
+# Find dependencies
+producer = registry.get_producer("clean")   # returns TaskNode for 'clean'
+consumers = registry.get_consumers("raw")   # list of tasks needing 'raw'
 
-# Construire le DAG
+# Build DAG
 dag = registry.build_dag()
 dag.print()
-ordre = dag.topological_sort()  # liste des tâches dans l'ordre d'exécution
-niveaux = dag.niveaux              # liste de listes (groupes parallèles)
+order = dag.topological_sort()  # list of tasks in execution order
+levels = dag.levels              # list of lists (parallel groups)
 ```
 
 Voir `examples/registry_discovery_example.py` pour une utilisation complète.
@@ -17554,16 +19649,16 @@ séquentiel.call_next(traiter_lot).call_next(finaliser)
 Construire des pipelines à l'exécution selon la configuration：
 
 ```python
-def construire_pipeline(config: dict) -> Pipeline:
-    étapes = []
+def build_pipeline(config: dict) -> Pipeline:
+    steps = []
     if config.get("preprocess"):
-        étapes.append(tâche_prétraitement)
-    if config.get("analyser"):
-        étapes.append(tâche_analyse)
+        steps.append(preprocess_task)
+    if config.get("analyze"):
+        steps.append(analyze_task)
     # ...
     pipeline = Pipeline(broker)
-    for étape in étapes:
-        pipeline.call_next(étape)
+    for step in steps:
+        pipeline.call_next(step)
     return pipeline
 ```
 
@@ -17572,13 +19667,13 @@ def construire_pipeline(config: dict) -> Pipeline:
 Utiliser `.filter()` et les étapes de condition：
 
 ```python
-haute_valeur = pipeline.filter(est_haute_valeur)
-haute_valeur.call_next(traitement_premium)
-basse_valeur = pipeline.filter(est_basse_valeur)
-basse_valeur.call_next(traitement_standard)
+high_value = pipeline.filter(is_high_value)
+high_value.call_next(premium_processing)
+low_value = pipeline.filter(is_low_value)
+low_value.call_next(standard_processing)
 
-# Fusion
-fusionné = haute_valeur.group([traitement_premium, traitement_standard])
+# Merge
+merged = high_value.group([premium_processing, standard_processing])
 ```
 
 Voir [steps/condition.py](https://github.com/dorel14/taskiq-flow/blob/main/taskiq_flow/steps/condition.py) pour `IfStep`.
@@ -18129,8 +20224,8 @@ Ce guide couvre :
 ```python
 from taskiq_flow import Pipeline, PipelineScheduler
 
-# Créer votre pipeline
-pipeline = Pipeline(broker).call_next(ma_tache).call_next(autre_tache)
+# Create your pipeline
+pipeline = Pipeline(broker).call_next(my_task).call_next(another_task)
 
 # Créer le planificateur
 scheduler = PipelineScheduler(broker)
@@ -18178,13 +20273,18 @@ scheduler = PipelineScheduler(
 |-------|-------------|--------------|-------------|
 | `"memory"` | ❌ Non | ❌ Non | Développement, mono-processus |
 | `"sqlite"` | ✅ Oui | ⚠️ Limité* | Production mono-worker, persistance simple |
+| `"postgresql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, haute disponibilité |
+| `"mysql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, alternative PostgreSQL |
+| `"redis"` | ❌ | ❌ | **Non implémenté** (placeholder lève `NotImplementedError`) |
 
-*Le store sqlite fonctionne avec une seule instance de scheduler ; multiples workers nécessitent DB externe.
+*Le store sqlite fonctionne avec une seule instance de scheduler ; multiples workers nécessitent DB externe (PostgreSQL/MySQL).
 
 **Recommandation** :
 - Dev/mocks → `store="memory"`
-- Production mono-worker → `store="sqlite"`
-- Distribué → Utiliser job store externe (PostgreSQL, Redis) — amélioration future
+- Production mono-worker → `store="sqlite"` avec chemin persistant
+- Production distribué → `store="postgresql://user:pass@host/dbname"` (recommandé) #pragma: allowlist secret
+
+> **Note** : Le support PostgreSQL et MySQL est **déjà implémenté** dans `taskiq_flow.scheduling.storage.JobPersistenceManager` et fonctionne via SQLAlchemy avec `sqlalchemy.asyncio.AsyncSession`. Voir la section [Stockage Avancé (PostgreSQL/MySQL)](#stockage-avancé-postgresqlmysql) ci-dessous.
 
 ### 2.2. Démarrage & Arrêt
 
@@ -18315,9 +20415,9 @@ Passer des arguments à la méthode `kiq()` du pipeline:
 await scheduler.schedule(
     pipeline,
     cron="* * * * *",
-    args=("arg_positionnel",),     # tuple
+    args=("positional_arg",),     # tuple
     kwargs={"option": True},      # dict
-    pipeline_id="mon_pipeline"     # ID de pipeline explicite
+    pipeline_id="my_pipeline"     # explicit pipeline ID
 )
 ```
 
@@ -18334,7 +20434,7 @@ pipeline = Pipeline(broker)  # génère ID aléatoire par défaut
 await scheduler.schedule(
     pipeline,
     cron="*/5 * * * *",
-    pipeline_id="mon_pipeline_v1"
+    pipeline_id="my_pipeline_v1"
 )
 ```
 
@@ -18408,16 +20508,16 @@ await scheduler.resume_job(job_id)
 Chaque exécution de pipeline planifiée est automatiquement suivie si le pipeline a le suivi activé:
 
 ```python
-suivi = PipelineTrackingManager().with_auto_storage(broker)
-pipeline = Pipeline(broker).with_tracking(suivi)
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+pipeline = Pipeline(broker).with_tracking(tracking)
 
 scheduler = PipelineScheduler(broker)
 await scheduler.schedule(pipeline, cron="*/5 * * * *")
 
-# Plus tard, requêter l'historique d'exécution
-historique = await suivi.get_historique()
-for run in historique:
-    print(f"Run {run.pipeline_id}: {run.statut} à {run.démarré_à}")
+# Later, query execution history
+history = await tracking.get_history()
+for run in history:
+    print(f"Run {run.pipeline_id}: {run.status} at {run.started_at}")
 ```
 
 **Distinguer les runs planifiés** : Utiliser des `pipeline_id` descriptifs:
@@ -18542,14 +20642,14 @@ Encapsuler l'exécution du pipeline avec gestion d'erreur:
 
 ```python
 @broker.task
-async def ma_tache_pipeline(données):
+async def my_pipeline_task(data):
     try:
-        résultat = await process(données)
-        return résultat
+        result = await process(data)
+        return result
     except Exception as exc:
-        # Logger erreur, mais laisser le scheduler continuer
-        logger.error(f"Pipeline échoué: {exc}")
-        raise  # Scheduler enregistre l'échec, continue avec prochain schedule
+        # Log error, but let scheduler continue
+        logger.error(f"Pipeline failed: {exc}")
+        raise  # Scheduler records failure, continues with next schedule
 ```
 
 ### 10.2. Callbacks d'Erreur au Niveau Scheduler
@@ -18647,22 +20747,27 @@ class MetricsScheduler(PipelineScheduler):
 
 ### 12.1. Haute Disponibilité
 
-Pour déploiements production HA, lancer multiples instances de scheduler avec un job store partagé (PostgreSQL recommandé):
+Pour déploiements production HA, lancer multiples instances de scheduler avec un job store partagé:
 
 ```python
 # Scheduler 1
 scheduler1 = PipelineScheduler(
     broker,
     store="postgresql",
-    db_url="postgresql://user:pass@host/db" # pragma: allowlist secret
-)
+    # pragma: allownextline secret
+    db_url="postgresql+asyncpg://user:pass@host/db" # pragma: allowlist secret
 
 # Scheduler 2 (config identique) — seul un acquittera les jobs
-scheduler2 = PipelineScheduler(...)
+scheduler2 = PipelineScheduler(
+    broker,
+    store="postgresql",
+    # pragma: allownextline secret
+    db_url="postgresql+asyncpg://user:pass@host/db"  # pragma: allowlist secret
+)
 # Les job stores d'APScheduler utilisent un verrouillage ligne ; un scheduler par job
 ```
 
-**Note** : Actuellement seuls stores memory et sqlite sont implémentés ; support PostgreSQL/Redis prévu.
+Voir [Stockage Avancé (PostgreSQL/MySQL)](#stockage-avancé-postgresqlmysql) pour la configuration détaillée.
 
 ### 12.2. Jobs de Longue Durée
 
@@ -18688,17 +20793,122 @@ Au redémarrage du scheduler, les jobs manqués sont gérés selon `misfire_grac
 trigger = CronTrigger(hour=9, misfire_grace_time=600)
 ```
 
-### 12.4. Taille du Job Store
+### 12.5. Stockage Avancé (PostgreSQL/MySQL)
 
-Le job store accumule l'historique. Nettoyer périodiquement:
+`JobPersistenceManager` supporte nativement PostgreSQL et MySQL via SQLAlchemy AsyncEngine.
+
+#### Configuration PostgreSQL (recommandé pour production)
 
 ```python
-# Supprimer jobs plus vieux que 30 jours
-anciens_jobs = await scheduler.list_jobs()
-for job in anciens_jobs:
-    if job.next_run_time < datetime.now() - timedelta(days=30):
-        await scheduler.remove_job(job.id)
+from taskiq_flow.scheduling.storage import JobPersistenceManager
+
+# PostgreSQL avec asyncpg
+storage = JobPersistenceManager(
+    db_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+
+# Avec le helper pour générer l'URL
+storage = JobPersistenceManager(
+    db_url=JobPersistenceManager.get_connection_url(
+        "postgresql",
+        host="localhost",
+        port=5432,
+        user="taskiq",
+        password="secret",        # pragma: allowlist secret
+        database="taskiq_flow",
+    ),
+    async_mode=True,
+)
 ```
+
+#### Configuration MySQL
+
+```python
+storage = JobPersistenceManager(
+    db_url="mysql+aiomysql://user:pass@localhost:3306/taskiq_flow",  # pragma: allowlist secret
+    async_mode=True,
+)
+```
+
+#### Configuration SQLite (développement)
+
+```python
+# Sync (développement)
+storage = JobPersistenceManager(
+    db_url="sqlite:///jobs.db",
+    async_mode=False,
+)
+
+# Async (recommandé même pour SQLite en production)
+storage = JobPersistenceManager(
+    db_url="sqlite+aiosqlite:///jobs.db",
+    async_mode=True,
+)
+```
+
+#### Intégration avec la Persistance APScheduler
+
+```python
+from taskiq_flow.scheduling.scheduler import PipelineScheduler
+from taskiq_flow.scheduling.storage import JobPersistenceManager
+
+storage = JobPersistenceManager(
+    db_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+)
+
+# Le store URL est passé au PipelineScheduler
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@localhost:5432/taskiq_flow",  # pragma: allowlist secret
+)
+```
+
+#### Opérations CRUD du JobPersistenceManager
+
+```python
+from datetime import datetime, timezone
+from taskiq_flow.scheduling.storage import JobPersistenceManager, SchedulerJob, PipelineExecution
+
+storage = JobPersistenceManager(db_url="sqlite:///test.db")
+
+# Sauvegarder un job
+job = SchedulerJob(
+    id="job_001",
+    pipeline_id="etl_daily",
+    label="ETL Quotidien",
+    cron="0 2 * * *",
+    timezone="UTC",
+)
+await storage.save_job(job)
+
+# Charger tous les jobs
+jobs = await storage.load_jobs()
+for j in jobs:
+    print(f"{j.id}: {j.cron} - {j.pipeline_id}")
+
+# Sauvegarder l'historique d'exécution
+execution = PipelineExecution(
+    job_id="job_001",
+    pipeline_id="etl_daily",
+    status="success",
+    started_at=datetime.now(timezone.utc),
+    completed_at=datetime.now(timezone.utc),
+    duration_seconds=45.2,
+)
+await storage.save_execution_history("job_001", execution)
+
+# Récupérer l'historique
+history = await storage.get_execution_history("job_001", limit=10)
+for run in history:
+    print(f"  {run.status} - {run.duration_seconds}s at {run.started_at}")
+```
+
+| Backend | Async | Multi-worker | Production |
+|---------|-------|--------------|------------|
+| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / petits projets |
+| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommandé |
+| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supporté |
 
 ---
 
@@ -18749,8 +20959,8 @@ Pipeline A déclenche Pipeline B via scheduling:
 
 ```python
 @broker.task
-async def pipeline_a_fini(résultat):
-    # Planifier pipeline B après completion de A
+async def pipeline_a_finished(result):
+    # Schedule pipeline B after completion of A
     job_id = await scheduler.schedule_at(
         pipeline_b,
         run_at=datetime.now() + timedelta(minutes=5)
@@ -18812,20 +21022,23 @@ PipelineScheduler fournit planification robuste, production-ready :
 | **Intervalle** | `scheduler.schedule_interval(pipeline, minutes=5)` |
 | **One-off** | `scheduler.schedule_at(pipeline, run_at=datetime)` |
 | **Gestion** | `list_jobs()`, `remove_job()`, `pause_job()` |
-| **Persistance** | SQLite (mono-worker) |
+| **Persistance** | SQLite (mono-worker), PostgreSQL/MySQL (multi-worker) |
 | **Tracking** | Automatique avec PipelineTrackingManager |
 | **Concurrence** | `max_instances`, `coalesce` contrôles |
 
 **Setup production typique**:
 
 ```python
-suivi = PipelineTrackingManager().with_storage(RedisPipelineStorage(redis))
-pipeline = Pipeline(broker).with_tracking(suivi)
+tracking = PipelineTrackingManager().with_storage(RedisPipelineStorage(redis))
+pipeline = Pipeline(broker).with_tracking(tracking)
 
-scheduler = PipelineScheduler(broker, store="sqlite", store_path="./jobs.db")
+scheduler = PipelineScheduler(
+    broker,
+    job_store_url="postgresql+asyncpg://user:pass@host/taskiq_flow",  # pragma: allowlist secret
+)
 await scheduler.start()
 
-# Planifier vos jobs...
+# Schedule your jobs...
 ```
 
 ---
@@ -19345,7 +21558,7 @@ Les tâches Taskiq-Flow sont :
 
 **Suivi en temps réel et historique des exécutions avec PipelineTrackingManager**
 
-> **Version** : {VERSION} | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
+> **Version**: 1.0.0 | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})
 
 ---
 
@@ -19366,21 +21579,21 @@ Taskiq-Flow offre des capacités complètes de suivi pour monitorer les exécuti
 ```python
 from taskiq_flow import Pipeline, PipelineTrackingManager
 
-# Initialiser le suivi avec sélection automatique du stockage
-suivi = PipelineTrackingManager().with_auto_storage(broker)
+# Initialize tracking with automatic storage selection
+tracking = PipelineTrackingManager().with_auto_storage(broker)
 
-# Attacher le suivi au pipeline
-pipeline = Pipeline(broker).with_tracking(suivi)
+# Attach tracking to pipeline
+pipeline = Pipeline(broker).with_tracking(tracking)
 
-# Exécuter
-task = await pipeline.kiq(données)
+# Execute
+task = await pipeline.kiq(data)
 result = await task.wait_result()
 
-# Interroger le statut
-statut = await suivi.get_status(pipeline.pipeline_id)
-print(f"Statut: {statut.statut}")        # TERMINÉ
-print(f"Étapes: {len(statut.étapes)}")     # Nombre d'étapes exécutées
-print(f"Durée: {statut.durée_ms}ms")
+# Query status
+status = await tracking.get_status(pipeline.pipeline_id)
+print(f"Status: {status.status}")        # COMPLETED
+print(f"Steps: {len(status.steps)}")     # Number of steps executed
+print(f"Duration: {status.duration_ms}ms")
 ```
 
 C'est le pattern de base. Approfondissons.
@@ -19396,20 +21609,20 @@ Le composant central pour enregistrer et récupérer les données d'exécution d
 ```python
 from taskiq_flow import PipelineTrackingManager, InMemoryPipelineStorage, RedisPipelineStorage
 
-# Option 1: Sélection automatique selon le broker (recommandé)
-suivi = PipelineTrackingManager().with_auto_storage(broker)
-# Utilise Redis si le broker le supporte, sinon fallback Mémoire
+# Option 1: Auto-select based on broker (recommended)
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+# Uses Redis if broker supports it, else falls back to Memory
 
-# Option 2: Stockage mémoire explicite (développement uniquement)
-suivi = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
+# Option 2: Explicit memory storage (development only)
+tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
-# Option 3: Stockage Redis explicite (production)
-suivi = PipelineTrackingManager().with_storage(
-    RedisPipelineStorage(client_redis)
+# Option 3: Explicit Redis storage (production)
+tracking = PipelineTrackingManager().with_storage(
+    RedisPipelineStorage(redis_client)
 )
 
-# Option 4: Backend de stockage personnalisé
-suivi = PipelineTrackingManager().with_storage(MonStockagePersonnalisé())
+# Option 4: Custom storage backend
+tracking = PipelineTrackingManager().with_storage(CustomStorage())
 ```
 
 ### 2.2. Durée de Vie du Stockage
@@ -19467,52 +21680,52 @@ statut: PipelineStatus
 ### 4.1. Obtenir le Statut d'un Pipeline
 
 ```python
-statut = await suivi.get_status(pipeline_id)
+status = await tracking.get_status(pipeline_id)
 
-if statut.statut == "TERMINÉ":
-    print(f"Pipeline terminé en {statut.durée_ms}ms")
-    print(f"Résultat: {statut.résultat}")
-elif statut.statut == "ÉCHOUÉ":
-    print(f"Échec: {statut.erreur}")
+if status.status == "COMPLETED":
+    print(f"Pipeline completed in {status.duration_ms}ms")
+    print(f"Result: {status.result}")
+elif status.status == "FAILED":
+    print(f"Failed: {status.error}")
 ```
 
 ### 4.2. Lister Tous les Pipelines
 
 ```python
-tous_statuts = await suivi.list_pipelines()
-for statut in tous_statuts:
-    print(f"{statut.pipeline_id}: {statut.statut}")
+all_statuses = await tracking.list_pipelines()
+for status in all_statuses:
+    print(f"{status.pipeline_id}: {status.status}")
 ```
 
 ### 4.3. Filtrer par Statut
 
 ```python
-en_cours = await suivi.list_pipelines(filtre_statut="EN_COURSE")
-échoués = await suivi.list_pipelines(filtre_statut="ÉCHOUÉ")
-terminés = await suivi.list_pipelines(filtre_statut="TERMINÉ")
+running = await tracking.list_pipelines(filter_status="RUNNING")
+failed = await tracking.list_pipelines(filter_status="FAILED")
+completed = await tracking.list_pipelines(filter_status="COMPLETED")
 ```
 
 ### 4.4. Obtenir l'Historique
 
 ```python
-# Obtenir les 10 derniers pipelines
-historique = await suivi.get_historique(limit=10)
+# Get last 10 pipelines
+history = await tracking.get_history(limit=10)
 
-# Filtrer par plage de dates
+# Filter by date range
 from datetime import datetime, timedelta
-il_y_a_semaine = datetime.now() - timedelta(days=7)
-récents = await suivi.get_historique(depuis=il_y_a_semaine)
+week_ago = datetime.now() - timedelta(days=7)
+recent = await tracking.get_history(since=week_ago)
 ```
 
 ### 4.5. Supprimer les Anciens Enregistrements
 
 ```python
-# Supprimer les enregistrements de plus de 30 jours
-supprimés = await suivi.nettoyer_anciens(days=30)
-print(f"Supprimé {supprimés} anciens enregistrements de pipeline")
+# Delete records older than 30 days
+deleted = await tracking.cleanup_old(days=30)
+print(f"Deleted {deleted} old pipeline records")
 
-# Supprimer un pipeline spécifique
-await suivi.supprimer_pipeline(pipeline_id)
+# Delete specific pipeline
+await tracking.delete_pipeline(pipeline_id)
 ```
 
 ---
@@ -19524,12 +21737,12 @@ await suivi.supprimer_pipeline(pipeline_id)
 ```python
 from taskiq_flow.tracking import InMemoryPipelineStorage
 
-stockage = InMemoryPipelineStorage()
-suivi = PipelineTrackingManager().with_storage(stockage)
+storage = InMemoryPipelineStorage()
+tracking = PipelineTrackingManager().with_storage(storage)
 
-# Les données vivent uniquement dans le processus Python
-# Au redémarrage, tout l'historique est perdu
-# Adeéquat pour: développement, tests, scripts one-shot
+# Data lives only in Python process
+# Lost on restart
+# Suitable for: development, testing, one-shot scripts
 ```
 
 **Avantages**：
@@ -19550,7 +21763,7 @@ import redis.asyncio as redis
 
 client_redis = redis.Redis(host="localhost", port=6379, decode_responses=True)
 stockage = RedisPipelineStorage(client_redis)
-suivi = PipelineTrackingManager().with_storage(stockage)
+tracking = PipelineTrackingManager().with_storage(stockage)
 ```
 
 **Configuration**：
@@ -19583,24 +21796,24 @@ Implémenter le protocole `TrackingStorage`:
 from taskiq_flow.tracking.storage import TrackingStorage
 from taskiq_flow.tracking.models import PipelineStatus
 
-class StockagePostgres(TrackingStorage):
-    async def save_status(self, statut: PipelineStatus):
-        # Insertion/mise à jour en PostgreSQL
+class PostgresStorage(TrackingStorage):
+    async def save_status(self, status: PipelineStatus):
+        # Insert/update in PostgreSQL
         pass
 
     async def get_status(self, pipeline_id: str) -> PipelineStatus | None:
-        # Récupération depuis la base
+        # Fetch from DB
         pass
 
-    async def list_pipelines(self, filtre_statut: str | None = None):
-        # Requête avec filtre optionnel
+    async def list_pipelines(self, filter_status: str | None = None):
+        # Query with optional filter
         pass
 
     async def delete_pipeline(self, pipeline_id: str):
-        # Suppression d'enregistrement
+        # Remove record
         pass
 
-suivi = PipelineTrackingManager().with_storage(StockagePostgres())
+tracking = PipelineTrackingManager().with_storage(PostgresStorage())
 ```
 
 ---
@@ -19610,13 +21823,13 @@ suivi = PipelineTrackingManager().with_storage(StockagePostgres())
 Pour des mises à jour de tableau de bord en direct, combiner `PipelineTrackingManager` avec `HookManager`:
 
 ```python
-from taskiq_flow.hooks import HookManager, DiffuseurÉvénementsSuivi
+from taskiq_flow.hooks import HookManager, TrackingEventBroadcaster
 
-gestionnaire_crochets = HookManager()
-diffuseur = DiffuseurÉvénementsSuivi(suivi, gestionnaire_crochets)
-suivi.ajouter_écouteur(diffuseur.on_mise_à_jour_statut)
+hook_manager = HookManager()
+broadcaster = TrackingEventBroadcaster(tracking, hook_manager)
+tracking.add_listener(broadcaster.on_status_update)
 
-pipeline = Pipeline(broker).with_hooks(gestionnaire_crochets).with_tracking(suivi)
+pipeline = Pipeline(broker).with_hooks(hook_manager).with_tracking(tracking)
 ```
 
 Les événements de pipeline sont maintenant diffusés via WebSocket en temps réel.
@@ -19630,13 +21843,13 @@ Voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) pour la con
 Collecter des statistiques de performance au fil du temps:
 
 ```python
-# Collecter les statistiques
-stats = await suivi.get_métriques(jours=7)
+# Collect statistics
+stats = await tracking.get_metrics(days=7)
 
-print(f"Total exécutions: {stats.total_pipelines}")
-print(f"Taux de succès: {stats.taux_réussite:.1%}")
-print(f"Durée moyenne: {stats.durée_ms_moyenne:.0f}ms")
-print(f"Raisons d'échec: {stats.raisons_échec}")
+print(f"Total executions: {stats.total_pipelines}")
+print(f"Success rate: {stats.success_rate:.1%}")
+print(f"Avg duration: {stats.avg_duration_ms:.0f}ms")
+print(f"Failure reasons: {stats.failure_reasons}")
 ```
 
 **Métriques courantes**：
@@ -19652,13 +21865,13 @@ Intégrer avec des systèmes de monitoring (Prometheus, Grafana):
 ```python
 from prometheus_client import Counter, Histogram
 
-COMPT_PIPELINES = Counter('pipelines_total', 'Total pipelines', ['statut'])
-DURÉE_PIPELINE = Histogram('pipeline_duration_seconds', 'Durée d\'exécution')
+PIPELINES_TOTAL = Counter('pipelines_total', 'Total pipelines', ['status'])
+PIPELINE_DURATION = Histogram('pipeline_duration_seconds', 'Pipeline execution duration')
 
-class ExportateurPrometheus:
-    async def on_pipeline_complete(self, statut: PipelineStatus):
-        COMPT_PIPELINES.labels(statut=statut.statut).inc()
-        DURÉE_PIPELINE.observe(statut.durée_ms / 1000)
+class PrometheusExporter:
+    async def on_pipeline_complete(self, status: PipelineStatus):
+        PIPELINES_TOTAL.labels(status=status.status).inc()
+        PIPELINE_DURATION.observe(status.duration_ms / 1000)
 ```
 
 ---
@@ -19668,20 +21881,20 @@ class ExportateurPrometheus:
 Attacher des callbacks aux événements de suivi:
 
 ```python
-class MonÉcouteur:
+class MyListener:
     async def on_pipeline_start(self, pipeline_id: str):
-        print(f"Pipeline {pipeline_id} démarré")
-        envoyer_notification_slack(f"Pipeline {pipeline_id} démarré")
+        print(f"Pipeline {pipeline_id} started")
+        send_slack_notification(f"Pipeline {pipeline_id} started")
 
-    async def on_step_complete(self, pipeline_id: str, step_name: str, résultat: Any):
-        journal_métrique_étape(step_name, résultat)
+    async def on_step_complete(self, pipeline_id: str, step_name: str, result: Any):
+        log_step_metric(step_name, result)
 
-    async def on_pipeline_complete(self, pipeline_id: str, statut: PipelineStatus):
-        if statut.statut == "ÉCHOUÉ":
-            alerter_échec(pipeline_id)
+    async def on_pipeline_complete(self, pipeline_id: str, status: PipelineStatus):
+        if status.status == "FAILED":
+            alert_failure(pipeline_id)
 
-écouteur = MonÉcouteur()
-suivi.ajouter_écouteur(écouteur)
+listener = MyListener()
+tracking.add_listener(listener)
 ```
 
 **Méthodes d'écouteur** (toutes optionnelles):
@@ -19699,23 +21912,23 @@ suivi.ajouter_écouteur(écouteur)
 ### 9.1. Sortie Console
 
 ```python
-statut = await suivi.get_status(pipeline_id)
+status = await tracking.get_status(pipeline_id)
 print(f"\n{'='*60}")
-print(f"Pipeline: {statut.pipeline_id}")
-print(f"Statut: {statut.statut}")
-print(f"Durée: {statut.durée_ms:.0f}ms")
-print(f"Étapes:")
-for étape in statut.étapes:
-    barre = "█" * int(étape.durée_ms / 10)
-    print(f"  {étape.step_name:<30} {barre} {étape.durée_ms:.0f}ms")
+print(f"Pipeline: {status.pipeline_id}")
+print(f"Status: {status.status}")
+print(f"Duration: {status.duration_ms:.0f}ms")
+print(f"Steps:")
+for step in status.steps:
+    bar = "█" * int(step.duration_ms / 10)
+    print(f"  {step.step_name:<30} {bar} {step.duration_ms:.0f}ms")
 ```
 
-### 9.2. Export JSON
+### 9.2. JSON Export
 
 ```python
 import json
-statut_dict = statut.model_dump(mode="json", exclude={"résultat"})  # exclure grands résultats
-print(json.dumps(statut_dict, indent=2, default=str))
+status_dict = status.model_dump(mode="json", exclude={"result"})  # exclude large results
+print(json.dumps(status_dict, indent=2, default=str))
 ```
 
 ### 9.3. Intégration avec Tableaux de Bord
@@ -19746,52 +21959,52 @@ URL_REDIS = os.getenv("URL_REDIS", "redis://localhost:6379")
 
 # app.py
 from redis.asyncio import Redis
-client_redis = Redis.from_url(URL_REDIS)
-suivi = PipelineTrackingManager().with_storage(
-    RedisPipelineStorage(client_redis, ttl_secondes=2592000)  # 30 jours
+client_redis = Redis.from_url(REDIS_URL)
+tracking = PipelineTrackingManager().with_storage(
+    RedisPipelineStorage(client_redis, ttl_seconds=2592000)  # 30 days
 )
 ```
 
 ### 10.2. Configurer des Politiques de Rétention
 
 ```python
-# Job de nettoyage périodique (quotidien)
-async def nettoyer_anciens_suivis():
-    supprimés = await suivi.nettoyer_anciens(jours=7)
-    print(f"Nettoyé {supprimés} anciens enregistrements de pipeline")
+# Periodic cleanup job (daily)
+async def cleanup_old_tracking():
+    deleted = await tracking.cleanup_old(days=7)
+    print(f"Cleaned up {deleted} old pipeline records")
 
-# Utiliser APScheduler pour exécuter quotidiennement
+# Use APScheduler to run daily
 from taskiq_flow import PipelineScheduler
-planificateur = PipelineScheduler(broker)
-planificateur.schedule_at(nettoyer_anciens_suivis, run_at="0 3 * * *")  # 3h daily
+scheduler = PipelineScheduler(broker)
+scheduler.schedule_at(cleanup_old_tracking, run_at="0 3 * * *")  # 3am daily
 ```
 
-### 10.3. Surveiller la Santé du Tracker
+### 10.3. Monitor Tracking Health
 
 ```python
-# Health check pour systèmes de monitoring
-async def santé_suivi():
+# Health check for monitoring systems
+async def health_check():
     try:
-        test_pipeline = Pipeline(broker).with_tracking(suivi)
+        test_pipeline = Pipeline(broker).with_tracking(tracking)
         await test_pipeline.kiq("health_check")
-        return {"statut": "sain"}
+        return {"status": "healthy"}
     except Exception as e:
-        return {"statut": "non_sain", "erreur": str(e)}
+        return {"status": "unhealthy", "error": str(e)}
 ```
 
 ### 10.4. Limiter la Taille de l'Historique
 
 ```python
-# Garder seulement les N derniers pipelines par motif de pipeline_id
+# Keep only last N pipelines per pipeline_id pattern
 import fnmatch
 
-motifs = ["batch_job_*", "etl_*"]
-for motif in motifs:
-    anciens = await suivi.list_pipelines()
-    correspondants = [p for p in anciens if fnmatch.fnmatch(p.pipeline_id, motif)]
-    if len(correspondants) > 100:
-        for ancien_pipeline in correspondants[-100:]:
-            await suivi.supprimer_pipeline(ancien_pipeline.pipeline_id)
+patterns = ["batch_job_*", "etl_*"]
+for pattern in patterns:
+    old = await tracking.list_pipelines()
+    matches = [p for p in old if fnmatch.fnmatch(p.pipeline_id, pattern)]
+    if len(matches) > 100:
+        for old_pipeline in matches[-100:]:
+            await tracking.delete_pipeline(old_pipeline.pipeline_id)
 ```
 
 ---
@@ -19802,30 +22015,30 @@ for motif in motifs:
 
 **Symptôme** : `RuntimeError: No tracking storage configured`
 
-**Solution** : Ajouter le stockage avant d'utiliser le suivi:
+**Solution** : Add storage before using tracking:
 
 ```python
-suivi = PipelineTrackingManager().with_auto_storage(broker)
-# ou
-suivi = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+# or
+tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 ```
 
-### Données de Suivi Manquantes
+### Missing Tracking Data
 
-**Symptôme** : `get_status()` retourne `None` alors que le pipeline a tourné
+**Symptom**: `get_status()` returns `None` even though pipeline ran
 
-**Causes & corrections**:
+**Causes & fixes**:
 
-1. **Suivi non attaché**:
+1. **Tracking not attached**:
    ```python
-   pipeline = Pipeline(broker).with_tracking(suivi)  # Doit appeler with_tracking()
+   pipeline = Pipeline(broker).with_tracking(tracking)  # Must call with_tracking()
    ```
 
-2. **Brokers différents** — S'assurer du même instance `broker` entre tâche et pipeline.
+2. **Different brokers** — Ensure same `broker` instance between task and pipeline.
 
-3. **Durée de vie du stockage** — Le stockage mémoire est perdu au redémarrage；passer à Redis.
+3. **Storage lifetime** — In-memory storage lost on restart; switch to Redis.
 
-4. **Décalage d'ID de Pipeline** — Confirmer que `pipeline.pipeline_id` correspond à la requête.
+4. **Pipeline ID mismatch** — Confirm `pipeline.pipeline_id` matches the query.
 
 ### Dégradation des Performance avec Redis
 
@@ -19868,6 +22081,7 @@ pipeline = Pipeline(broker).with_tracking(suivi)
 ## Prochaines Étapes
 
 - **[Streaming WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Livraison d'événements en direct pour tableaux de bord
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Pipeline DAG complet avec parallélisme automatique
 - **[Planification]({{ '/fr/guides/scheduling/' | relative_url }})** — Exécution périodique automatique de pipelines
 - **[Performance]({{ '/fr/guides/performance/' | relative_url }})** — Optimiser la surcharge de suivi
 
@@ -19927,17 +22141,17 @@ from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 from taskiq_flow.integration.websocket import get_websocket_server
 
-# 1. Créer le broker et le gestionnaire de hooks
+# 1. Create broker and hook manager
 broker = InMemoryBroker()
-gestionnaire_hooks = HookManager()
+hook_manager = HookManager()
 
-# 2. Configurer le pont WebSocket
-setup_websocket_bridge(gestionnaire_hooks)  # connecte HookManager → transport WebSocket
+# 2. Configure WebSocket bridge
+setup_websocket_bridge(hook_manager)  # connect HookManager → WebSocket transport
 
-# 3. Créer un pipeline avec hooks attachés
+# 3. Create pipeline with hooks attached
 pipeline = Pipeline(broker)
 pipeline.pipeline_id = "workflow_demo"
-pipeline.with_hooks(gestionnaire_hooks)
+pipeline.with_hooks(hook_manager)
 
 # Ajouter des tâches au pipeline...
 
@@ -20323,13 +22537,13 @@ Réduire la bande passante en filtrant côté serveur:
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Envoyer seulement les événements pour pipelines spécifiques
-filtre = EventFilter(pipeline_ids=['pipeline_1', 'pipeline_2'])
-gestionnaire_hooks.add_filter(filtre)
+# Send only events for specific pipelines
+filter = EventFilter(pipeline_ids=['pipeline_1', 'pipeline_2'])
+hook_manager.add_filter(filter)
 
-# Seulement les événements d'étape (pas niveau pipeline)
-filtre = EventFilter(event_types=['StepStartEvent', 'StepCompleteEvent'])
-gestionnaire_hooks.add_filter(filtre)
+# Only step events (not pipeline-level)
+filter = EventFilter(event_types=['StepStartEvent', 'StepCompleteEvent'])
+hook_manager.add_filter(filter)
 ```
 
 Filtrage côté client également possible:
@@ -20524,34 +22738,82 @@ class LimiteurDebit:
 
 **Symptôme** : Connexion réussie, mais aucun événement n'arrive.
 
-**Corrections**：
+**Corrections** ：
 - S'assurer que le pipeline a `pipeline_id` défini
-- Confirmer que `pipeline.with_hooks(gestionnaire_hooks)` est appelé
-- Vérifier que `setup_websocket_bridge(gestionnaire_hooks)` est appelé avant que le pipeline ne démarre
+- Confirmer que `pipeline.with_hooks(hook_manager)` est appelé
+- Vérifier que `setup_websocket_bridge(hook_manager)` est appelé avant le démarrage du pipeline
 - Vérifier le format du message d'abonnement (voir Section 5)
 
 ### Utilisation Mémoire Élevée
 
 **Symptôme** : Mémoire serveur augmente avec le temps.
 
-**Corrections**：
+**Corrections** :
 - Limiter le nombre de pipelines suivis
-- Implémenter nettoyage automatique des clients déconnectés
-- Utiliser transport Redis pour externaliser l'état du processus
-- Définir limite max de connexions
+- Implémenter le nettoyage automatique des clients déconnectés
+- Utiliser le transport Redis pour externaliser l'état du processus
+- Définir la limite maximale de connexions
 
 ### Événements Dans le Désordre
 
 **Symptôme** : Le client reçoit StepComplete avant StepStart.
 
-**Corrections**：
-- Utiliser garanties de livraison séquentielle (par défaut pour WebSocket)
+**Corrections** :
+- Utiliser les garanties de livraison séquentielle (par défaut pour WebSocket)
 - S'assurer que tous les hooks sont correctement attachés
-- Vérifier les middleware personnalisés qui pourraient émettre des événements asynchrone
+- Vérifier les middleware personnalisés qui pourraient émettre des événements de manière asynchrone
+
+---
+
+### 10.4. Chiffrement SSL/TLS (WSS)
+
+Activez les connexions WebSocket chiffrées pour la production :
+
+```python
+from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
+
+# Avec certificats SSL
+server = PipelineWebSocketServer(
+    host="0.0.0.0",
+    port=8765,
+    ssl_cert="/chemin/vers/cert.pem",
+    ssl_key="/chemin/vers/key.pem",
+)
+
+# Connexion avec wss://
+# Client : new WebSocket("wss://votre-domaine.com/ws")
+```
+
+**Via un reverse proxy (recommandé) :**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
+
+    location /ws {
+        proxy_pass http://localhost:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+```javascript
+// Le client se connecte via wss à travers le proxy
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
 
 ---
 
 ## 12. Résumé
+
+### 12.1. Résumé Composants
 
 | Composant | Responsabilité |
 |-----------|----------------|
@@ -20561,27 +22823,30 @@ class LimiteurDebit:
 | `Serveur WebSocket` | Gère connexions clients, diffuse |
 | `Client` | S'abonne, reçoit, affiche événements |
 
-**Configuration basique (5 lignes)**:
+**Script de base (5 lignes)**:
 
 ```python
-crochets = HookManager()
-setup_websocket_bridge(crochets)
-pipeline = Pipeline(broker).with_hooks(crochets)
-serveur = get_websocket_server()
-await serveur.start_server()
+hooks = HookManager()
+setup_websocket_bridge(hooks)
+pipeline = Pipeline(broker).with_hooks(hooks)
+server = get_websocket_server()
+await server.start_server()
 ```
 
 ---
 
-## Prochaines Étapes
+## 13. Prochaines Étapes
 
 - **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Backend de stockage et requêtes historiques
+- **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Pipeline DAG complet avec événements compatibles WebSocket
 - **[Guide API]({{ '/fr/guides/api/' | relative_url }})** — Endpoints REST pour backends de tableau de bord
 - **[Exemples: Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }})** — Code complet fonctionnel
 
 ---
 
 *Streamer les événements de pipeline en direct. Combiner avec [Stockage de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) pour historique persistant.*
+
+---
 
 
 ## DOCUMENT: Index
@@ -20948,7 +23213,8 @@ Avec les bases acquises, explorez les guides approfondis :
 | Sujet | Guide |
 |-------|-------|
 | Pipelines séquentiels et dataflow | [Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }}) |
-| Définitions de tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}) |
+| **Approfondissement Dataflow** | **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** |
+| Définition des tâches et décorateurs | [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}) |
 | Modes d'exécution et gestion d'erreurs | [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}) |
 | Monitoring en temps réel | [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}) |
 | Tableaux de bord en direct | [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}) |
