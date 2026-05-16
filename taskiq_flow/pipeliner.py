@@ -179,33 +179,6 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             return True
         return False
 
-    @overload
-    def __init__(
-        self,
-        broker: AsyncBroker,
-        task: (
-            AsyncKicker[_FuncParams, Coroutine[Any, Any, _ReturnType]]
-            | AsyncKicker[_FuncParams, CoroutineType[Any, Any, _ReturnType]]
-            | AsyncTaskiqDecoratedTask[_FuncParams, Coroutine[Any, Any, _ReturnType]]
-            | AsyncTaskiqDecoratedTask[
-                _FuncParams,
-                CoroutineType[Any, Any, _ReturnType],
-            ]
-            | None
-        ) = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        broker: AsyncBroker,
-        task: (
-            AsyncKicker[_FuncParams, _ReturnType]
-            | AsyncTaskiqDecoratedTask[_FuncParams, _ReturnType]
-            | None
-        ) = None,
-    ) -> None: ...
-
     def __init__(
         self,
         broker: AsyncBroker,
@@ -278,29 +251,6 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         self.options.update(retries, timeout, fail_fast, continue_on_error)
         return self
 
-    @overload
-    def call_next(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[_ReturnType], Coroutine[Any, Any, _T]]
-            | AsyncKicker[[_ReturnType], CoroutineType[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[_ReturnType], Coroutine[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[_ReturnType], CoroutineType[Any, Any, _T]]
-        ),
-        param_name: str | Literal[-1] | None = None,
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
-
-    @overload
-    def call_next(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[_ReturnType], _T] | AsyncTaskiqDecoratedTask[[_ReturnType], _T]
-        ),
-        param_name: str | Literal[-1] | None = None,
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
-
     def call_next(
         self,
         task: AsyncKicker[Any, Any] | AsyncTaskiqDecoratedTask[Any, Any],
@@ -352,25 +302,6 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             ),
         )
         return self
-
-    @overload
-    def call_after(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[], Coroutine[Any, Any, _T]]
-            | AsyncKicker[[], CoroutineType[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[], Coroutine[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[], CoroutineType[Any, Any, _T]]
-        ),
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
-
-    @overload
-    def call_after(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: AsyncKicker[[], _T] | AsyncTaskiqDecoratedTask[[], _T],
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
 
     def call_after(
         self,

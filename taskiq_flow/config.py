@@ -2,10 +2,10 @@
 Configuration pour Taskiq-Flow.
 
 Ce module fournit une configuration centralisée pour la sécurité,
-les métriques et autres paramètres.
+les métriques, le stockage et le cache.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 from typing import Any
@@ -46,6 +46,22 @@ class TaskiqFlowConfig(BaseSettings):
     websocket_max_connections: int = 1000
     websocket_ssl_cert: str | None = None
     websocket_ssl_key: str | None = None
+
+    # Stockage
+    storage_enabled: bool = True
+    storage_type: str = "auto"  # "auto", "memory", "redis", "sqlite", "sqlalchemy"
+    storage_redis_url: str | None = None
+    storage_sqlite_url: str = "sqlite+aiosqlite:///taskiq_flow.db"
+    storage_sqlalchemy_url: str | None = None
+    storage_ttl_seconds: int = 3600
+    storage_async_mode: bool = True
+
+    # Cache
+    cache_enabled: bool = True
+    cache_type: str = "auto"  # "auto", "memory", "redis"
+    cache_redis_url: str | None = None
+    cache_default_ttl: int = 3600
+    cache_lock_timeout: int = 10
 
 
 __all__ = ["TaskiqFlowConfig"]

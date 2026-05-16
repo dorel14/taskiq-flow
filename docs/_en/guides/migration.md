@@ -86,7 +86,7 @@ config = TaskiqFlowConfig(
     # Security
     security_enabled=True,
     auth_provider="api_key",  # "api_key" | "jwt"
-    jwt_secret="your-secret",  # Required for JWT auth
+    jwt_secret="your-secret",  # pragma: allowlist secret - Required for JWT auth 
     api_keys={...},
     require_https=True,
 

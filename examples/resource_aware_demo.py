@@ -1,11 +1,19 @@
 """
-Resource-Aware Parallelism Demo.
+Démonstration du parallélisme adaptatif basé sur les ressources pour Taskiq-Flow.
 
-This example demonstrates dynamic parallelism adjustment based on
-CPU and memory availability using ResourceAwareExecutor.
+Ce module démontre l'ajustement dynamique du degré de parallélisme selon
+la disponibilité CPU et mémoire via `ResourceAwareExecutor` :
+- Suivi en temps réel de l'utilisation CPU et mémoire
+- Ajustement automatique de la concurrence
+- Mode dry-run pour observer les décisions sans exécuter
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples :
+    - Pipeline resource-aware via ExecutionEngine
+    - Monitoring dynamique CPU/mémoire par tâche
+    - Comparaison parallélisme fixe vs adaptatif
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

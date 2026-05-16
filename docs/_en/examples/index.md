@@ -25,6 +25,8 @@ This gallery provides in-depth walkthroughs of the example scripts included in t
 | [Tracking Demo]({{ '/en/examples/tracking-demo/' | relative_url }}) | Real-time pipeline monitoring with PipelineTrackingManager | Tracking, status storage, visualization |
 | [Scheduled Pipeline]({{ '/en/examples/scheduled-pipeline/' | relative_url }}) | Cron-based recurring pipeline execution | PipelineScheduler, APScheduler, timezones |
 | [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }}) | Full DAG with parallelism, map-reduce, and visualization | DataflowPipeline, automatic DAG, parallelism |
+| [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }}) | NetworkX DAG analysis: critical path, parallel groups, multi-format export | DAGVisualizer, NetworkX, critical path, exports |
+| [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }}) | Interactive web DAG viewer via NiceGUI and MermaidGenerator | MermaidGenerator, NiceGUI, interactive web visualization |
 | [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }}) | Manual DataflowRegistry construction, DAG inspection, and low-level execution | DataflowRegistry, ExecutionEngine, DAG introspection |
 | [WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }}) | Real-time event streaming via WebSockets | HookManager, WebSocket transport, live tracking |
 | [REST API]({{ '/en/examples/api-example/' | relative_url }}) | FastAPI integration for remote pipeline management | PipelineVisualizationAPI, custom endpoints |
@@ -72,6 +74,8 @@ Some examples require additional services (Redis, etc.). See individual example 
 
 ### Advanced Workflows
 - [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})
+- [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }})
+- [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }})
 - [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }})
 
 ### Integration

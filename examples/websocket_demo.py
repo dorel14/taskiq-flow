@@ -1,12 +1,16 @@
 """
-Example demonstrating WebSocket integration for real-time pipeline tracking.
+Exemple démontrant l'intégration WebSocket pour le suivi temps réel des pipelines.
 
-This example shows both FastAPI and picows WebSocket implementations:
-- FastAPI WebSocket: Integrated with FastAPI routes (preferred)
-- picows WebSocket: Standalone WebSocket server
+Ce module montre les deux implémentations WebSocket :
+- WebSocket FastAPI : intégré aux routes FastAPI (recommandé)
+- WebSocket picows : serveur WebSocket autonome
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Implémentations :
+    - FastAPI WebSocket : Endpoint `/ws/{pipeline_id}` dans un serveur FastAPI
+    - picows WebSocket : Serveur dédié avec hook d'événements pipelines
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

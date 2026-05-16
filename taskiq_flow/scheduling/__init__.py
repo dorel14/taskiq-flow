@@ -5,11 +5,16 @@ Fournit les classes et fonctions pour planifier l'exécution
 des pipelines via APScheduler ou le système de labels TaskIQ.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 from .scheduler import LabelBasedScheduler, PipelineScheduler
-from .storage import JobPersistenceManager, PipelineExecution, SchedulerJob
+from .storage import (
+    JobPersistenceManager,
+    PersistenceAdapter,
+    PipelineExecution,
+    SchedulerJob,
+)
 from .triggers import (
     create_cron_trigger,
     create_date_trigger,
@@ -25,6 +30,7 @@ from .triggers import (
 __all__ = [
     "JobPersistenceManager",
     "LabelBasedScheduler",
+    "PersistenceAdapter",
     "PipelineExecution",
     "PipelineScheduler",
     "SchedulerJob",

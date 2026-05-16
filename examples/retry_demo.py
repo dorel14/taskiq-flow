@@ -1,11 +1,14 @@
 """
-Retry Demo.
+Démonstration des politiques de retry et de gestion d'erreurs pour Taskiq-Flow.
 
-This example demonstrates the retry middleware and error handling modes
-in Taskiq-Flow v0.4.5.
+Ce module démontre le middleware de retry (`PipelineRetryMiddleware`) et les
+différents modes de gestion d'erreurs dans Taskiq-Flow 1.2.0 :
+- Retry avec backoff exponentiel
+- Mode FAIL_FAST, CONTINUE_ON_ERROR, SKIP_FAILED
+- Politique de retry par tâche et par pipeline
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

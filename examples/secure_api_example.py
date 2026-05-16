@@ -1,11 +1,20 @@
 """
-Secure API Example.
+Exemple d'API sécurisée pour Taskiq-Flow.
 
-This example demonstrates how to secure your Taskiq-Flow API with
-authentication, authorization, rate limiting, and audit logging.
+Ce module démontre la sécurisation d'une API Taskiq-Flow avec :
+- Authentification par clé API (API-Key header)
+- Autorisation par rôle (admin/user)
+- Rate limiting par clé API
+- Journalisation d'audit (audit log) de toutes les requêtes
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Routes protégées :
+    - GET  /pipelines          — Liste tous les pipelines (auth requis)
+    - POST /pipelines          — Crée un pipeline (auth + admin)
+    - GET  /pipelines/{id}     — Détails d'un pipeline (auth requis)
+    - DELETE /pipelines/{id}   — Supprime un pipeline (auth + admin)
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import logging
@@ -48,7 +57,7 @@ pipeline.pipeline_id = "secure_demo_pipeline"
 
 
 # 4. Create FastAPI app with security
-app = FastAPI(title="Secure Taskiq-Flow API", version="0.4.5")
+app = FastAPI(title="Secure Taskiq-Flow API", version="1.2.0")
 viz_api = create_visualization_api(broker, app)
 viz_api.add_pipeline("secure_demo_pipeline", pipeline)
 

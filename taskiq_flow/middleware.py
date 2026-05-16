@@ -545,7 +545,9 @@ class TransportMiddleware:
 
     def _create_http_stream_transport(self) -> Any:
         """Create HTTP stream (SSE) transport."""
-        from taskiq_flow.transport.http_stream import get_http_stream_transport  # noqa: I001, PLC0415
+        from taskiq_flow.transport.http_stream import (  # noqa: PLC0415
+            get_http_stream_transport,
+        )
 
         transport = get_http_stream_transport()
         logger.info("HTTP stream transport configured")
@@ -554,7 +556,9 @@ class TransportMiddleware:
     def _create_redis_pubsub_transport(self) -> Any:
         """Create Redis pub/sub transport."""
         try:
-            from taskiq_flow.transport.redis_pubsub import RedisPubSubTransport  # noqa: I001, PLC0415
+            from taskiq_flow.transport.redis_pubsub import (  # noqa: PLC0415
+                RedisPubSubTransport,
+            )
 
             transport = RedisPubSubTransport(
                 redis_client=self.config.get("redis_client"),

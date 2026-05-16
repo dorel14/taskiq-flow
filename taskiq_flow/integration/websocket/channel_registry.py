@@ -25,7 +25,6 @@ class WebSocketLike(Protocol):
     async def send_text(self, data: str) -> None: ...
 
 
-
 class ChannelRegistry:
     """
     Registre de canaux avec support de motifs (patterns).

@@ -1,11 +1,11 @@
 """
-Tests for security features.
+Tests pour les fonctionnalités de sécurité.
 
-This module tests authentication, authorization, rate limiting,
-and audit logging.
+Ce module teste l'authentification, l'autorisation, le rate limiting
+et la journalisation d'audit.
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
