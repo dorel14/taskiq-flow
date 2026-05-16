@@ -2774,6 +2774,8 @@ This gallery provides in-depth walkthroughs of the example scripts included in t
 | [Tracking Demo]({{ '/en/examples/tracking-demo/' | relative_url }}) | Real-time pipeline monitoring with PipelineTrackingManager | Tracking, status storage, visualization |
 | [Scheduled Pipeline]({{ '/en/examples/scheduled-pipeline/' | relative_url }}) | Cron-based recurring pipeline execution | PipelineScheduler, APScheduler, timezones |
 | [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }}) | Full DAG with parallelism, map-reduce, and visualization | DataflowPipeline, automatic DAG, parallelism |
+| [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }}) | NetworkX DAG analysis: critical path, parallel groups, multi-format export | DAGVisualizer, NetworkX, critical path, exports |
+| [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }}) | Interactive web DAG viewer via NiceGUI and MermaidGenerator | MermaidGenerator, NiceGUI, interactive web visualization |
 | [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }}) | Manual DataflowRegistry construction, DAG inspection, and low-level execution | DataflowRegistry, ExecutionEngine, DAG introspection |
 | [WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }}) | Real-time event streaming via WebSockets | HookManager, WebSocket transport, live tracking |
 | [REST API]({{ '/en/examples/api-example/' | relative_url }}) | FastAPI integration for remote pipeline management | PipelineVisualizationAPI, custom endpoints |
@@ -2821,6 +2823,8 @@ Some examples require additional services (Redis, etc.). See individual example 
 
 ### Advanced Workflows
 - [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})
+- [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }})
+- [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }})
 - [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }})
 
 ### Integration
@@ -2833,6 +2837,272 @@ Some examples require additional services (Redis, etc.). See individual example 
 - **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Run your first pipeline
 - **[User Guides]({{ '/en/guides/' | relative_url }})** — Deep dives into each feature
 - **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module documentation
+
+
+## DOCUMENT: Nicegui Dag Demo
+
+# Example: nicegui_dag_demo.py
+
+**Interactive DAG visualization with NiceGUI and MermaidGenerator**
+
+> **Version**: {VERSION} | **File**: `examples/nicegui_dag_demo.py`
+
+---
+
+## Overview
+
+This example demonstrates how to build an interactive web application using **NiceGUI** to visualize a Taskiq-Flow `DataflowPipeline` DAG. It leverages the built-in `MermaidGenerator` to render flowcharts directly in the browser.
+
+Key themes:
+- Generating Mermaid.js diagrams from a DAG programmatically
+- Serving them via an interactive NiceGUI web app
+- Running the pipeline builder script separately from the web server
+
+---
+
+## What This Example Shows
+
+- Using `DataflowPipeline.from_tasks()` to build a simple 3-step pipeline
+- Calling the internal `_build_dataflow_dag()` to obtain the DAG without executing
+- Using `MermaidGenerator.to_mermaid_with_styling()` to produce Mermaid code
+- Serving that diagram inside a NiceGUI `ui.markdown()` page
+- A dual-mode script: async DAG builder + synchronous NiceGUI server
+
+---
+
+## Code Walkthrough
+
+### 1. Pipeline Definition
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Load raw data from a source."""
+    await asyncio.sleep(0.1)
+    return {"source": source, "values": [1, 2, 3, 4, 5]}
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Process raw data by calculating statistics."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Generate a final report from processed data."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "REPORT-001",
+        "source": processed_data["source"],
+        "statistics": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "status": "completed",
+    }
+```
+
+Pipeline DAG structure:
+```
+load_data → process_data → generate_report
+```
+
+---
+
+### 2. Building the DAG (Without Execution)
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_data, process_data, generate_report],
+)
+pipeline.pipeline_id = "data_processing_pipeline"
+
+# Build the DAG statically — no tasks are executed
+pipeline._build_dataflow_dag()
+dag = pipeline._dag
+```
+
+> **Note**: `_build_dataflow_dag()` is an internal method that inspects the
+> `@pipeline_task` annotations and assembles the dependency graph in memory.
+> If you need a public API, use `DataflowRegistry` to build a DAG explicitly
+> (see the [Registry Discovery Example]({{ '/en/examples/registry-discovery/' | relative_url }})).
+
+---
+
+### 3. Mermaid Diagram Generation
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# → flowchart LR / TD with colored nodes and arrows
+```
+
+`MermaidGenerator.to_mermaid_with_styling()` produces Mermaid.js flowchart
+code with CSS class definitions for input/process/output/decision node shapes.
+
+---
+
+### 4. NiceGUI Application
+
+```python
+@ui.page("/")
+def dag_viewer_page() -> None:
+    """Main page showing the DAG visualization."""
+    ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; font-weight: bold;")
+    ui.label("Data Processing Pipeline").style("font-size: 18px;")
+    ui.separator()
+
+    if mermaid_diagram_global:
+        ui.markdown(f"""```mermaid\n{mermaid_diagram_global}\n```""")
+    else:
+        ui.label("No DAG to display").style("color: red;")
+
+    ui.separator()
+    ui.label("DAG Statistics:").style("font-weight: bold;")
+
+ui.run(title="TaskIQ Flow DAG Viewer", port=8080)
+```
+
+NiceGUI renders `ui.markdown()` content server-side, and Mermaid.js is loaded
+client-side to render the diagram in the browser.
+
+---
+
+## Expected Output
+
+**Console (DAG builder)**:
+```
+=== Taskiq-Flow NiceGUI DAG Visualization Demo ===
+
+DAG has 3 nodes and 2 edges
+Starting NiceGUI server...
+Open your browser to http://127.0.0.1:8080 to view the DAG
+
+Mermaid diagram code:
+flowchart LR
+    classDef input fill:#e1f5fe,stroke:#01579b,...
+    classDef process fill:#fff3e0,stroke:#e65100,...
+    classDef output fill:#e8f5e9,stroke:#1b5e20,...
+    load_data["load_data"]:::process
+    process_data["process_data"]:::process
+    generate_report["generate_report"]:::output
+    load_data --> process_data
+    process_data --> generate_report
+```
+
+**Browser at `http://127.0.0.1:8080`**:
+
+A full-page NiceGUI app showing the Mermaid diagram with colored nodes,
+alongside basic DAG statistics.
+
+---
+
+## MermaidGenerator Reference
+
+| Method | Description |
+|--------|-------------|
+| `MermaidGenerator(dag)` | Create generator from a `DAG` instance |
+| `.to_mermaid(orientation="TB")` | Basic Mermaid flowchart (TB/BT/LR/RL) |
+| `.to_mermaid_with_styling(orientation="LR")` | Styled with color-coded classes per node type |
+| `.to_mermaid_interactive()` | HTML with click handlers (for web dashboards) |
+
+Orientation values:
+
+| Value | Direction |
+|-------|-----------|
+| `"TB"` | Top → Bottom (default) |
+| `"BT"` | Bottom → Top |
+| `"LR"` | Left → Right |
+| `"RL"` | Right → Left |
+
+---
+
+## Running the Demo
+
+### Prerequisites
+
+```bash
+pip install nicegui "taskiq-flow[all]"
+```
+
+### Option 1 — Build DAG and start NiceGUI
+
+```bash
+python examples/nicegui_dag_demo.py
+```
+
+The script runs `asyncio.run(main())` which builds the DAG and generates the
+Mermaid diagram, then prints instructions for launching NiceGUI.
+
+### Option 2 — Launch NiceGUI directly
+
+```bash
+python -c "from examples.nicegui_dag_demo import run_nicegui_app; run_nicegui_app()"
+```
+
+> Opens `http://127.0.0.1:8080` in your default browser.
+
+---
+
+## Key Points
+
+### NiceGUI + Taskiq-Flow Integration
+
+| Component | Role |
+|-----------|------|
+| `DataflowPipeline` | Builds the DAG from task declarations |
+| `MermaidGenerator` | Converts DAG → Mermaid.js code |
+| `ui.markdown()` | Renders Mermaid diagram in NiceGUI |
+| `ui.run()` | Starts the ASGI web server on port 8080 |
+
+### Why Separate Builder and Server
+
+The example keeps the async pipeline builder (`main()`) separate from the
+NiceGUI app (`run_nicegui_app()`) because:
+- NiceGUI's `ui.run()` is a blocking call and cannot coexist with `asyncio.run()`
+- In production, generate Mermaid code at startup or on DAG change events
+- Consider using `ui.timer()` or pub/sub to refresh the diagram dynamically
+
+### Alternatives to NiceGUI for DAG Visualization
+
+| Tool | Use Case |
+|------|----------|
+| `MermaidGenerator` | Static diagrams (docs, wikis, README) |
+| `DAGVisualizer` | NetworkX-based analysis, JSON/DOT/ Cytoscape exports |
+| `DagViewer` (NiceGUI) | Interactive web panels (when fully implemented) |
+
+---
+
+## Learning Path
+
+After this example:
+
+1. **[DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }})** — NetworkX critical path, multiple export formats
+2. **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG construction and inspection
+3. **[Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})** — Full audio pipeline with parallelism
+4. **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** — All pipeline types and patterns
+
+---
+
+*This example shows how to combine Taskiq-Flow with NiceGUI for interactive pipeline visualization.*
 
 
 ## DOCUMENT: Quickstart
@@ -7065,7 +7335,7 @@ config = TaskiqFlowConfig(
     # Security
     security_enabled=True,
     auth_provider="api_key",  # "api_key" | "jwt"
-    jwt_secret="your-secret",  #pragma: allowlist secret - Required for JWT auth
+    jwt_secret="your-secret",  # pragma: allowlist secret - Required for JWT auth 
     api_keys={...},
     require_https=True,
 
@@ -11650,34 +11920,6 @@ Welcome to the English documentation for **Taskiq-Flow**.
 
 *Maintained by SoniqueBay Team*
 
----
-title: English Documentation
-nav_order: 5
-permalink: /en/
----
-# Taskiq-Flow Documentation (English)
-
-Welcome to the English documentation for **Taskiq-Flow**.
-
-## 📖 Start Here
-
-- **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Get up and running in 5 minutes
-- **[User Guides]({{ '/en/guides/' | relative_url }})** — In-depth guides on pipelines, tasks, execution, tracking, WebSocket, scheduling, retry, performance, and REST API
-- **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module and class documentation
-- **[Examples]({{ '/en/examples/' | relative_url }})** — Working code examples for all features
-
-## 🔗 Quick Links
-
-- [Project README](https://github.com/dorel14/taskiq-flow/blob/main/README.md) — Project overview and philosophy
-- [PyPI Package](https://pypi.org/project/taskiq-flow/) — Install with `pip install taskiq-flow`
-- [GitHub Repository](https://github.com/dorel14/taskiq-flow) — Source code and issue tracker
-- [Contributing Guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) — How to contribute
-- [License](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) — MIT License
-
----
-
-*Maintained by SoniqueBay Team*
-
 
 ## DOCUMENT: Quickstart
 
@@ -14773,6 +15015,8 @@ Cette galerie propose des parcours détaillés des scripts d'exemple inclus dans
 | [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }}) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
 | [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }}) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
 | [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }}) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
+| [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }}) | Analyse DAG NetworkX : chemin critique, groupes parallèles, export | DAGVisualizer, NetworkX, chemin critique, exports |
+| [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }}) | Visualiseur web interactif de DAG via NiceGUI et MermaidGenerator | MermaidGenerator, NiceGUI, visualisation web interactive |
 | [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }}) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
 | [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }}) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
 | [API REST]({{ '/fr/examples/api-example/' | relative_url }}) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
@@ -14820,6 +15064,8 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 
 ### Workflows Avancés
 - [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }})
+- [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }})
 - [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})
 
 ### Intégration
@@ -14832,6 +15078,275 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 - **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Lancez votre premier pipeline
 - **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Approfondissements par fonctionnalité
 - **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules
+
+
+## DOCUMENT: Nicegui Dag Demo
+
+# Exemple: nicegui_dag_demo.py
+
+**Visualisation interactive de DAG avec NiceGUI et MermaidGenerator**
+
+> **Version** : {VERSION} | **Fichier** : `examples/nicegui_dag_demo.py`
+
+---
+
+## Aperçu
+
+Cet exemple montre comment construire une application web interactive avec
+**NiceGUI** pour visualiser le DAG d'un `DataflowPipeline` Taskiq-Flow. Il
+s'appuie sur le `MermaidGenerator` intégré pour générer un diagramme Mermaid.js
+visible directement dans le navigateur.
+
+Thèmes abordés :
+- Génération de diagrammes Mermaid.js depuis un DAG de façon programmatique
+- Diffusion du diagramme par une application web NiceGUI
+- Séparation entre la construction du pipeline (async) et le serveur web (synchrone)
+
+---
+
+## Ce Que Cet Exemple Montre
+
+- Utilisation de `DataflowPipeline.from_tasks()` pour créer un pipeline à 3 étapes
+- Appel à `_build_dataflow_dag()` pour obtenir le DAG **sans exécuter les tâches**
+- Utilisation de `MermaidGenerator.to_mermaid_with_styling()` pour générer le code Mermaid
+- Affichage du diagramme dans une page `ui.markdown()` NiceGUI
+- Script en mode double : builder async + serveur web synchrone
+
+---
+
+## Parcours Du Code
+
+### 1. Définition du Pipeline
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Charge les données brutes depuis une source."""
+    await asyncio.sleep(0.1)
+    return {"source": source, "values": [1, 2, 3, 4, 5]}
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Traite les données brutes en calculant des statistiques."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Génère un rapport final depuis les données traitées."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "RAPPORT-001",
+        "source": processed_data["source"],
+        "statistiques": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "statut": "terminé",
+    }
+```
+
+Structure du DAG :
+```
+load_data → process_data → generate_report
+```
+
+---
+
+### 2. Construction du DAG (Sans Exécution)
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_data, process_data, generate_report],
+)
+pipeline.pipeline_id = "pipeline_traitement_donnees"
+
+# Construit le DAG de façon statique — aucune tâche n'est exécutée
+pipeline._build_dataflow_dag()
+dag = pipeline._dag
+```
+
+> **Note** : `_build_dataflow_dag()` est une méthode interne qui parcourt
+> les annotations `@pipeline_task` pour assembler le graphe de dépendances
+> en mémoire. Pour une approche publique, utilisez `DataflowRegistry`
+> (voir [Exemple Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})).
+
+---
+
+### 3. Génération du Diagramme Mermaid
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# → flowchart LR / TD avec nœuds colorés et flèches
+```
+
+`MermaidGenerator.to_mermaid_with_styling()` génère du code Mermaid.js
+avec des classes CSS par type de nœud (entrée, processus, sortie, décision).
+
+---
+
+### 4. Application NiceGUI
+
+```python
+@ui.page("/")
+def page_visualisation_dag() -> None:
+    """Page principale de visualisation du DAG."""
+    ui.label("Visualisation DAG TaskIQ Flow").style("font-size: 24px; font-weight: bold;")
+    ui.label("Pipeline de Traitement de Données").style("font-size: 18px;")
+    ui.separator()
+
+    if mermaid_diagramme_global:
+        ui.markdown(f"""```mermaid\n{mermaid_diagramme_global}\n```""")
+    else:
+        ui.label("Aucun DAG à afficher").style("color: red;")
+
+    ui.separator()
+    ui.label("Statistiques du DAG:").style("font-weight: bold;")
+
+ui.run(title="Visionneuse DAG TaskIQ Flow", port=8080)
+```
+
+NiceGUI interprète le contenu `ui.markdown()` côté serveur, et Mermaid.js
+charge le rendu du diagramme côté navigateur.
+
+---
+
+## Sortie Attendue
+
+**Console (builder DAG)** :
+```
+=== Démo Visualisation DAG NiceGUI Taskiq-Flow ===
+
+DAG: 3 nœuds et 2 arêtes
+Serveur NiceGUI démarré...
+Ouvrez http://127.0.0.1:8080 dans votre navigateur
+
+Code du diagramme Mermaid :
+flowchart LR
+    classDef input fill:#e1f5fe,stroke:#01579b,...
+    classDef process fill:#fff3e0,stroke:#e65100,...
+    classDef output fill:#e8f5e9,stroke:#1b5e20,...
+    load_data["load_data"]:::process
+    process_data["process_data"]:::process
+    generate_report["generate_report"]:::output
+    load_data --> process_data
+    process_data --> generate_report
+```
+
+**Navigateur sur `http://127.0.0.1:8080`** :
+
+Application web NiceGUI complète affichant le diagramme Mermaid avec nœuds
+colorés et les statistiques de base du DAG.
+
+---
+
+## Référence MermaidGenerator
+
+| Méthode | Description |
+|---------|-------------|
+| `MermaidGenerator(dag)` | Crée un générateur depuis une instance de `DAG` |
+| `.to_mermaid(orientation="TB")` | Flowchart Mermaid basique (TB/BT/LR/RL) |
+| `.to_mermaid_with_styling(orientation="LR")` | Stylisé avec couleurs par type de nœud |
+| `.to_mermaid_interactive()` | HTML avec gestionnaires de clic (pour tableaux de bord web) |
+
+Valeurs d'orientation :
+
+| Valeur | Direction |
+|--------|-----------|
+| `"TB"` | Haut → Bas (défaut) |
+| `"BT"` | Bas → Haut |
+| `"LR"` | Gauche → Droite |
+| `"RL"` | Droite → Gauche |
+
+---
+
+## Lancer la Démo
+
+### Prérequis
+
+```bash
+pip install nicegui "taskiq-flow[all]"
+```
+
+### Option 1 — Construire le DAG et démarrer NiceGUI
+
+```bash
+python examples/nicegui_dag_demo.py
+```
+
+Le script exécute `asyncio.run(main())`, qui construit le DAG et génère le
+diagramme, puis affiche les instructions pour lancer NiceGUI.
+
+### Option 2 — Lancer NiceGUI directement
+
+```bash
+python -c "from examples.nicegui_dag_demo import run_nicegui_app; run_nicegui_app()"
+```
+
+> Ouvre `http://127.0.0.1:8080` dans votre navigateur par défaut.
+
+---
+
+## Points Clés
+
+### Intégration NiceGUI + Taskiq-Flow
+
+| Composant | Rôle |
+|-----------|------|
+| `DataflowPipeline` | Construit le DAG depuis les déclarations de tâches |
+| `MermaidGenerator` | Convertit le DAG → code Mermaid.js |
+| `ui.markdown()` | Affiche le diagramme Mermaid dans NiceGUI |
+| `ui.run()` | Démarre le serveur web ASGI sur le port 8080 |
+
+### Pourquoi Séparer Builder et Serveur
+
+L'exemple dissocie la construction du pipeline (`main()`) du serveur
+NiceGUI (`run_nicegui_app()`) car :
+- `ui.run()` est un appel bloquant et ne peut pas coexister avec `asyncio.run()`
+- En production, générez le code Mermaid au démarrage ou lors des changements de DAG
+- Utilisez `ui.timer()` ou un système pub/sub pour rafraîchir le diagramme dynamiquement
+
+### Alternatives à NiceGUI pour la Visualisation de DAG
+
+| Outil | Cas d'usage |
+|-------|-------------|
+| `MermaidGenerator` | Diagrammes statiques (docs, wikis, README) |
+| `DAGVisualizer` | Analyse NetworkX, exports JSON/DOT/Cytoscape |
+| `DAGViewer` (NiceGUI) | Panneaux web interactifs (en cours d'implémentation) |
+
+---
+
+## Chemin d'Apprentissage
+
+Après cet exemple :
+
+1. **[Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }})** — Réseau critique, exports multi-formats NetworkX
+2. **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Construction et inspection du DAG
+3. **[Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Pipeline audio complet avec parallélisme
+4. **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Tous les types et patterns de pipelines
+
+---
+
+*Cet exemple montre comment combiner Taskiq-Flow avec NiceGUI pour une visualisation interactive de pipelines.*
 
 
 ## DOCUMENT: Quickstart
@@ -23356,36 +23871,6 @@ Bienvenue dans la documentation française de **Taskiq-Flow**.
 
 *Maintenu par l'équipe SoniqueBay*
 
----
-
-title: Documentation Française
-nav_order: 5
-permalink: /fr/
----
-
-# Taskiq-Flow Documentation (Français)
-
-Bienvenue dans la documentation française de **Taskiq-Flow**.
-
-## 📖 Commencer
-
-- **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Prenez en main en 5 minutes
-- **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Guides détaillés sur les pipelines, tâches, exécution, suivi, WebSocket, planification, retry, performance et API REST
-- **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules et classes
-- **[Exemples]({{ '/fr/examples/' | relative_url }})** — Scripts d'exemple fonctionnels pour toutes les fonctionnalités
-
-## 🔗 Liens Rapides
-
-- [README du Projet](https://github.com/dorel14/taskiq-flow/blob/main/README.fr.md) — Vue d'ensemble et philosophie du projet
-- [Package PyPI](https://pypi.org/project/taskiq-flow/) — Installez avec `pip install taskiq-flow`
-- [Dépôt GitHub](https://github.com/dorel14/taskiq-flow) — Code source et suivi d'issues
-- [Guide de Contribution](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) — Comment contribuer
-- [Licence](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) — Licence MIT
-
----
-
-*Maintenu par l'équipe SoniqueBay*
-
 
 ## DOCUMENT: Quickstart
 
@@ -24035,13 +24520,19 @@ if __name__ == "__main__":
 
 ```python
 """
-DAG Visualization Demo.
+Démonstration de visualisation avancée de DAG pour Taskiq-Flow.
 
-This example demonstrates the advanced DAG visualization capabilities
-using NetworkX, Mermaid, and NiceGUI integration.
+Ce module démontre les capacités de visualisation et d'analyse de DAG
+utilisant NetworkX pour l'analyse de graphes, Mermaid pour les diagrammes
+et les formats d'export JSON, DOT, Cytoscape et ASCII.
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples inclus :
+    - DAGVisualizer : analyse critique, groupes parallèles, exports multiples
+    - MermaidGenerator : génération de diagrammes stylisés
+    - Visualisation ASCII pour terminal
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -24486,6 +24977,187 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+```
+
+### Example: nicegui_dag_demo.py
+
+```python
+"""
+Démonstration NiceGUI de visualisation de DAG pour Taskiq-Flow.
+
+Ce module utilise le MermaidGenerator intégré pour générer un diagramme
+Mermaid.js depuis un pipeline DataflowPipeline et l'affiche dans une
+application web interactive construite avec NiceGUI.
+
+Permissions d'exécution :
+    - Dépendances : pip install nicegui taskiq-flow[all]
+    - Lancement   : python examples/nicegui_dag_demo.py
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
+"""
+
+import asyncio
+import logging
+from typing import Any
+
+from taskiq import InMemoryBroker
+
+from taskiq_flow import DataflowPipeline, pipeline_task
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create broker
+broker = InMemoryBroker(await_inplace=True)
+
+
+# Define sample tasks for a data processing pipeline
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Load raw data from a source."""
+    await asyncio.sleep(0.1)
+    return {
+        "source": source,
+        "values": [1, 2, 3, 4, 5],
+    }
+
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Process raw data by calculating statistics."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Generate a final report from processed data."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "REPORT-001",
+        "source": processed_data["source"],
+        "statistics": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "status": "completed",
+    }
+
+
+async def main() -> None:
+    """Run the NiceGUI DAG visualization demo."""
+    logger.info("=== Taskiq-Flow NiceGUI DAG Visualization Demo ===\n")
+
+    # Create pipeline from tasks
+    pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [
+            load_data,  # type: ignore
+            process_data,  # type: ignore
+            generate_report,  # type: ignore
+        ],
+    )
+    pipeline.pipeline_id = "data_processing_pipeline"
+
+    # Build the DAG (without executing)
+    pipeline._build_dataflow_dag()
+    dag = pipeline._dag
+
+    if dag is None:
+        logger.error("Failed to build DAG")
+        return
+
+    logger.info(f"DAG has {len(dag.nodes)} nodes and {len(dag.edges)} edges")
+    logger.info("Starting NiceGUI server...")
+    logger.info("Open your browser to http://127.0.0.1:8080 to view the DAG")
+
+    # Generate Mermaid code for the DAG
+    mermaid_gen = MermaidGenerator(dag)
+    mermaid_code = mermaid_gen.to_mermaid_with_styling()
+
+    # Store for the NiceGUI app
+    global mermaid_diagram_global  # noqa: PLW0603
+    mermaid_diagram_global = mermaid_code
+
+    # logger.info the mermaid diagram for reference
+    logger.info("Mermaid diagram code:")
+    logger.info(mermaid_code)
+
+
+# Global to store mermaid diagram
+mermaid_diagram_global = ""
+
+
+def run_nicegui_app() -> None:
+    """
+    Run the NiceGUI application to display the DAG.
+
+    This function requires NiceGUI to be installed.
+    Install with: pip install nicegui
+    """
+    try:
+        from nicegui import ui  # type: ignore # noqa: PLC0415
+    except ImportError:
+        logger.error("NiceGUI is not installed. Install with: pip install nicegui")
+        raise
+
+    @ui.page("/")
+    def dag_viewer_page() -> None:
+        """Main page showing the DAG visualization."""
+        ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; \
+                                                        font-weight: bold;")
+        ui.label("Data Processing Pipeline").style("font-size: 18px;")
+        ui.separator()
+
+        # Display the Mermaid diagram
+        if mermaid_diagram_global:
+            ui.markdown(f"""
+```mermaid
+{mermaid_diagram_global}
+```
+            """)
+        else:
+            ui.label("No DAG to display").style("color: red;")
+
+        # Display DAG statistics
+        ui.separator()
+        ui.label("DAG Statistics:").style("font-weight: bold;")
+
+    ui.run(title="TaskIQ Flow DAG Viewer", port=8080)
+
+
+if __name__ in {"__main__", "__mp_main__"}:
+    # Run the async demo first to build the DAG and generate mermaid code
+    asyncio.run(main())
+
+    # Then run the NiceGUI app
+    # Note: In practice, you would want to generate the mermaid code
+    # before starting NiceGUI, or use the asyncio pattern properly
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("To run the NiceGUI DAG visualization demo:")
+    logger.info("1. Make sure you have nicegui installed: pip install nicegui")
+    logger.info("2. Run: python -m examples.nicegui_dag_demo")
+    logger.info("3. Open http://127.0.0.1:8080 in your browser")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info("The Mermaid diagram code has been generated above.")
+    logger.info("You can also view the DAG by running the NiceGUI app:")
+    logger.info("  python -c 'from examples.nicegui_dag_demo import\
+                run_nicegui_app; run_nicegui_app()'")
 
 ```
 
@@ -25046,13 +25718,21 @@ if __name__ == "__main__":
 
 ```python
 """
-Resource-Aware Parallelism Demo.
+Démonstration du parallélisme adaptatif basé sur les ressources pour Taskiq-Flow.
 
-This example demonstrates dynamic parallelism adjustment based on
-CPU and memory availability using ResourceAwareExecutor.
+Ce module démontre l'ajustement dynamique du degré de parallélisme selon
+la disponibilité CPU et mémoire via `ResourceAwareExecutor` :
+- Suivi en temps réel de l'utilisation CPU et mémoire
+- Ajustement automatique de la concurrence
+- Mode dry-run pour observer les décisions sans exécuter
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples :
+    - Pipeline resource-aware via ExecutionEngine
+    - Monitoring dynamique CPU/mémoire par tâche
+    - Comparaison parallélisme fixe vs adaptatif
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -25231,13 +25911,16 @@ if __name__ == "__main__":
 
 ```python
 """
-Retry Demo.
+Démonstration des politiques de retry et de gestion d'erreurs pour Taskiq-Flow.
 
-This example demonstrates the retry middleware and error handling modes
-in Taskiq-Flow v0.4.5.
+Ce module démontre le middleware de retry (`PipelineRetryMiddleware`) et les
+différents modes de gestion d'erreurs dans Taskiq-Flow 1.2.0 :
+- Retry avec backoff exponentiel
+- Mode FAIL_FAST, CONTINUE_ON_ERROR, SKIP_FAILED
+- Politique de retry par tâche et par pipeline
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -25492,13 +26175,22 @@ if __name__ == "__main__":
 
 ```python
 """
-Secure API Example.
+Exemple d'API sécurisée pour Taskiq-Flow.
 
-This example demonstrates how to secure your Taskiq-Flow API with
-authentication, authorization, rate limiting, and audit logging.
+Ce module démontre la sécurisation d'une API Taskiq-Flow avec :
+- Authentification par clé API (API-Key header)
+- Autorisation par rôle (admin/user)
+- Rate limiting par clé API
+- Journalisation d'audit (audit log) de toutes les requêtes
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Routes protégées :
+    - GET  /pipelines          — Liste tous les pipelines (auth requis)
+    - POST /pipelines          — Crée un pipeline (auth + admin)
+    - GET  /pipelines/{id}     — Détails d'un pipeline (auth requis)
+    - DELETE /pipelines/{id}   — Supprime un pipeline (auth + admin)
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import logging
@@ -25541,7 +26233,7 @@ pipeline.pipeline_id = "secure_demo_pipeline"
 
 
 # 4. Create FastAPI app with security
-app = FastAPI(title="Secure Taskiq-Flow API", version="0.4.5")
+app = FastAPI(title="Secure Taskiq-Flow API", version="1.2.0")
 viz_api = create_visualization_api(broker, app)
 viz_api.add_pipeline("secure_demo_pipeline", pipeline)
 
@@ -25657,14 +26349,18 @@ if __name__ == "__main__":
 
 ```python
 """
-Example demonstrating WebSocket integration for real-time pipeline tracking.
+Exemple démontrant l'intégration WebSocket pour le suivi temps réel des pipelines.
 
-This example shows both FastAPI and picows WebSocket implementations:
-- FastAPI WebSocket: Integrated with FastAPI routes (preferred)
-- picows WebSocket: Standalone WebSocket server
+Ce module montre les deux implémentations WebSocket :
+- WebSocket FastAPI : intégré aux routes FastAPI (recommandé)
+- WebSocket picows : serveur WebSocket autonome
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Implémentations :
+    - FastAPI WebSocket : Endpoint `/ws/{pipeline_id}` dans un serveur FastAPI
+    - picows WebSocket : Serveur dédié avec hook d'événements pipelines
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
