@@ -8,14 +8,17 @@ color_scheme: dark
 
 Documentation complète des modules et classes de Taskiq-Flow.
 
-## 📚 Disponible
+## Disponible
 
 | Module | Description |
 |--------|-------------|
 | **[Composants Cœurs]({{ '/fr/api/core/' | relative_url }})** | Pipeline, DataflowPipeline, middleware, exceptions |
 | **[Décorateurs]({{ '/fr/api/decorators/' | relative_url }})** | `@pipeline_task` et utilitaires |
 | **[Exécution]({{ '/fr/api/execution/' | relative_url }})** | ExecutionEngine, DAG, DAGBuilder |
+| **[Stockage]({{ '/fr/api/storage/' | relative_url }})** nouveau en v1.2.0 | Adaptateurs de stockage interchangeables (InMemory, Redis, SQLite), factory, StorageMiddleware |
+| **[Cache]({{ '/fr/api/cache/' | relative_url }})** nouveau en v1.2.0 | Cache Dogpile (adaptateurs InMemory et Redis), CacheMiddleware |
 | **[Suivi]({{ '/fr/api/tracking/' | relative_url }})** | TrackingManager et backends de stockage |
+| **[Optimisation]({{ '/fr/api/optimization/' | relative_url }})** | ResourceAwareExecutor |
 | **[WebSocket]({{ '/fr/api/websocket/' | relative_url }})** | HookManager et système d'événements |
 
 ---

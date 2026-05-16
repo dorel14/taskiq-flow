@@ -31,14 +31,14 @@ A **retry** is automatically re-executing a failed task with the same inputs. Re
 
 ### When to Retry
 
-✅ **Good candidates for retry**:
+ **Good candidates for retry**:
 
 - Network timeouts (external API unavailable)
 - Database connection errors (transient)
 - Rate limit hits (retry-after header)
 - Temporary resource exhaustion
 
-❌ **Do NOT retry**:
+ **Do NOT retry**:
 
 - Validation errors (bad input won't fix itself)
 - Programming errors (bug in code)

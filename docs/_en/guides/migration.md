@@ -9,7 +9,7 @@
 
 This guide helps you migrate from Taskiq-Flow v0.4.5 to v1.0.2. The migration involves changes to imports, API signatures, configuration, and new features.
 
-**Breaking changes** are marked with ⚠️. Non-breaking additions are marked with ✨.
+**Breaking changes** are marked with . Non-breaking additions are marked with .
 
 ---
 
@@ -52,7 +52,7 @@ from taskiq_flow import (
 
 ## 2. Configuration Changes
 
-### ⚠️ Security Now Enabled by Default
+### Security Now Enabled by Default
 
 In v0.4.5, security was optional and required explicit setup. In v1.0.2, `TaskiqFlowConfig` enables security by default:
 
@@ -79,7 +79,7 @@ config = TaskiqFlowConfig(
 config = TaskiqFlowConfig(security_enabled=False)
 ```
 
-### ✨ New Configuration Options
+### New Configuration Options
 
 ```python
 config = TaskiqFlowConfig(
@@ -117,7 +117,7 @@ config = TaskiqFlowConfig(
 
 ## 3. Pipeline Creation
 
-### ⚠️ `Pipeline` Class Moved
+### `Pipeline` Class Moved
 
 The original `Pipeline` class has been moved to `pipeliner`. The top-level `Pipeline` is now a re-export for backward compatibility.
 
@@ -131,7 +131,7 @@ from taskiq_flow import Pipeline
 from taskiq_flow.pipeliner import Pipeline
 ```
 
-### ✨ New `DataflowPipeline`
+### New `DataflowPipeline`
 
 The new `DataflowPipeline` is the recommended way to create pipelines with DAG support:
 
@@ -165,7 +165,7 @@ pipeline.add_task(aggregate)
 
 ## 4. Execution Engine
 
-### ⚠️ `ExecutionEngine` Replaces Direct Pipeline Execution
+### `ExecutionEngine` Replaces Direct Pipeline Execution
 
 For DAG-based execution, use `ExecutionEngine`:
 
@@ -192,7 +192,7 @@ outputs = await engine.execute(
 )
 ```
 
-### ✨ New Execution Options
+### New Execution Options
 
 ```python
 engine = ExecutionEngine(
@@ -212,7 +212,7 @@ engine = ExecutionEngine(
 
 ## 5. Middleware Changes
 
-### ✨ `PipelineMiddleware` Now Supports Metrics
+### `PipelineMiddleware` Now Supports Metrics
 
 The `PipelineMiddleware` constructor accepts an optional `metrics_collector`:
 
@@ -228,7 +228,7 @@ middleware = PipelineMiddleware(
 broker = InMemoryBroker().with_middlewares(middleware)
 ```
 
-### ⚠️ `TransportMiddleware` Construction Changed
+### `TransportMiddleware` Construction Changed
 
 ```python
 # v0.4.5 - Implicit WebSocket
@@ -254,7 +254,7 @@ transport = TransportMiddleware(
 
 ## 6. Metrics System
 
-### ✨ New Prometheus Metrics
+### New Prometheus Metrics
 
 Metrics are now collected via `MetricsCollector`:
 
@@ -289,7 +289,7 @@ app.get("/metrics")(get_metrics_endpoint())
 
 ## 7. WebSocket Changes
 
-### ✨ New HTTP Streaming (SSE) Transport
+### New HTTP Streaming (SSE) Transport
 
 ```python
 from taskiq_flow.transport.http_stream import HTTPStreamTransport, get_http_stream_transport
@@ -304,7 +304,7 @@ app.get("/events")(sse_endpoint)
 await transport.broadcast(event)
 ```
 
-### ⚠️ WebSocket Authentication Now Properly Enforced
+### WebSocket Authentication Now Properly Enforced
 
 v0.4.5 had a bypass in the WebSocket handler. v1.0.2 properly validates tokens:
 
@@ -326,7 +326,7 @@ ws.send(JSON.stringify({
 }))
 ```
 
-### ✨ Authorization Checks on Subscribe
+### Authorization Checks on Subscribe
 
 ```python
 # Server-side ACL enforcement
@@ -338,7 +338,7 @@ if not self.authorization.can_read(pipeline_id, self.user):
 
 ## 8. Tracking System
 
-### ✨ Tracking Manager Improvements
+### Tracking Manager Improvements
 
 ```python
 from taskiq_flow import PipelineTrackingManager, TrackingStorageFactory
@@ -359,7 +359,7 @@ print(status.state)  # PipelineState.RUNNING, SUCCESS, FAILED, etc.
 
 ## 9. Security Setup
 
-### ✨ New Security Module
+### New Security Module
 
 ```python
 from taskiq_flow.security import SecurityMiddleware
@@ -431,17 +431,17 @@ middleware = PipelineMiddleware(metrics_collector=metrics)
 
 | Feature | v0.4.5 | v1.0.0 | v1.0.2 |
 |---------|--------|--------|--------|
-| Basic pipeline execution | ✓ | ✓ | ✓ |
-| DAG-based dataflow | ✗ | ✓ | ✓ |
-| Security module | ✗ | ✓ | ✓ |
-| Metrics system | ✗ | ✓ | ✓ |
-| WebSocket transport | ✗ | ✓ | ✓ |
-| HTTP SSE transport | ✗ | ✗ | ✓ |
-| Authorization ACLs | ✗ | ✓ | ✓ |
-| Rate limiting | ✗ | ✓ | ✓ |
-| Resource-aware executor | ✗ | ✗ | ✓ |
-| Execution engine | ✗ | ✓ | ✓ |
-| Auto-configuration | ✗ | ✗ | ✓ |
+| Basic pipeline execution |  |  |  |
+| DAG-based dataflow |  |  |  |
+| Security module |  |  |  |
+| Metrics system |  |  |  |
+| WebSocket transport |  |  |  |
+| HTTP SSE transport |  |  |  |
+| Authorization ACLs |  |  |  |
+| Rate limiting |  |  |  |
+| Resource-aware executor |  |  |  |
+| Execution engine |  |  |  |
+| Auto-configuration |  |  |  |
 
 ---
 

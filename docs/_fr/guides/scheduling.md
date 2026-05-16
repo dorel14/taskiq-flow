@@ -78,11 +78,11 @@ scheduler = PipelineScheduler(
 
 | Store | Persistance | Multi-worker | Cas d'usage |
 |-------|-------------|--------------|-------------|
-| `"memory"` | ❌ Non | ❌ Non | Développement, mono-processus |
-| `"sqlite"` | ✅ Oui | ⚠️ Limité* | Production mono-worker, persistance simple |
-| `"postgresql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, haute disponibilité |
-| `"mysql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, alternative PostgreSQL |
-| `"redis"` | ❌ | ❌ | **Non implémenté** (placeholder lève `NotImplementedError`) |
+| `"memory"` |  Non |  Non | Développement, mono-processus |
+| `"sqlite"` |  Oui |  Limité* | Production mono-worker, persistance simple |
+| `"postgresql"` (via URL) |  Oui |  Oui | Production multi-worker, haute disponibilité |
+| `"mysql"` (via URL) |  Oui |  Oui | Production multi-worker, alternative PostgreSQL |
+| `"redis"` |  |  | **Non implémenté** (placeholder lève `NotImplementedError`) |
 
 *Le store sqlite fonctionne avec une seule instance de scheduler ; multiples workers nécessitent DB externe (PostgreSQL/MySQL).
 
@@ -713,9 +713,9 @@ for run in history:
 
 | Backend | Async | Multi-worker | Production |
 |---------|-------|--------------|------------|
-| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / petits projets |
-| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommandé |
-| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supporté |
+| SQLite |  `sqlite+aiosqlite` |  Single-writer | Dev / petits projets |
+| PostgreSQL |  `postgresql+asyncpg` |  Full |  Recommandé |
+| MySQL |  `mysql+aiomysql` |  Full |  Supporté |
 
 ---
 

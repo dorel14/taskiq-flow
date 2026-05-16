@@ -9,16 +9,16 @@ permalink: /
 
 Welcome to the official documentation for **Taskiq-Flow**, a powerful Python library for orchestrating asynchronous task workflows with pipelines, dataflow DAGs, real-time tracking, and distributed scheduling.
 
-## 🌐 Language Selection
+## Language Selection
 
 This documentation is available in two languages:
 
-- **[🇬🇧 English Documentation]({{ '/en/' | relative_url }})** — Complete technical documentation in English (source language)
-- **[🇫🇷 Documentation Française]({{ '/fr/' | relative_url }})** — Traduction française complète
+- **[ English Documentation]({{ '/en/' | relative_url }})** — Complete technical documentation in English (source language)
+- **[ Documentation Française]({{ '/fr/' | relative_url }})** — Traduction française complète
 
 Both versions are kept synchronized, with code examples remaining in English for consistency.
 
-## 📚 Documentation Structure
+## Documentation Structure
 
 The documentation is organized into the following sections:
 
@@ -55,7 +55,7 @@ The documentation is organized into the following sections:
   - WebSocket demo
   - REST API
 
-## 🚀 Quick Overview
+## Quick Overview
 
 Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataflow model**:
 
@@ -68,24 +68,24 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 - **Parallel Execution** — Automatic concurrency for independent tasks
 - **Map-Reduce** — Built-in batch processing helpers
 
-## 📖 Read the Guides
+## Read the Guides
 
 **[→ Getting Started (English)]({{ '/en/quickstart/' | relative_url }})**
 
 **[→ Commencer (Français)]({{ '/fr/quickstart/' | relative_url }})**
 
-## 🔗 Quick Links
+## Quick Links
 
 - **Project Repository**: [GitHub - taskiq-flow](https://github.com/dorel14/taskiq-flow)
 - **PyPI Package**: [taskiq-flow](https://pypi.org/project/taskiq-flow/)
 - **Taskiq Documentation**: [taskiq-python.github.io](https://taskiq-python.github.io/)
 - **Issue Tracker**: [GitHub Issues](https://github.com/dorel14/taskiq-flow/issues)
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/master/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License — see the [LICENSE](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) file for details.
 

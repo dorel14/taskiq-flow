@@ -504,10 +504,10 @@ tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
 | Feature | In-Memory | Redis |
 |---------|-----------|-------|
-| **Multi-process** | ❌ No | ✅ Yes |
-| **Persistent** | ❌ No | ✅ Yes |
-| **Shared state** | ❌ No | ✅ Yes |
-| **Speed** | ⚡ Fastest | ⚡ Fast (network) |
+| **Multi-process** |  No |  Yes |
+| **Persistent** |  No |  Yes |
+| **Shared state** |  No |  Yes |
+| **Speed** |  Fastest |  Fast (network) |
 | **Config required** | None | Redis server |
 
 **Basic recipe**:

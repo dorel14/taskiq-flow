@@ -7,13 +7,14 @@ permalink: /en/guides/
 
 In-depth guides covering all Taskiq-Flow features.
 
-## 📖 Available Guides
+## Available Guides
 
 | Guide | Description |
 |-------|-------------|
 | **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** | Sequential & dataflow pipeline patterns |
 | **[Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})** | Task definitions & decorators |
 | **[Execution Guide]({{ '/en/guides/execution/' | relative_url }})** | Execution modes & error handling |
+| **[Storage & Cache Middleware]({{ '/en/guides/cache/' | relative_url }})** new in v1.2.0 | Centralized persistence & Dogpile worker caching |
 | **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** | Real-time monitoring |
 | **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** | Live dashboards |
 | **[Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})** | Cron scheduling |

@@ -167,7 +167,7 @@ Running `python examples/retry_demo.py`:
 Executing flaky task with retry middleware...
 (Task may fail 1-2 times before succeeding)
 
-✅ Pipeline succeeded! Result: Success on attempt 2
+ Pipeline succeeded! Result: Success on attempt 2
 
 Retry count stored in middleware: {'flaky_task': 1}
 

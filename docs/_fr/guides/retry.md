@@ -31,14 +31,14 @@ Une **retry** (réessai) est la ré-exécution automatique d'une tâche échoué
 
 ### Quand Retenter
 
-✅ **Bons candidats pour le retry** :
+ **Bons candidats pour le retry** :
 
 - Timeouts réseau (API externe indisponible)
 - Erreurs de connexion base de données (transitoires)
 - Limitation de débit (header retry-after)
 - Épuisement temporaire des ressources
 
-❌ **Ne PAS retenter** :
+ **Ne PAS retenter** :
 
 - Erreurs de validation (mauvaise entrée ne se corrigera pas)
 - Erreurs de programmation (bug dans le code)
