@@ -14,12 +14,14 @@ import json
 import logging
 from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 try:
-    import redis.asyncio as redis
+    import redis.asyncio as redis_async
+    from redis.asyncio import Redis
 except ImportError:
-    redis = None  # type: ignore
+    redis_async = None  # type: ignore
+    Redis = None  # type: ignore
 
 from taskiq_flow.tracking.models import (
     PipelineStatus,
@@ -62,9 +64,9 @@ class RedisPipelineStorage(PipelineStorage):
         redis_url: str = "redis://localhost:6379",
         ttl_seconds: int = 3600,
     ) -> None:
-        if redis is None:
+        if redis_async is None:
             raise ImportError("redis package is required for RedisPipelineStorage")
-        self.redis = redis.from_url(redis_url)
+        self.redis = redis_async.from_url(redis_url)
         self.ttl_seconds = ttl_seconds
         self._index_key = "pipeline_index"  # Sorted set for pipeline listing
 
@@ -118,7 +120,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             started_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(
+            await self.redis.hset(  # type: ignore[misc]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.RUNNING.value,
@@ -136,7 +138,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(
+            await self.redis.hset(  # type: ignore[misc]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.COMPLETED.value,
@@ -155,7 +157,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(
+            await self.redis.hset(  # type: ignore[misc]
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.FAILED.value,
@@ -189,7 +191,7 @@ class RedisPipelineStorage(PipelineStorage):
                 "error": None,
             }
 
-            await self.redis.lset(
+            await self.redis.lset(  # type: ignore[misc]
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -204,7 +206,7 @@ class RedisPipelineStorage(PipelineStorage):
     async def complete_step(self, pipeline_id: str, step_index: int) -> None:
         """Mark a step as completed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(
+        step_json = await self.redis.lindex(  # type: ignore[misc]
             steps_key,
             step_index,
         )
@@ -212,7 +214,7 @@ class RedisPipelineStorage(PipelineStorage):
             step_data = json.loads(step_json)
             step_data["status"] = StepStatus.COMPLETED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
-            await self.redis.lset(
+            await self.redis.lset(  # type: ignore[misc]
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -221,7 +223,7 @@ class RedisPipelineStorage(PipelineStorage):
     async def fail_step(self, pipeline_id: str, step_index: int, error: str) -> None:
         """Mark a step as failed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(
+        step_json = await self.redis.lindex(  # type: ignore[misc]
             steps_key,
             step_index,
         )
@@ -230,7 +232,7 @@ class RedisPipelineStorage(PipelineStorage):
             step_data["status"] = StepStatus.FAILED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
             step_data["error"] = error
-            await self.redis.lset(
+            await self.redis.lset(  # type: ignore[misc]
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -239,11 +241,14 @@ class RedisPipelineStorage(PipelineStorage):
     async def get_pipeline_status(self, pipeline_id: str) -> PipelineStatusInfo | None:
         """Get status of a pipeline."""
 
-        async def _get_status() -> Any:
+        async def _get_status() -> PipelineStatusInfo | None:
             return await self._get_pipeline_status_impl(pipeline_id)
 
         try:
-            return await self._retry_operation(_get_status)
+            return cast(
+                PipelineStatusInfo | None,
+                await self._retry_operation(_get_status),
+            )
         except Exception as e:
             logger.error(
                 f"Failed to get pipeline status for {pipeline_id} after retries: {e}",
@@ -258,7 +263,7 @@ class RedisPipelineStorage(PipelineStorage):
         pipeline_key = f"pipe:{pipeline_id}"
         steps_key = f"pipe:{pipeline_id}:steps"
 
-        pipeline_data = await self.redis.hgetall(
+        pipeline_data = await self.redis.hgetall(  # type: ignore[misc]
             pipeline_key,
         )
         if not pipeline_data:
@@ -268,7 +273,7 @@ class RedisPipelineStorage(PipelineStorage):
         # Decode bytes to strings
         pipeline_data = {k.decode(): v.decode() for k, v in pipeline_data.items()}
 
-        steps_json = await self.redis.lrange(
+        steps_json = await self.redis.lrange(  # type: ignore[misc]
             steps_key,
             0,
             -1,
@@ -281,7 +286,7 @@ class RedisPipelineStorage(PipelineStorage):
                 except (json.JSONDecodeError, ValueError) as e:
                     logger.warning(
                         f"Failed to parse step data for pipeline {pipeline_id}: {e}",
-                    )
+                    )  # type: ignore[misc]
                     continue
 
         # Parse datetime fields with error handling
@@ -365,10 +370,13 @@ class RedisPipelineStorage(PipelineStorage):
             cutoff_timestamp = datetime.now(timezone.utc).timestamp() - ttl_seconds
 
             # Remove old entries from index
-            removed_count = await self.redis.zremrangebyscore(
-                self._index_key,
-                0,
-                cutoff_timestamp,
+            removed_count = cast(
+                int,
+                await self.redis.zremrangebyscore(
+                    self._index_key,
+                    0,
+                    cutoff_timestamp,
+                ),
             )
 
             logger.debug(f"Cleaned up {removed_count} old pipeline entries from index")

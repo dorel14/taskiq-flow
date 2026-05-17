@@ -1,14 +1,13 @@
 """
-Intégration WebSocket pour les événements de pipeline en temps réel.
+WebSocket integration for real-time pipeline events.
 
-Fournit des implémentations WebSocket pour la diffusion des événements
-de pipeline aux clients connectés.
+Provides WebSocket implementations for broadcasting pipeline events
+to connected clients.
 
-- FastAPI WebSocket: Intégration avec FastAPI pour un API unifiée
-- picows: Serveur WebSocket autonome basé sur picows
+- FastAPI WebSocket: Integration with FastAPI for unified API
 
 Author: SoniqueBay Team
-Version: 1.0.2
+Version: 1.1.0
 """
 
 from taskiq_flow.integration.websocket.fastapi_ws import (
@@ -16,15 +15,9 @@ from taskiq_flow.integration.websocket.fastapi_ws import (
     fastapi_websocket_endpoint,
     get_fastapi_ws_manager,
 )
-from taskiq_flow.integration.websocket.server import (
-    PipelineWebSocketServer,
-    get_websocket_server,
-)
 
 __all__ = [
     "FastAPIWebSocketManager",
-    "PipelineWebSocketServer",
     "fastapi_websocket_endpoint",
     "get_fastapi_ws_manager",
-    "get_websocket_server",
 ]

@@ -213,7 +213,10 @@ class DataflowRegistry:
 
         """
         metadata = self.task_metadata.get(task, {})
-        return metadata.get("inputs", [])
+        inputs = metadata.get("inputs", [])
+        if not isinstance(inputs, list):
+            return []
+        return [str(x) for x in inputs]
 
     def get_producer(
         self,

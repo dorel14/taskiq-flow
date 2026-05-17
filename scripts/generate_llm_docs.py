@@ -73,8 +73,8 @@ def generate() -> None:
                 )
 
     # --- ÉCRITURE ---
-    OUTPUT_INDEX.write_text("\n".join(index_md))
-    OUTPUT_FULL.write_text("\n".join(full_md))
+    OUTPUT_INDEX.write_text("\n".join(index_md), encoding="utf-8")
+    OUTPUT_FULL.write_text("\n".join(full_md), encoding="utf-8")
     logger.info(f"Fichiers {OUTPUT_INDEX} et {OUTPUT_FULL} générés avec succès.")
 
 

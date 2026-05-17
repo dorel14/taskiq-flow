@@ -1,15 +1,12 @@
 """
 Exemple démontrant l'intégration WebSocket pour le suivi temps réel des pipelines.
 
-Ce module montre les deux implémentations WebSocket :
-- WebSocket FastAPI : intégré aux routes FastAPI (recommandé)
-- WebSocket picows : serveur WebSocket autonome
+Ce module montre l'implémentation FastAPI WebSocket pour les événements de pipeline.
 
 Implémentations :
     - FastAPI WebSocket : Endpoint `/ws/{pipeline_id}` dans un serveur FastAPI
-    - picows WebSocket : Serveur dédié avec hook d'événements pipelines
 
-Auteur: SoniqueBay Team
+Autheur: SoniqueBay Team
 Version: 1.2.0
 """
 
@@ -20,9 +17,6 @@ from taskiq import InMemoryBroker
 
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import (
-    get_websocket_server,
-)
 from taskiq_flow.middleware import PipelineMiddleware
 
 # Configure logging
@@ -51,7 +45,6 @@ async def main() -> None:
     hook_manager = HookManager()
 
     # Use FastAPI WebSocket (preferred) - integrates with FastAPI routes
-    # You can also use picows by setting use_fastapi=False
     setup_websocket_bridge(hook_manager, use_fastapi=True)
 
     # Create pipeline with tracking
@@ -81,56 +74,5 @@ async def main() -> None:
     print("Demo complete.")  # noqa: T201
 
 
-async def main_picows() -> None:
-    """Run the WebSocket demo with picows standalone server."""
-    # Set up hooks and WebSocket bridge
-    hook_manager = HookManager()
-    setup_websocket_bridge(hook_manager, use_fastapi=False)
-
-    # Create pipeline with tracking
-    pipeline: Pipeline = Pipeline(broker)  # type: ignore
-    pipeline.pipeline_id = "websocket_demo_picows"
-    pipeline.call_next(
-        add_one,
-        param_name="x",
-    )
-    pipeline.call_next(
-        multiply_by_two,
-        param_name="x",
-    )
-
-    # Enable hooks for WebSocket events
-    pipeline.with_hooks(hook_manager)
-
-    # Start WebSocket server in background
-    websocket_server = get_websocket_server()
-    _ = asyncio.create_task(  # noqa: RUF006
-        websocket_server.start_server("127.0.0.1", 8765),
-    )
-
-    print("WebSocket server started on ws://127.0.0.1:8765")  # noqa: T201
-    msg = '{"pipeline_id": "websocket_demo_picows"}'
-    print(f"Connect a WebSocket client and subscribe with: {msg}")  # noqa: T201
-    print("Then run the pipeline to see real-time events...")  # noqa: T201
-
-    # Wait a moment for server to start
-    await asyncio.sleep(1)
-
-    # Run pipeline
-    result = await pipeline.kiq(5)  # Start with 5
-    print(f"Pipeline result: {result}")  # noqa: T201
-
-    # Keep server running for a bit
-    await asyncio.sleep(5)
-
-    print("Demo complete. Server will shut down.")  # noqa: T201
-
-
 if __name__ == "__main__":
-    import sys
-
-    # Default to FastAPI WebSocket, use --picows for standalone server
-    if "--picows" in sys.argv:
-        asyncio.run(main_picows())
-    else:
-        asyncio.run(main())
+    asyncio.run(main())

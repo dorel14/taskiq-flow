@@ -169,7 +169,7 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
                 broker,
             )
             .with_labels(
-                **{CURRENT_STEP: str(step_number), PIPELINE_DATA: pipe_data},  # type: ignore[arg-type]
+                **{CURRENT_STEP: str(step_number), PIPELINE_DATA: pipe_data},
             )
             .kiq(
                 sub_task_ids,

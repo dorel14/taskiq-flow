@@ -20,6 +20,12 @@ from taskiq_flow.hooks.events import PipelineEvent
 
 logger = logging.getLogger(__name__)
 
+# Optional starlette import for auth verification
+try:
+    from starlette.requests import Request
+except ImportError:
+    Request = None  # type: ignore
+
 # Metrics
 SSE_CONNECTIONS_ACTIVE = Gauge(
     "taskiq_flow_sse_connections_active",
@@ -118,6 +124,8 @@ class HTTPStreamTransport:
         channel_prefix: str = "pipeline",
         heartbeat_interval: float = 15.0,
         max_queue_size: int = 1000,
+        auth_provider: Any = None,
+        authorization: Any = None,
     ) -> None:
         """
         Initialize the HTTP streaming transport.
@@ -126,11 +134,15 @@ class HTTPStreamTransport:
             channel_prefix: Prefix for channel names.
             heartbeat_interval: Seconds between heartbeat events.
             max_queue_size: Maximum events per connection queue.
+            auth_provider: Optional auth provider for token verification.
+            authorization: Optional authorization manager for pipeline ACLs.
 
         """
         self.channel_prefix = channel_prefix
         self.heartbeat_interval = heartbeat_interval
         self.max_queue_size = max_queue_size
+        self.auth_provider = auth_provider
+        self.authorization = authorization
         self._channels: dict[str, set[EventQueue]] = {}
         self._lock = asyncio.Lock()
         self._heartbeat_task: asyncio.Task[Any] | None = None
@@ -349,7 +361,60 @@ class HTTPStreamTransport:
                 StreamingResponse with SSE content.
 
             """
+            # Extract pipeline_id
             pid = pipeline_id or request.query_params.get("pipeline_id", "default")
+
+            # Verify authentication if configured
+            if self.auth_provider:
+                # Check for token in headers or query params
+                token = request.headers.get(
+                    "authorization"
+                ) or request.query_params.get("token")
+                if not token:
+                    return StreamingResponse(
+                        [],
+                        media_type="text/event-stream",
+                        status_code=401,
+                        headers={"Content-Type": "text/plain"},
+                    )
+
+                # Create a mock request to verify token
+                try:
+                    mock_request = Request(
+                        scope={
+                            "type": "http",
+                            "method": "GET",
+                            "path": "/events",
+                            "headers": [
+                                (
+                                    b"authorization",
+                                    token.encode() if isinstance(token, str) else token,
+                                ),
+                            ],
+                        }
+                    )
+                    auth_result = self.auth_provider.verify(mock_request)
+                    if asyncio.iscoroutine(auth_result):
+                        user = await auth_result
+                    else:
+                        user = auth_result
+
+                    if not user:
+                        return StreamingResponse(
+                            [],
+                            media_type="text/event-stream",
+                            status_code=401,
+                            headers={"Content-Type": "text/plain"},
+                        )
+                except Exception as e:
+                    logger.warning(f"Auth verification failed: {e}")
+                    return StreamingResponse(
+                        [],
+                        media_type="text/event-stream",
+                        status_code=401,
+                        headers={"Content-Type": "text/plain"},
+                    )
+
             queue = await self.subscribe(pid)
 
             async def event_generator() -> Any:

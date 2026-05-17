@@ -26,29 +26,61 @@ classifiers = [
 version = "1.1.0"
 dependencies = [
   "aiosqlite>=0.22.1",
-  "apscheduler[sqlalchemy]>=3.11.2",
   "dogpile-cache>=1.5.0",
   "fastapi>=0.136.1",
+  # "flameprof>=0.4",  # moved to optional profiling
   "mypy>=1.20.2",
   "networkx>=3.4.2",
-  "picows>=1.19.0",
   "prometheus-client>=0.25.0",
   "pydantic>=2,<3",
   "pydantic-settings>=2.14.0",
   "redis>=5.3.1",
   "slowapi>=0.1.9",
   "taskiq>=0.11.12,<1",
-  "taskiq-aio-kafka>=0.3.0",
-  "taskiq-aio-pika>=0.6.0",
-  "taskiq-redis>=1.0.9",
   "typos>=1.46.0",
   "uvicorn>=0.46.0",
 ]
 
 [project.optional-dependencies]
-scheduler = ["apscheduler>=3.10,<4"]
-redis = ["redis>=5.0,<6"]
-all = ["apscheduler", "redis"]
+scheduler = ["apscheduler[sqlalchemy]>=3.11.2"]
+brokers = [
+    "taskiq-aio-kafka>=0.3.0",
+    "taskiq-aio-pika>=0.6.0",
+    "taskiq-redis>=1.0.9",
+]
+scientific = [
+    "numpy>=2.0",
+    "xarray>=2024.7",
+    "zarr>=2.18",
+]
+profiling = [
+    "gprof2dot>=2025.02.09; platform_system != \"Windows\"",
+    "flameprof>=0.4",
+    "py-spy>=0.3.8",
+]
+dev = [
+    "anyio>=4",
+    "mypy>=1.8,<2",
+    "pre-commit>=4",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist[psutil]>=3",
+    "pytest-benchmark>=5.2.3",
+    "ruff>=0.15.0",
+    "isort>=8.0.1",
+]
+all = [
+    "taskiq-aio-kafka>=0.3.0",
+    "taskiq-aio-pika>=0.6.0",
+    "taskiq-redis>=1.0.9",
+    "apscheduler[sqlalchemy]>=3.11.2",
+    "numpy>=2.0",
+    "xarray>=2024.7",
+    "zarr>=2.18",
+    "flameprof>=0.4",
+    "py-spy>=0.3.8",
+]
 
 [project.urls]
 Homepage = "https://github.com/dorel14/taskiq-flow"

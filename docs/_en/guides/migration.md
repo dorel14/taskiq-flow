@@ -69,7 +69,7 @@ config = TaskiqFlowConfig(
     api_keys={
         "my-key": {
             "role": "admin",
-            "pipeline_whitelist": ["*"],
+            "pipelines": ["*"],
             "permissions": ["read", "execute", "admin"],
         }
     },
@@ -401,24 +401,28 @@ rate_limiter = RateLimiter(default_limits={
 ## 11. Common Issues
 
 ### Error: "No API key provided"
+
 ```
 # Fix: Add API key to headers or configure auth_provider
 X-API-Key: your-api-key
 ```
 
 ### Error: "Authorization required" on WebSocket
+
 ```python
 # Fix: Send auth message before subscribing
 ws.send(JSON.stringify({"action": "auth", "token": "your-token"}))
 ```
 
 ### Error: "Unsupported transport type"
+
 ```python
 # Fix: Use valid transport type
 TransportMiddleware(transport_type="websocket")  # "websocket", "http_stream", or "redis_pubsub"
 ```
 
 ### Metrics not showing up
+
 ```python
 # Fix: Add metrics_collector to PipelineMiddleware
 metrics = MetricsCollector()

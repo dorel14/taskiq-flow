@@ -42,17 +42,25 @@ Install from PyPI:
 pip install taskiq-flow
 ```
 
-For optional features:
+### Optional Extras
+
+Install with optional features:
 
 ```bash
-# All features (tracking, scheduling, visualization)
-pip install taskiq-flow[all]
+# Core only (recommended for minimal installs)
+pip install taskiq-flow
 
-# Just Redis support for tracking/storage
-pip install taskiq-flow[redis]
+# Brokers support (Kafka + RabbitMQ + Redis)
+pip install "taskiq-flow[brokers]"
 
-# With scheduling capabilities
-pip install taskiq-flow[scheduler]
+# Scheduler with job persistence (APScheduler + SQLAlchemy)
+pip install "taskiq-flow[scheduler]"
+
+# Scientific data types (numpy, xarray, zarr)
+pip install "taskiq-flow[scientific]"
+
+# Everything
+pip install "taskiq-flow[all]"
 ```
 
 ### Basic Setup
@@ -401,7 +409,7 @@ See `examples/registry_discovery_example.py` for a complete walkthrough of manua
 
 ## WebSocket Tracking
 
-Taskiq-Flow supports real-time tracking of pipeline execution via WebSockets. You can receive live updates about pipeline and step status as they happen.
+Taskiq-Flow supports real-time tracking of pipeline execution via WebSockets using FastAPI WebSocket integration. You can receive live updates about pipeline and step status as they happen.
 
 ### Setting up WebSocket Tracking
 
@@ -410,49 +418,27 @@ import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 
 # Create broker and hook manager
 broker = InMemoryBroker()
 hook_manager = HookManager()
 
-# Set up WebSocket bridge
-setup_websocket_bridge(hook_manager)
+# Set up WebSocket bridge (uses FastAPI WebSocket)
+setup_websocket_bridge(hook_manager, use_fastapi=True)
 
 # Create pipeline and attach hook manager
 pipeline = Pipeline(broker)
-pipeline.pipeline_id = "demo_pipeline"  # set a known ID for WebSocket clients
+pipeline.pipeline_id = "demo_pipeline"
 pipeline.with_hooks(hook_manager)
 
 # Add your pipeline steps...
-
-# Start WebSocket server (configure host/port as needed)
-async def main():
-    # Configure server host and port
-    server = get_websocket_server(host="127.0.0.1", port=8765)
-    # Or override at startup: server = get_websocket_server()
-    # asyncio_server = await server.start_server("127.0.0.1", 8765)
-
-    asyncio_server = await server.start_server()
-
-    # Run your pipeline
-    result = await pipeline.kiq(some_data)
-
-    # Keep server running
-    await asyncio_server.serve_forever()
-
-asyncio.run(main())
+# The FastAPI WebSocket endpoint is available at /ws/{pipeline_id}
+# when using the FastAPI API integration
 ```
 
 ### Connecting WebSocket Clients
 
-WebSocket clients can connect to `ws://127.0.0.1:8765` and subscribe to specific pipelines by sending a JSON message:
-
-```json
-{"pipeline_id": "demo_pipeline"}
-```
-
-Once subscribed, clients will receive real-time events like:
+WebSocket clients can connect to the FastAPI endpoint `/ws/{pipeline_id}` and receive real-time events:
 
 ```json
 {
