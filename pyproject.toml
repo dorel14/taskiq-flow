@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: System :: Networking",
   "Typing :: Typed",
 ]
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
   "aiosqlite>=0.22.1",
   "apscheduler[sqlalchemy]>=3.11.2",
