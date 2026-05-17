@@ -16,15 +16,19 @@ highlighter: rouge
 # Use remote theme for Just the Docs (GitHub Pages compatible)
 remote_theme: just-the-docs/just-the-docs
 
+# Global dark theme (applies to all pages)
+color_scheme: dark
+
+# Site favicon and logo (served from docs/assets/)
+favicon_ico: "/assets/favico.ico"
+logo: "/assets/logo.png"
+
 # Just the Docs theme configuration
 just_the_docs:
   # Search
   search_enabled: true
   search_preview: true
   heading_break: 360  # include headings up to h3 in search preview
-
-  # Color scheme supports "light" (default) and "dark"
-  color_scheme: dark
 
   # Collections navigation
   nav_sort: case_insensitive
@@ -37,14 +41,7 @@ just_the_docs:
       nav_fold: true
 
   # Footer
-  footer_content: "Documentation version: 1.0.2 | Last updated: 2026-05-08"
-
-
-
-  # Icons (optional, uses built-in)
-  # icon: ""
-  favicon_ico: "/assets/favico.ico"
-  logo: "/assets/logo.png"
+  footer_content: "Documentation version: 1.2.0 | Last updated: 2026-05-16"
 
 # Collections for organized content
 collections:

@@ -1,4 +1,5 @@
-"""Système de hooks et d'événements pour les pipelines.
+"""
+Système de hooks et d'événements pour les pipelines.
 
 Ce module fournit un système d'événements publishes-subscribe
 permettant de réagir aux différents stades d'exécution

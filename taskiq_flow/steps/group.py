@@ -1,4 +1,5 @@
-"""Step de groupe pour exécution parallèle de tâches indépendantes.
+"""
+Step de groupe pour exécution parallèle de tâches indépendantes.
 
 Exécute plusieurs tâches en parallèle sans dépendances entre elles
 et collecte leurs résultats dans une liste ordonnée.
@@ -59,6 +60,7 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
 
         Note:
             Si aucune tâche n'est définie, le résultat est passé through.
+
         """
         if not self.tasks:
             # No tasks to execute, pass through the result
@@ -150,11 +152,12 @@ class GroupStep(pydantic.BaseModel, AbstractStep, step_name="group"):
                 [task_a, task_b, task_c],
                 param_names=["data", None, "config"]
             )
+
         """
         task_specs = []
         for i, task in enumerate(tasks):
-            kicker = task.kicker() if hasattr(task, "kicker") else task  # type: ignore
-            message = kicker._prepare_message()  # type: ignore
+            kicker = task.kicker() if hasattr(task, "kicker") else task
+            message = kicker._prepare_message()
             labels = dict(message.labels)
 
             # Add retry/timeout labels if present

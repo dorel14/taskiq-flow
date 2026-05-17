@@ -1,4 +1,5 @@
-"""Registre global des pipelines pour l'API de visualisation.
+"""
+Registre global des pipelines pour l'API de visualisation.
 
 Ce module fournit un registre simple en mémoire des pipelines
 accessibles via les endpoints DAG. En production, cela pourrait
@@ -17,17 +18,20 @@ _pipelines: dict[str, DataflowPipeline] = {}
 
 
 def register_pipeline(pipeline_id: str, pipeline: DataflowPipeline) -> None:
-    """Enregistre un pipeline dans le registre global.
+    """
+    Enregistre un pipeline dans le registre global.
 
     Args:
         pipeline_id: Identifiant unique du pipeline
         pipeline: Instance DataflowPipeline
+
     """
     _pipelines[pipeline_id] = pipeline
 
 
 def get_pipeline(pipeline_id: str) -> DataflowPipeline:
-    """Récupère un pipeline par son ID.
+    """
+    Récupère un pipeline par son ID.
 
     Args:
         pipeline_id: Identifiant du pipeline
@@ -37,6 +41,7 @@ def get_pipeline(pipeline_id: str) -> DataflowPipeline:
 
     Raises:
         HTTPException: 404 si le pipeline n'existe pas
+
     """
     if pipeline_id not in _pipelines:
         raise HTTPException(

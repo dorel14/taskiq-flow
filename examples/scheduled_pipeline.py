@@ -1,4 +1,5 @@
-"""Scheduled pipeline example.
+"""
+Scheduled pipeline example.
 
 This example demonstrates how to schedule a pipeline to run periodically
 using the LabelBasedScheduler with TaskIQ's label-based scheduling mechanism.

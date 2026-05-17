@@ -1,4 +1,5 @@
-"""Step de filtrage pour pipelines.
+"""
+Step de filtrage pour pipelines.
 
 Ce module définit FilterStep, une étape qui exécute une tâche prédicat
 sur chaque élément d'une liste en parallèle, ne conservant que les éléments
@@ -71,10 +72,10 @@ async def filter_tasks(
 
     results = await context.broker.result_backend.get_result(parent_task_id)
     filtered_results = []
-    for task_id, value in zip(
+    for task_id, value in zip(  # type: ignore[call-overload]
         ordered_ids,
-        results.return_value,  # type: ignore
-        strict=False,  # type: ignore
+        results.return_value,
+        strict=False,
     ):
         result = await context.broker.result_backend.get_result(task_id)
         if result.is_err:
@@ -144,6 +145,7 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
 
         Raises:
             AbortPipeline: Si le résultat n'est pas itérable
+
         """
         if not isinstance(result.return_value, Iterable):
             raise AbortPipeline(reason="Result of the previous task is not iterable.")
@@ -167,7 +169,7 @@ class FilterStep(pydantic.BaseModel, AbstractStep, step_name="filter"):
                 broker,
             )
             .with_labels(
-                **{CURRENT_STEP: step_number, PIPELINE_DATA: pipe_data},  # type: ignore
+                **{CURRENT_STEP: str(step_number), PIPELINE_DATA: pipe_data},  # type: ignore[arg-type]
             )
             .kiq(
                 sub_task_ids,

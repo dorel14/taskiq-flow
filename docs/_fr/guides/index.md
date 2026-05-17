@@ -7,13 +7,14 @@ permalink: /fr/guides/
 
 Guides détaillés couvrant toutes les fonctionnalités de Taskiq-Flow.
 
-## 📖 Guides Disponibles
+## Guides Disponibles
 
 | Guide | Description |
 |-------|-------------|
 | **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** | Patterns de pipelines séquentiels et dataflow |
 | **[Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})** | Définitions de tâches et décorateurs |
 | **[Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})** | Modes d'exécution et gestion d'erreurs |
+| **[Guide Stockage & Cache]({{ '/fr/guides/cache/' | relative_url }})** nouveau en v1.2.0 | Persistance centralisée & cache Dogpile workers |
 | **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** | Monitoring en temps réel |
 | **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** | Tableaux de bord en direct |
 | **[Guide de Planification]({{ '/fr/guides/scheduling/' | relative_url }})** | Planification cron |

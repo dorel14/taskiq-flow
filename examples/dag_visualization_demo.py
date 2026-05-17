@@ -1,10 +1,17 @@
-"""DAG Visualization Demo.
+"""
+Démonstration de visualisation avancée de DAG pour Taskiq-Flow.
 
-This example demonstrates the advanced DAG visualization capabilities
-using NetworkX, Mermaid, and NiceGUI integration.
+Ce module démontre les capacités de visualisation et d'analyse de DAG
+utilisant NetworkX pour l'analyse de graphes, Mermaid pour les diagrammes
+et les formats d'export JSON, DOT, Cytoscape et ASCII.
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples inclus :
+    - DAGVisualizer : analyse critique, groupes parallèles, exports multiples
+    - MermaidGenerator : génération de diagrammes stylisés
+    - Visualisation ASCII pour terminal
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

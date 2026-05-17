@@ -1,4 +1,5 @@
-"""Step séquentiel pour l'exécution linéaire de tâches.
+"""
+Step séquentiel pour l'exécution linéaire de tâches.
 
 Ce module définit SequentialStep, le step le plus fondamental qui
 exécute une tâche après une autre en passant le résultat de la
@@ -84,6 +85,7 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
             - Positionnel (param_name=None): comme premier argument
             - Keyword (param_name="nom"): comme argument nommé
             - Omis (param_name=-1): pas d'injection du résultat
+
         """
         kicker: AsyncKicker[Any, Any] = (
             AsyncKicker(
@@ -135,6 +137,7 @@ class SequentialStep(pydantic.BaseModel, AbstractStep, step_name="sequential"):
                 retries=3,
                 timeout=60
             )
+
         """
         kicker = task.kicker() if isinstance(task, AsyncTaskiqDecoratedTask) else task
         message = kicker._prepare_message()

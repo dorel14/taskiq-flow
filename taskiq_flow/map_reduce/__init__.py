@@ -1,4 +1,5 @@
-"""Opérations map-reduce pour le traitement par lots.
+"""
+Opérations map-reduce pour le traitement par lots.
 
 Ce module fournit des opérations de map et reduce en parallèle
 avec des fonctionnalités avancées: chunking intelligent, suivi
@@ -67,6 +68,7 @@ class ChunkConfig:
 
         Returns:
             List of chunks
+
         """
         if not items:
             return []
@@ -163,6 +165,7 @@ class MapReduce:
                 chunk_config=chunk_config,
                 progress_callback=lambda done, total: print(f"{done}/{total}"),
             )
+
         """
         start_time = time.time()
 
@@ -313,6 +316,7 @@ class MapReduce:
 
         Returns:
             Tuple of (list of chunk results, list of errors from failed chunks)
+
         """
         semaphore = asyncio.Semaphore(max_parallel) if max_parallel else None
         total_chunks = len(chunks)
@@ -411,6 +415,7 @@ class MapReduce:
                 output="experiments",
                 max_parallel=5,
             )
+
         """
         start_time = time.time()
 
@@ -526,6 +531,7 @@ class MapReduce:
                 output="aggregated",
                 initial=0,
             )
+
         """
         if not inputs:
             return initial
@@ -616,6 +622,7 @@ class MapReduce:
                 max_parallel=10,
                 reduce_chunk_size=100,
             )
+
         """
         logger.info(
             "[MAP-REDUCE] Starting pipeline: %d items",
@@ -693,6 +700,7 @@ class MapReduce:
 
         Raises:
             Exception: If task execution fails
+
         """
         # Create kicker
         kicker: AsyncKicker[Any, Any] = AsyncKicker(
@@ -722,6 +730,7 @@ class MapReduce:
 
         Returns:
             Parameter name to use
+
         """
         try:
             sig = inspect.signature(task)

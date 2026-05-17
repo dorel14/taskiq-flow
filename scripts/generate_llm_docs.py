@@ -25,7 +25,8 @@ def clean_jekyll_markdown(content: str) -> str:
 
 
 def generate() -> None:
-    """Génère les fichiers de documentation LLM.
+    """
+    Génère les fichiers de documentation LLM.
 
     Génère les fichiers llms.txt et llms-full.txt à partir
     des fichiers Markdown et des exemples Python.

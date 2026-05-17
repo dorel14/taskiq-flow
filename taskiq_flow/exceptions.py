@@ -1,4 +1,5 @@
-"""Exceptions spécifiques à taskiq-flow.
+"""
+Exceptions spécifiques à taskiq-flow.
 
 Ce module définit la hiérarchie des exceptions utilisées dans
 taskiq-flow, including:

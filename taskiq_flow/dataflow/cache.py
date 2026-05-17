@@ -1,4 +1,5 @@
-"""Cache de données pour stocker et récupérer les résultats de tâches.
+"""
+Cache de données pour stocker et récupérer les résultats de tâches.
 
 Implémente un système de cache avec injection de dépendances,
 permettant aux tâches de consommer les sorties des tâches
@@ -46,6 +47,7 @@ class DataCache:
         >>> deps = cache.inject(["features", "tags"])
         >>> deps.keys()
         dict_keys(['features', 'tags'])
+
     """
 
     def __init__(self) -> None:
@@ -65,6 +67,7 @@ class DataCache:
             >>> cache.set("audio_features", {"duration": 180.0})
             >>> "audio_features" in cache.keys()
             True
+
         """
         self._cache[key] = value
 
@@ -87,6 +90,7 @@ class DataCache:
             >>> value = cache.get("result")
             >>> print(value)
             42
+
         """
         if key not in self._cache:
             raise KeyError(f"No cached value found for key: {key}")
@@ -107,6 +111,7 @@ class DataCache:
             >>> cache.set("model", trained_model)
             >>> cache.has("model")
             True
+
         """
         return key in self._cache
 
@@ -136,6 +141,7 @@ class DataCache:
             >>> args = cache.inject(["features", "labels"])
             >>> args == {"features": [1,2,3], "labels": [0,1,0]}
             True
+
         """
         return {dep: self.get(dep) for dep in dependencies}
 
@@ -153,6 +159,7 @@ class DataCache:
             >>> cache.update({"a": 1, "b": 2, "c": 3})
             >>> cache.get("b")
             2
+
         """
         self._cache.update(items)
 
@@ -169,6 +176,7 @@ class DataCache:
             >>> cache.clear()
             >>> len(cache)
             0
+
         """
         self._cache.clear()
 
@@ -186,6 +194,7 @@ class DataCache:
             >>> cache.set("key", "value")
             >>> len(cache)
             1
+
         """
         return len(self._cache)
 
@@ -201,6 +210,7 @@ class DataCache:
             >>> cache = DataCache()
             >>> cache.size
             0
+
         """
         return len(self._cache)
 
@@ -218,6 +228,7 @@ class DataCache:
             >>> cache.set("b", 2)
             >>> sorted(cache.keys)
             ['a', 'b']
+
         """
         return list(self._cache.keys())
 
@@ -235,5 +246,6 @@ class DataCache:
             >>> d = cache.to_dict()
             >>> d == {"x": 1, "y": 2}
             True
+
         """
         return dict(self._cache)

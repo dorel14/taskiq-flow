@@ -1,4 +1,5 @@
-"""Ordonnanceur de pipelines avec APScheduler.
+"""
+Ordonnanceur de pipelines avec APScheduler.
 
 Ce module fournit deux classes principales:
 - LabelBasedScheduler: ordonnanceur léger utilisant les labels TaskIQ
@@ -62,7 +63,8 @@ async def _execute_scheduled_pipeline(
     args: list[Any] | tuple[Any, ...],
     kwargs: dict[str, Any],
 ) -> Any:
-    """Execute a scheduled pipeline by ID.
+    """
+    Execute a scheduled pipeline by ID.
 
     This is a module-level function that can be pickled for distributed brokers.
     It retrieves the pipeline from the registry and executes it.
@@ -74,6 +76,7 @@ async def _execute_scheduled_pipeline(
 
     Returns:
         The pipeline result
+
     """
     # Get the pipeline from the global registry
     pipeline = Pipeline.get_pipeline(pipeline_id)
@@ -84,7 +87,8 @@ async def _execute_scheduled_pipeline(
 
 
 class LabelBasedScheduler:
-    """Lightweight scheduler using TaskIQ's LabelScheduleSource.
+    """
+    Lightweight scheduler using TaskIQ's LabelScheduleSource.
 
     This is the default scheduler that uses TaskIQ's built-in label-based
     scheduling mechanism. It doesn't require external dependencies and
@@ -98,13 +102,16 @@ class LabelBasedScheduler:
             cron="0 9 * * *",  # Every day at 9 AM
             args=(arg1, arg2),
         )
+
     """
 
     def __init__(self, broker: AsyncBroker) -> None:
-        """Initialize the label-based scheduler.
+        """
+        Initialize the label-based scheduler.
 
         Args:
             broker: TaskIQ broker instance
+
         """
         self.broker = broker
         self._schedules: dict[str, dict[str, Any]] = {}
@@ -123,7 +130,8 @@ class LabelBasedScheduler:
         kwargs: dict[str, Any] | None = None,
         enabled: bool = True,
     ) -> str:
-        """Schedule a pipeline using a label-based schedule.
+        """
+        Schedule a pipeline using a label-based schedule.
 
         This method creates a LabelSchedule that will trigger the pipeline
         based on the specified cron expression or interval.
@@ -159,6 +167,7 @@ class LabelBasedScheduler:
 
         Raises:
             ValueError: If neither cron nor interval is specified
+
         """
         if not cron and not interval_seconds:
             raise ValueError("Either cron or interval_seconds must be specified")
@@ -232,7 +241,8 @@ class LabelBasedScheduler:
         kwargs: dict[str, Any] | None = None,
         enabled: bool = True,
     ) -> str:
-        """Schedule a pipeline with a cron expression.
+        """
+        Schedule a pipeline with a cron expression.
 
         Args:
             pipeline: Pipeline to schedule
@@ -244,6 +254,7 @@ class LabelBasedScheduler:
 
         Returns:
             The schedule ID
+
         """
         return await self.schedule_with_label(
             pipeline=pipeline,
@@ -263,7 +274,8 @@ class LabelBasedScheduler:
         kwargs: dict[str, Any] | None = None,
         enabled: bool = True,
     ) -> str:
-        """Schedule a pipeline with a fixed interval.
+        """
+        Schedule a pipeline with a fixed interval.
 
         Args:
             pipeline: Pipeline to schedule
@@ -275,6 +287,7 @@ class LabelBasedScheduler:
 
         Returns:
             The schedule ID
+
         """
         return await self.schedule_with_label(
             pipeline=pipeline,
@@ -286,32 +299,38 @@ class LabelBasedScheduler:
         )
 
     def get_schedule(self, label: str) -> dict[str, Any] | None:
-        """Get a schedule by label.
+        """
+        Get a schedule by label.
 
         Args:
             label: Schedule label
 
         Returns:
             The schedule if found, None otherwise
+
         """
         return self._schedules.get(label)
 
     def list_schedules(self) -> list[dict[str, Any]]:
-        """List all schedules.
+        """
+        List all schedules.
 
         Returns:
             List of all schedules
+
         """
         return list(self._schedules.values())
 
     def enable_schedule(self, label: str) -> bool:
-        """Enable a schedule.
+        """
+        Enable a schedule.
 
         Args:
             label: Schedule label
 
         Returns:
             True if the schedule was found and enabled, False otherwise
+
         """
         schedule = self._schedules.get(label)
         if schedule:
@@ -321,13 +340,15 @@ class LabelBasedScheduler:
         return False
 
     def disable_schedule(self, label: str) -> bool:
-        """Disable a schedule.
+        """
+        Disable a schedule.
 
         Args:
             label: Schedule label
 
         Returns:
             True if the schedule was found and disabled, False otherwise
+
         """
         schedule = self._schedules.get(label)
         if schedule:
@@ -337,13 +358,15 @@ class LabelBasedScheduler:
         return False
 
     def remove_schedule(self, label: str) -> bool:
-        """Remove a schedule.
+        """
+        Remove a schedule.
 
         Args:
             label: Schedule label
 
         Returns:
             True if the schedule was found and removed, False otherwise
+
         """
         if label in self._schedules:
             del self._schedules[label]

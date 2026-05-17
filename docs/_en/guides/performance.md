@@ -162,10 +162,10 @@ pool = ResourceAwareWorkerPool(
 Pass references instead of full data:
 
 ```python
-# ❌ Bad: copies entire dataset per task call
+#  Bad: copies entire dataset per task call
 pipeline.map(process, large_dataset)  # Each task gets full dataset copy
 
-# ✅ Better: pass identifiers, fetch inside task
+#  Better: pass identifiers, fetch inside task
 @broker.task
 def process(item_id: str):
     item = database.get(item_id)  # Fetch on-demand
@@ -290,11 +290,11 @@ async def db_task(query: str):
 Instead of many small calls, batch:
 
 ```python
-# ❌ N separate calls
+#  N separate calls
 for item in items:
     await db.insert(item)
 
-# ✅ Single batch insert
+#  Single batch insert
 await db.bulk_insert(items)
 ```
 

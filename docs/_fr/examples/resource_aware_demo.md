@@ -173,7 +173,7 @@ Pipeline structure:
   [light_results, heavy_results] --combine--> [final]
 
 Executing pipeline...
-✅ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
+ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
 
 TaskResourceProfile allows you to annotate tasks with resource requirements.
 ResourceAwareExecutor uses these profiles to compute optimal parallelism.

@@ -1,4 +1,5 @@
-"""Modules d'intégration.
+"""
+Modules d'intégration.
 
 Contient les intégrations avec des systèmes externes comme WebSocket.
 

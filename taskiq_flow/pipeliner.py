@@ -1,4 +1,5 @@
-"""Pipeline de base pour l'orchestration de tâches TaskIQ.
+"""
+Pipeline de base pour l'orchestration de tâches TaskIQ.
 
 Ce module fournit la classe Pipeline de base qui permet de construire
 des séquences de tâches avec passage de résultats. C'est le cœur de
@@ -124,6 +125,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         Les types génériques _FuncParams et _ReturnType représentent
         respectivement les paramètres de la première tâche et le
         type de retour de la dernière tâche.
+
     """
 
     # Global registry for pipelines (needed for distributed task execution)
@@ -131,13 +133,15 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
 
     @classmethod
     def register_pipeline(cls, pipeline: Pipeline[Any, Any]) -> str:
-        """Register a pipeline in the global registry.
+        """
+        Register a pipeline in the global registry.
 
         Args:
             pipeline: Pipeline to register
 
         Returns:
             The pipeline ID
+
         """
         if pipeline.pipeline_id is None:
             pipeline.pipeline_id = str(uuid.uuid4())
@@ -146,57 +150,34 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
 
     @classmethod
     def get_pipeline(cls, pipeline_id: str) -> Pipeline[Any, Any] | None:
-        """Get a pipeline from the registry.
+        """
+        Get a pipeline from the registry.
 
         Args:
             pipeline_id: The pipeline ID
 
         Returns:
             The pipeline or None if not found
+
         """
         return cls._pipeline_registry.get(pipeline_id)
 
     @classmethod
     def unregister_pipeline(cls, pipeline_id: str) -> bool:
-        """Remove a pipeline from the registry.
+        """
+        Remove a pipeline from the registry.
 
         Args:
             pipeline_id: The pipeline ID
 
         Returns:
             True if removed, False if not found
+
         """
         if pipeline_id in cls._pipeline_registry:
             del cls._pipeline_registry[pipeline_id]
             return True
         return False
-
-    @overload
-    def __init__(
-        self,
-        broker: AsyncBroker,
-        task: (
-            AsyncKicker[_FuncParams, Coroutine[Any, Any, _ReturnType]]
-            | AsyncKicker[_FuncParams, CoroutineType[Any, Any, _ReturnType]]
-            | AsyncTaskiqDecoratedTask[_FuncParams, Coroutine[Any, Any, _ReturnType]]
-            | AsyncTaskiqDecoratedTask[
-                _FuncParams,
-                CoroutineType[Any, Any, _ReturnType],
-            ]
-            | None
-        ) = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        broker: AsyncBroker,
-        task: (
-            AsyncKicker[_FuncParams, _ReturnType]
-            | AsyncTaskiqDecoratedTask[_FuncParams, _ReturnType]
-            | None
-        ) = None,
-    ) -> None: ...
 
     def __init__(
         self,
@@ -217,6 +198,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             tracking_manager: Gestionnaire de tracking
             hook_manager: Gestionnaire de hooks
             options: Options d'exécution (retry, timeout, etc.)
+
         """
         self.broker = broker
         self.steps: list[DumpedStep] = []
@@ -244,6 +226,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
 
         Returns:
             Self pour chaînage fluent
+
         """
         self.tracking_enabled = enabled
         self.tracking_manager = manager
@@ -267,29 +250,6 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         """Set pipeline execution options."""
         self.options.update(retries, timeout, fail_fast, continue_on_error)
         return self
-
-    @overload
-    def call_next(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[_ReturnType], Coroutine[Any, Any, _T]]
-            | AsyncKicker[[_ReturnType], CoroutineType[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[_ReturnType], Coroutine[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[_ReturnType], CoroutineType[Any, Any, _T]]
-        ),
-        param_name: str | Literal[-1] | None = None,
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
-
-    @overload
-    def call_next(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[_ReturnType], _T] | AsyncTaskiqDecoratedTask[[_ReturnType], _T]
-        ),
-        param_name: str | Literal[-1] | None = None,
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
 
     def call_next(
         self,
@@ -328,6 +288,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
 
             # Ne pas passer le résultat (séquentiel sans dépendance)
             pipeline.call_next(finalize, param_name=-1)
+
         """
         self.steps.append(
             DumpedStep(
@@ -341,25 +302,6 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             ),
         )
         return self
-
-    @overload
-    def call_after(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: (
-            AsyncKicker[[], Coroutine[Any, Any, _T]]
-            | AsyncKicker[[], CoroutineType[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[], Coroutine[Any, Any, _T]]
-            | AsyncTaskiqDecoratedTask[[], CoroutineType[Any, Any, _T]]
-        ),
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
-
-    @overload
-    def call_after(
-        self: Pipeline[_FuncParams, _ReturnType],
-        task: AsyncKicker[[], _T] | AsyncTaskiqDecoratedTask[[], _T],
-        **additional_kwargs: Any,
-    ) -> Pipeline[_FuncParams, _T]: ...
 
     def call_after(
         self,
@@ -450,6 +392,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         Example:
             # Appliquer process_item à chaque élément d'une liste
             pipeline.map(process_item, param_name="item", max_parallel=10)
+
         """
         self.steps.append(
             DumpedStep(
@@ -519,6 +462,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         Example:
             # Ne garder que les éléments pairs
             pipeline.filter(is_even, param_name="n")
+
         """
         self.steps.append(
             DumpedStep(
@@ -595,6 +539,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
             Le pipeline_id est généré automatiquement si le tracking
             est activé. Les labels_taskiq contiennent les données
             sérialisées du pipeline pour reconstruction par le middleware.
+
         """
         if not self.steps:
             raise ValueError("Pipeline is empty.")
@@ -675,6 +620,7 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
                 [task_a, task_b, task_c],
                 param_names=[None, "data", None]
             )
+
         """
         self.steps.append(
             DumpedStep(

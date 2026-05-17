@@ -162,10 +162,10 @@ pool = ResourceAwareWorkerPool(
 Passez des références au lieu des données complètes :
 
 ```python
-# ❌ Mauvais : copie le jeu de données complet pour chaque appel de tâche
+#  Mauvais : copie le jeu de données complet pour chaque appel de tâche
 pipeline.map(process, large_dataset)  # Chaque tâche reçoit une copie complète
 
-# ✅ Mieux : passez des identifiants, récupérez dans la tâche
+#  Mieux : passez des identifiants, récupérez dans la tâche
 @broker.task
 def process(item_id: str):
     item = database.get(item_id)  # Récupération à la demande
@@ -290,11 +290,11 @@ async def db_task(query: str):
 Au lieu de nombreux petits appels, faites des lots :
 
 ```python
-# ❌ N appels séparés
+#  N appels séparés
 for item in items:
     await db.insert(item)
 
-# ✅ Insertion par lot unique
+#  Insertion par lot unique
 await db.bulk_insert(items)
 ```
 
@@ -490,9 +490,39 @@ engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
 
----
+### 11.1. ResourceAwareExecutor et TaskResourceProfile
 
-## 12. Résumé
+TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
+pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
+
+```python
+from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
+
+# Définir un profil de ressources pour les tâches lourdes
+heavy_profile = TaskResourceProfile(
+    estimated_memory_mb=2048,
+    estimated_cpu_cores=4.0,
+)
+
+@broker.task
+@heavy_profile
+def heavy_computation(data):
+    # Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM
+    return process_heavy_data(data)
+
+# Utiliser ResourceAwareExecutor pour l'exécution
+executor = ResourceAwareExecutor(
+    broker=broker,
+    max_parallel=10,
+)
+```
+
+`ResourceAwareExecutor` évalue les profils de ressources des tâches et les
+distribue aux workers disponibles en fonction de leur capacité.
+`TaskResourceProfile` permet d'annoter chaque tâche avec ses besoins estimés
+en mémoire et CPU.
+
+## 13. Résumé
 
 L'optimisation des performances est itérative :
 

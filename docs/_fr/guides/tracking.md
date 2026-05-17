@@ -504,10 +504,10 @@ tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
 | Fonctionnalité | Mémoire | Redis |
 |----------------|---------|-------|
-| **Multi-processus** | ❌ Non | ✅ Oui |
-| **Persistant** | ❌ Non | ✅ Oui |
-| **État partagé** | ❌ Non | ✅ Oui |
-| **Vitesse** | ⚡ Plus rapide | ⚡ Rapide (réseau) |
+| **Multi-processus** |  Non |  Oui |
+| **Persistant** |  Non |  Oui |
+| **État partagé** |  Non |  Oui |
+| **Vitesse** |  Plus rapide |  Rapide (réseau) |
 | **Configuration requise** | Aucune | Serveur Redis |
 
 **Recette basique**:

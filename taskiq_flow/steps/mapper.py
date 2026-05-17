@@ -1,4 +1,5 @@
-"""Step mapper pour l'exécution parallèle sur une collection.
+"""
+Step mapper pour l'exécution parallèle sur une collection.
 
 Ce module définit MapperStep qui applique une tâche à chaque élément
 d'une collection en parallèle, ainsi que la tâche partagée wait_tasks
@@ -142,6 +143,7 @@ class MapperStep(pydantic.BaseModel, AbstractStep, step_name="mapper"):
 
         Raises:
             AbortPipeline: Si le résultat précédent n'est pas itérable
+
         """
         sub_task_ids: list[str] = []
         return_value = result.return_value

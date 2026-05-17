@@ -1,4 +1,5 @@
-"""Décorateurs pour les tâches de pipeline.
+"""
+Décorateurs pour les tâches de pipeline.
 
 Fournit @pipeline_task et @pipeline_task_multi_output pour déclarer
 les dépendances de données des tâches. Ces décorateurs enregistrent
@@ -147,6 +148,7 @@ def pipeline_task(
 
     Returns:
         Décorateur qui transforme la fonction en tâche de pipeline
+
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -237,6 +239,7 @@ def get_pipeline_metadata(func: Any) -> dict[str, Any]:
 
         meta = get_pipeline_metadata(my_task)
         # meta = {"output": "result", "inputs": ["x"], ...}
+
     """
     # Check if it's a TaskiqDecoratedTask
     if hasattr(func, "original_function"):
@@ -341,6 +344,7 @@ def is_pipeline_task(func: Any) -> bool:
     Returns:
         True si la fonction est décorée avec @pipeline_task ou
         @pipeline_task_multi_output, False sinon
+
     """
     metadata = get_pipeline_metadata(func)
     return metadata.get("is_pipeline_task", False)
@@ -358,6 +362,7 @@ def get_task_outputs(func: Any) -> list[str]:
 
     Returns:
         Liste des noms de sortie
+
     """
     metadata = get_pipeline_metadata(func)
     if not metadata:
@@ -386,6 +391,7 @@ def validate_pipeline_outputs(tasks: list[Any]) -> None:
 
     Example:
         validate_pipeline_outputs([task1, task2, task3])
+
     """
     _task_registry.validate_outputs()
 
@@ -400,6 +406,7 @@ def get_all_pipeline_outputs() -> list[str]:
 
     Returns:
         Liste de tous les output names
+
     """
     return _task_registry.get_all_outputs()
 
@@ -413,6 +420,7 @@ def get_task_by_output(output_name: str) -> Any | None:
 
     Returns:
         Tâche correspondante ou None si non trouvée
+
     """
     return _task_registry.get_task_by_output(output_name)
 
@@ -458,6 +466,7 @@ def pipeline_task_multi_output(
 
     Raises:
         ValueError: Si outputs est vide ou si retries < 0
+
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -518,6 +527,7 @@ def _infer_inputs_from_signature(func: Callable[..., Any]) -> list[str]:
 
     Returns:
         List of parameter names that should be treated as inputs
+
     """
     try:
         sig = inspect.signature(func)
@@ -547,6 +557,7 @@ def _is_async_function(func: Callable[..., Any]) -> bool:
 
     Returns:
         True if the function is async
+
     """
     return inspect.iscoroutinefunction(func)
 

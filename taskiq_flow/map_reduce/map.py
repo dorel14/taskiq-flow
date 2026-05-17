@@ -1,4 +1,5 @@
-"""Fonction map pour l'application parallèle d'une tâche.
+"""
+Fonction map pour l'application parallèle d'une tâche.
 
 Ce module fournit la fonction `map` qui applique une tâche à chaque
 élément d'une liste en parallèle. C'est un wrapper autour de
@@ -51,6 +52,7 @@ async def map(
             output="processed_items",
             max_parallel=10,
         )
+
     """
     result: MapResult[Any] = await MapReduce.map(
         broker,

@@ -1,4 +1,5 @@
-"""Routes API pour la visualisation des DAG.
+"""
+Routes API pour la visualisation des DAG.
 
 Ce module fournit des endpoints FastAPI pour interroger les DAG
 et obtenir des visualisations dans différents formats.
@@ -51,6 +52,7 @@ async def get_dag(
 
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou format invalide
+
     """
     pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
@@ -90,6 +92,7 @@ async def get_critical_path(
 
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou contient des cycles
+
     """
     pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
@@ -125,6 +128,7 @@ async def get_parallel_groups(
 
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé ou contient des cycles
+
     """
     pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag
@@ -160,6 +164,7 @@ async def get_networkx_graph(
 
     Raises:
         HTTPException: Si le pipeline n'est pas trouvé
+
     """
     pipeline = get_pipeline(pipeline_id)
     dag = pipeline._dag

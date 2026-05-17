@@ -1,4 +1,5 @@
-"""Middleware d'enforcement HTTPS pour Taskiq-Flow.
+"""
+Middleware d'enforcement HTTPS pour Taskiq-Flow.
 
 Ce module fournit un middleware qui enforce l'utilisation de HTTPS
 pour les requêtes entrantes, configurable via la configuration.
@@ -17,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
-    """Middleware qui enforce la connexion HTTPS.
+    """
+    Middleware qui enforce la connexion HTTPS.
 
     Bloque les requêtes HTTP si require_https est True.
     Respecte l'en-tête X-Forwarded-Proto pour les déploiements derrière
@@ -25,6 +27,7 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
 
     Attributes:
         require_https: Si True, rejette les requêtes non-HTTPS
+
     """
 
     def __init__(self, app: Any, require_https: bool = True) -> None:
@@ -34,12 +37,14 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
         Args:
             app: ASGI application
             require_https: Whether to enforce HTTPS (default True)
+
         """
         super().__init__(app)
         self.require_https = require_https
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
-        """Process request and enforce HTTPS if configured.
+        """
+        Process request and enforce HTTPS if configured.
 
         Args:
             request: Incoming request
@@ -47,6 +52,7 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response object
+
         """
         if self.require_https:
             # Determine if request is secure

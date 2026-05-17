@@ -1,4 +1,5 @@
-"""Constantes utilisées dans tout le projet taskiq-flow.
+"""
+Constantes utilisées dans tout le projet taskiq-flow.
 
 Ce module centralise toutes les constantes de clés de labels
 TaskIQ et autres valeurs fixes utilisées par le middleware

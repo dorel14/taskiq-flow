@@ -360,7 +360,7 @@ await server.start_server()
 
 ---
 
-## 📚 Further Reading
+## Further Reading
 
 - **[Full API Reference]({{ '/en/api/' | relative_url }})** — Complete class and method documentation
 - **[Example Gallery]({{ '/en/examples/' | relative_url }})** — Detailed walkthroughs of each example script

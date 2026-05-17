@@ -1,4 +1,5 @@
-"""Modèles de données pour le suivi des pipelines.
+"""
+Modèles de données pour le suivi des pipelines.
 
 Définit les modèles Pydantic pour représenter l'état d'exécution
 des pipelines et de leurs étapes: PipelineStatusInfo, StepStatusInfo,
@@ -58,6 +59,7 @@ class StepStatusInfo(BaseModel):
         finished_at: Horodatage de fin (ou None)
         retries: Nombre de tentatives effectuées
         error: Message d'erreur si échec
+
     """
 
     step_index: int
@@ -88,6 +90,7 @@ class PipelineStatusInfo(BaseModel):
         result: Résultat final si complété
         error: Message d'erreur si échoué
         steps: Liste des statuts d'étape
+
     """
 
     pipeline_id: str

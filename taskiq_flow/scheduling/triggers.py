@@ -1,4 +1,5 @@
-"""Aides pour la création de triggers d'ordonnancement.
+"""
+Aides pour la création de triggers d'ordonnancement.
 
 Fournit des fonctions factory pour créer des triggers APScheduler
 (cron, date, interval) ainsi que des helpers utilitaires comme
@@ -29,12 +30,10 @@ except ImportError:
     APSCHEDULER_AVAILABLE = False
 
 # Type alias for trigger types
-if TYPE_CHECKING:
+if TYPE_CHECKING or APSCHEDULER_AVAILABLE:
     TriggerType = CronTrigger | DateTrigger | IntervalTrigger
-elif APSCHEDULER_AVAILABLE:
-    TriggerType = CronTrigger | DateTrigger | IntervalTrigger  # type: ignore
 else:
-    TriggerType = type(None)  # type: ignore
+    TriggerType = None
 
 
 def create_cron_trigger(

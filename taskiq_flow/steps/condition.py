@@ -1,4 +1,5 @@
-"""Step conditionnel pour exécution sous condition.
+"""
+Step conditionnel pour exécution sous condition.
 
 Exécute une tâche si une condition (expression ou callable) est vraie,
 sinon exécute une tâche alternative si fournie.
@@ -58,6 +59,7 @@ class ConditionStep(pydantic.BaseModel, AbstractStep, step_name="condition"):
             Si condition est une chaîne, elle est évaluée comme
             une expression Python safe avec variable 'value'.
             Si callable, elle est appelée avec le résultat.
+
         """
         # Evaluate condition
         if isinstance(self.condition, str):

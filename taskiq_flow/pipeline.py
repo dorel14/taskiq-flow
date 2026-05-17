@@ -1,4 +1,5 @@
-"""Pipeline avec orchestration basée sur les dépendances de données.
+"""
+Pipeline avec orchestration basée sur les dépendances de données.
 
 Ce module fournit la classe DataflowPipeline qui étend Pipeline
 en construisant automatiquement un DAG (Directed Acyclic Graph) à partir
@@ -67,6 +68,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         - Hérite de toutes les méthodes de Pipeline (call_next, map, filter...)
         -with_tracking(), with_hooks() et with_options() fonctionnent également
         - La construction du DAG est lazy (à l'appel de kiq_dataflow())
+
     """
 
     def __init__(self, broker: AsyncBroker, *args: Any, **kwargs: Any) -> None:
@@ -77,6 +79,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             broker: TaskIQ broker
             *args: Passed to parent class
             **kwargs: Passed to parent class
+
         """
         super().__init__(broker, *args, **kwargs)
 
@@ -125,6 +128,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         Note:
             L'ordre de la liste n'affecte pas l'exécution (le DAG
             détermine l'ordre), mais un ordre logique aide la lecture.
+
         """
         pipeline = cls(broker)
         pipeline._dataflow_tasks = tasks
@@ -156,6 +160,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         Returns:
             Self for chaining
+
         """
         self._dataflow_tasks.append(task)
         self._is_dataflow_built = False
@@ -198,6 +203,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         Note:
             Le DAG est construit automatiquement au premier appel
             si des tâches ont été ajoutées via from_tasks() ou add_dataflow_task().
+
         """
         if not self._is_dataflow_built:
             self._build_dataflow_dag()
@@ -255,6 +261,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 chunk_config=ChunkConfig(chunk_size=50),
                 max_parallel=10,
             )
+
         """
         # Store map operation for execution
         if not hasattr(self, "_map_operations"):
@@ -288,7 +295,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         return self
 
-    def reduce(  # type: ignore[override]
+    def reduce(
         self,
         task: AsyncTaskiqDecoratedTask[Any, Any],
         input_name: str,
@@ -321,6 +328,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 chunk_size=100,
                 initial={}
             )
+
         """
         # Store reduce operation for execution
         if not hasattr(self, "_reduce_operations"):
@@ -374,6 +382,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 track_list=tracks,
                 metadata=meta
             )
+
         """
         logger.info(
             "Starting map-reduce pipeline execution",
@@ -389,7 +398,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         # Execute map operations
         if hasattr(self, "_map_operations"):
             for op in self._map_operations:
-                op_dict: dict[str, Any] = op  # type: ignore[assignment]
+                op_dict: dict[str, Any] = op
                 # Use advanced map with chunking if configured
                 kwargs = op_dict.get("kwargs", {})
                 chunk_config = kwargs.get("chunk_config")
@@ -469,7 +478,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         # Execute reduce operations
         if hasattr(self, "_reduce_operations"):
             for op in self._reduce_operations:
-                op_dict_reduce: dict[str, Any] = op  # type: ignore[assignment]
+                op_dict_reduce: dict[str, Any] = op
                 input_data = results.get(op_dict_reduce["input_name"], [])
                 kwargs = op_dict_reduce.get("kwargs", {})
                 chunk_size = kwargs.get("chunk_size")
@@ -551,7 +560,8 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         interval_seconds: int | None = None,
         **inputs: Any,
     ) -> str:
-        """Schedule the pipeline with label-based scheduling.
+        """
+        Schedule the pipeline with label-based scheduling.
 
         This method schedules the pipeline using TaskIQ LabelScheduleSource,
         which is a lightweight alternative to APScheduler.
@@ -568,6 +578,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         Raises:
             ValueError: If neither cron nor interval is specified
+
         """
         return await scheduler.schedule_with_label(
             pipeline=self,
@@ -586,7 +597,8 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         cron: str,
         **inputs: Any,
     ) -> str:
-        """Schedule the pipeline with a cron expression.
+        """
+        Schedule the pipeline with a cron expression.
 
         Args:
             scheduler: LabelBasedScheduler instance
@@ -596,6 +608,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         Returns:
             The schedule ID
+
         """
         return await scheduler.schedule_with_cron(
             pipeline=self,
@@ -613,7 +626,8 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         interval_seconds: int,
         **inputs: Any,
     ) -> str:
-        """Schedule the pipeline with a fixed interval.
+        """
+        Schedule the pipeline with a fixed interval.
 
         Args:
             scheduler: LabelBasedScheduler instance
@@ -623,6 +637,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         Returns:
             The schedule ID
+
         """
         return await scheduler.schedule_with_interval(
             pipeline=self,
@@ -676,6 +691,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 max_parallel=10,
                 reduce_chunk_size=100,
             )
+
         """
         return await MapReduce.map_reduce(
             self.broker,
@@ -724,6 +740,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
                 output="experiments",
                 max_parallel=5,
             )
+
         """
         map_result = await MapReduce.map_sweep(
             self.broker,
@@ -755,6 +772,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
         Example:
             dag_json = pipeline.visualize()
             print(json.dumps(dag_json, indent=2))
+
         """
         if not self._dag:
             self._build_dataflow_dag()
@@ -776,6 +794,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
             dot = pipeline.visualize_dot()
             with open("pipeline.dot", "w") as f:
                 f.write(dot)
+
         """
         if not self._dag:
             self._build_dataflow_dag()
@@ -791,6 +810,7 @@ class DataflowPipeline(OriginalPipeline[Any, Any]):
 
         Example:
             pipeline.print_dag()
+
         """
         if not self._dag:
             self._build_dataflow_dag()

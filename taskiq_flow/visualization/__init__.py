@@ -1,4 +1,5 @@
-"""Visualisation du DAG pour le suivi des pipelines.
+"""
+Visualisation du DAG pour le suivi des pipelines.
 
 Ce module fournit DAGVisualizer capable de générer des représentations
 du graphe de dépendances en JSON (pour UI web), DOT (pour Graphviz)

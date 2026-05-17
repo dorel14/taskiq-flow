@@ -360,7 +360,7 @@ await server.start_server()
 
 ---
 
-## 📚 Lectures Complémentaires
+## Lectures Complémentaires
 
 - **[Référence API Complète]({{ '/fr/api/' | relative_url }})** — Documentation complète des classes et méthodes
 - **[Galerie d'Exemples]({{ '/fr/examples/' | relative_url }})** — Explications détaillées de chaque script d'exemple

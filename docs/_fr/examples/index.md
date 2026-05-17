@@ -25,6 +25,8 @@ Cette galerie propose des parcours détaillés des scripts d'exemple inclus dans
 | [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }}) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
 | [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }}) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
 | [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }}) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
+| [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }}) | Analyse DAG NetworkX : chemin critique, groupes parallèles, export | DAGVisualizer, NetworkX, chemin critique, exports |
+| [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }}) | Visualiseur web interactif de DAG via NiceGUI et MermaidGenerator | MermaidGenerator, NiceGUI, visualisation web interactive |
 | [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }}) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
 | [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }}) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
 | [API REST]({{ '/fr/examples/api-example/' | relative_url }}) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
@@ -72,6 +74,8 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 
 ### Workflows Avancés
 - [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }})
+- [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }})
 - [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})
 
 ### Intégration

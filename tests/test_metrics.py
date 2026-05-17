@@ -1,9 +1,10 @@
-"""Tests for metrics collection.
+"""
+Tests pour la collecte de métriques.
 
-This module tests the metrics collector and middleware.
+Ce module teste le collecteur de métriques et le middleware associé.
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

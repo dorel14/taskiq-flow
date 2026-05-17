@@ -1,4 +1,5 @@
-"""Intégration WebSocket pour les événements de pipeline en temps réel.
+"""
+Intégration WebSocket pour les événements de pipeline en temps réel.
 
 Fournit des implémentations WebSocket pour la diffusion des événements
 de pipeline aux clients connectés.

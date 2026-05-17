@@ -1,4 +1,5 @@
-"""Interface de stockage pour le suivi des pipelines.
+"""
+Interface de stockage pour le suivi des pipelines.
 
 Définit le contrat abstrait pour les backends de stockage
 de suivi d'exécution de pipelines. Les implementations concrètes
@@ -42,6 +43,7 @@ class PipelineStorage(ABC):
         Args:
             pipeline_id: Identifiant unique du pipeline
             total_steps: Nombre total d'étapes attendues
+
         """
         ...
 
@@ -52,6 +54,7 @@ class PipelineStorage(ABC):
 
         Args:
             pipeline_id: Identifiant du pipeline
+
         """
         ...
 
@@ -63,6 +66,7 @@ class PipelineStorage(ABC):
         Args:
             pipeline_id: Identifiant du pipeline
             result: Résultat final de l'exécution
+
         """
         ...
 
@@ -74,6 +78,7 @@ class PipelineStorage(ABC):
         Args:
             pipeline_id: Identifiant du pipeline
             error: Message d'erreur décrivant l'échec
+
         """
         ...
 
@@ -93,6 +98,7 @@ class PipelineStorage(ABC):
             step_index: Index de l'étape (0-based)
             task_id: ID de la tâche TaskIQ
             task_name: Nom de la tâche
+
         """
         ...
 
@@ -104,6 +110,7 @@ class PipelineStorage(ABC):
         Args:
             pipeline_id: Identifiant du pipeline
             step_index: Index de l'étape
+
         """
         ...
 
@@ -116,6 +123,7 @@ class PipelineStorage(ABC):
             pipeline_id: Identifiant du pipeline
             step_index: Index de l'étape
             error: Message d'erreur
+
         """
         ...
 
@@ -129,6 +137,7 @@ class PipelineStorage(ABC):
 
         Returns:
             Dictionnaire du statut ou None si pipeline inexistant
+
         """
         ...
 
@@ -142,6 +151,7 @@ class PipelineStorage(ABC):
 
         Returns:
             Liste ordonnée par date de création décroissante
+
         """
         ...
 
@@ -155,5 +165,6 @@ class PipelineStorage(ABC):
 
         Returns:
             Nombre d'éléments supprimés
+
         """
         ...

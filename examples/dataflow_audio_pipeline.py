@@ -1,4 +1,5 @@
-"""Example: Audio processing pipeline using dataflow architecture.
+"""
+Example: Audio processing pipeline using dataflow architecture.
 
 This example demonstrates how to build an audio processing pipeline
 using the dataflow-based approach, where tasks automatically determine

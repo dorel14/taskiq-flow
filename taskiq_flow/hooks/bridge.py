@@ -1,4 +1,5 @@
-"""Bridge entre HookManager et le serveur WebSocket pour les événements de pipeline.
+"""
+Bridge entre HookManager et le serveur WebSocket pour les événements de pipeline.
 
 Ce module définit WebSocketHookBridge qui écoute les événements
 du pipeline via HookManager et les diffuse aux clients WebSocket
@@ -42,7 +43,8 @@ _MISSING = object()  # Sentinel for missing attributes
 
 
 class WebSocketHookBridge:
-    """Bridge that forwards pipeline events from HookManager to WebSocket clients.
+    """
+    Bridge that forwards pipeline events from HookManager to WebSocket clients.
 
     Supports both FastAPI WebSocket and picows implementations.
     FastAPI WebSocket is preferred when integrated with FastAPI routes.
@@ -316,7 +318,8 @@ def get_websocket_bridge(
     hook_manager: HookManager,
     use_fastapi: bool = True,
 ) -> WebSocketHookBridge:
-    """Get or create a WebSocket bridge instance for the given hook manager.
+    """
+    Get or create a WebSocket bridge instance for the given hook manager.
 
     Args:
         hook_manager: The HookManager to bridge events from
@@ -324,6 +327,7 @@ def get_websocket_bridge(
 
     Returns:
         WebSocketHookBridge instance
+
     """
     manager_id = id(hook_manager)
 
@@ -356,7 +360,8 @@ def setup_websocket_bridge(
     hook_manager: HookManager,
     use_fastapi: bool = True,
 ) -> WebSocketHookBridge:
-    """Set up the WebSocket bridge for a HookManager.
+    """
+    Set up the WebSocket bridge for a HookManager.
 
     Args:
         hook_manager: The HookManager to bridge events from
@@ -364,6 +369,7 @@ def setup_websocket_bridge(
 
     Returns:
         Configured WebSocketHookBridge instance
+
     """
     bridge = get_websocket_bridge(hook_manager, use_fastapi)
     bridge.register_pipeline_events()

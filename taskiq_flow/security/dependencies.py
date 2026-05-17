@@ -1,4 +1,5 @@
-"""Dépendances FastAPI pour l'authentification et l'autorisation.
+"""
+Dépendances FastAPI pour l'authentification et l'autorisation.
 
 Ce module fournit des dépendances injectables dans les routes
 pour l'authentification (via SecurityMiddleware) et l'autorisation
@@ -17,7 +18,8 @@ from taskiq_flow.security.authorization import AuthorizationError, PipelineAutho
 
 
 def get_auth_provider(request: Request) -> AuthProvider:
-    """Dependency to get the configured auth provider from app state.
+    """
+    Dependency to get the configured auth provider from app state.
 
     Args:
         request: FastAPI request (provides access to app.state)
@@ -27,6 +29,7 @@ def get_auth_provider(request: Request) -> AuthProvider:
 
     Raises:
         HTTPException: 500 if auth provider not configured
+
     """
     provider = getattr(request.app.state, "auth_provider", None)
     if provider is None:
@@ -38,7 +41,8 @@ def get_auth_provider(request: Request) -> AuthProvider:
 
 
 def get_authorization(request: Request) -> PipelineAuthorization:
-    """Dependency to get the authorization manager from app state.
+    """
+    Dependency to get the authorization manager from app state.
 
     Args:
         request: FastAPI request (provides access to app.state)
@@ -48,6 +52,7 @@ def get_authorization(request: Request) -> PipelineAuthorization:
 
     Raises:
         HTTPException: 500 if authorization manager not configured
+
     """
     authorization = getattr(request.app.state, "authorization", None)
     if authorization is None:
@@ -59,7 +64,8 @@ def get_authorization(request: Request) -> PipelineAuthorization:
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
-    """Extract authenticated user from request state (set by SecurityMiddleware).
+    """
+    Extract authenticated user from request state (set by SecurityMiddleware).
 
     This dependency must be used after SecurityMiddleware has run.
     Returns the user_context dict stored in request.state.user.
@@ -69,6 +75,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
 
     Returns:
         User context dictionary
+
     """
     user = getattr(request.state, "user", None)
     if user is None:
@@ -86,7 +93,8 @@ async def verify_pipeline_access(
     user: dict[str, Any] = Depends(get_current_user),  # noqa: B008
     authorization: PipelineAuthorization = Depends(get_authorization),  # noqa: B008
 ) -> dict[str, Any]:
-    """Verify that the current user can access the requested pipeline.
+    """
+    Verify that the current user can access the requested pipeline.
 
     This dependency combines authentication (via get_current_user) and
     authorization (pipeline ACL check). Use in DAG routes.
@@ -101,6 +109,7 @@ async def verify_pipeline_access(
 
     Raises:
         HTTPException: 403 if user lacks read access to the pipeline
+
     """
     try:
         if not authorization.can_read(pipeline_id, user):

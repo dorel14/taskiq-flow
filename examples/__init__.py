@@ -1,4 +1,5 @@
-"""Examples for taskiq-flow.
+"""
+Examples for taskiq-flow.
 
 This package contains example scripts demonstrating various features
 of the taskiq-flow library.

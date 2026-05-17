@@ -1,11 +1,15 @@
-"""Tests for DAG visualization features.
+"""
+Tests pour les fonctionnalités de visualisation de DAG.
 
-This module tests the DAG visualization capabilities including
-JSON export, DOT format, NetworkX conversion, critical path detection,
-and parallel group identification.
+Ce module teste les capacités de visualisation de DAG, incluant :
+- Export JSON
+- Format DOT (Graphviz)
+- Conversion NetworkX
+- Détection du chemin critique
+- Identification des groupes parallèles
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import pytest

@@ -1,4 +1,5 @@
-"""Stockage en mémoire pour le suivi des pipelines.
+"""
+Stockage en mémoire pour le suivi des pipelines.
 
 Implémentation de PipelineStorage utilisant un dictionnaire en mémoire.
 Destiné au développement et aux tests, non persistant.

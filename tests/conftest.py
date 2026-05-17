@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -25,6 +24,7 @@ def broker() -> InMemoryBroker:
 
     Returns:
         Configured InMemoryBroker instance.
+
     """
     broker = InMemoryBroker()
     broker.add_middlewares(PipelineMiddleware())
@@ -32,12 +32,13 @@ def broker() -> InMemoryBroker:
 
 
 @pytest.fixture
-def simple_task(broker: InMemoryBroker) -> Callable[[int], Any]:
+def simple_task(broker: InMemoryBroker) -> Any:
     """
     Create a simple test task.
 
     Returns:
         Decorated task function.
+
     """
 
     @broker.task
@@ -49,12 +50,13 @@ def simple_task(broker: InMemoryBroker) -> Callable[[int], Any]:
 
 
 @pytest.fixture
-def dataflow_task(broker: InMemoryBroker) -> Callable[[dict[str, Any]], Any]:
+def dataflow_task(broker: InMemoryBroker) -> Any:
     """
     Create a dataflow-enabled test task.
 
     Returns:
         Decorated task function with @pipeline_task.
+
     """
 
     @broker.task

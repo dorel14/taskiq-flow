@@ -25,7 +25,9 @@ classifiers = [
 ]
 version = "1.0.3"
 dependencies = [
+  "aiosqlite>=0.22.1",
   "apscheduler[sqlalchemy]>=3.11.2",
+  "dogpile-cache>=1.5.0",
   "fastapi>=0.136.1",
   "mypy>=1.20.2",
   "networkx>=3.4.2",
@@ -171,6 +173,7 @@ lint.ignore = [
               "D401",
               "D104",
               "D100",
+              "D203",
               "D417",
               "ANN401",
               "PLR0913",

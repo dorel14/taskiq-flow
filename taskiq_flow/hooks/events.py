@@ -1,4 +1,5 @@
-"""Modèles d'événements de pipeline.
+"""
+Modèles d'événements de pipeline.
 
 Ce module définit tous les événements émis pendant l'exécution
 d'un pipeline: PipelineStartEvent, StepStartEvent, StepCompleteEvent,

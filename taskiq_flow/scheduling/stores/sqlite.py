@@ -1,4 +1,5 @@
-"""Configuration du job store SQLite pour APScheduler.
+"""
+Configuration du job store SQLite pour APScheduler.
 
 Fournit une configuration simple utilisant SQLite comme backend
 de persistance des tâches planifiées.

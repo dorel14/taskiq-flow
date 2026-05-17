@@ -1,4 +1,5 @@
-"""Example: Using the REST API for pipeline visualization and management.
+"""
+Example: Using the REST API for pipeline visualization and management.
 
 This example demonstrates how to set up a FastAPI server with
 the PipelineVisualizationAPI to expose pipeline management

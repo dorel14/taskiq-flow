@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineVisualizationAPI:
-    """API REST pour la visualisation et la gestion des pipelines.
+    """
+    API REST pour la visualisation et la gestion des pipelines.
 
     Fournit des endpoints FastAPI pour inspecter les DAGs, déclencher
     des exécutions et suivre le statut des pipelines.
@@ -42,12 +43,14 @@ class PipelineVisualizationAPI:
         app: FastAPI | None = None,
         config: TaskiqFlowConfig | None = None,
     ) -> None:
-        """Initialize the visualization API.
+        """
+        Initialize the visualization API.
 
         Args:
             broker: TaskIQ broker instance
             app: FastAPI app instance (creates new one if not provided)
             config: TaskiqFlow configuration for security/metrics
+
         """
         self.broker = broker
         self.app = app or FastAPI(title="TaskIQ Flow Visualization API")
@@ -174,7 +177,8 @@ class PipelineVisualizationAPI:
             pipeline_id: str,
             tasks: list[dict[str, Any]],
         ) -> dict[str, str]:
-            """Register a pipeline for visualization.
+            """
+            Register a pipeline for visualization.
 
             Note: This endpoint stores pipeline metadata for visualization.
             For actual pipeline execution, use the add_pipeline method or
@@ -184,6 +188,7 @@ class PipelineVisualizationAPI:
                 pipeline_id: Unique pipeline identifier
                 tasks: List of task definitions with optional 'name',
                     'dependencies' keys
+
             """
             logger.info(
                 "Registering pipeline %s with %d tasks",
@@ -292,11 +297,13 @@ class PipelineVisualizationAPI:
             )
 
     def add_pipeline(self, pipeline_id: str, pipeline: DataflowPipeline) -> None:
-        """Add a pipeline to the API.
+        """
+        Add a pipeline to the API.
 
         Args:
             pipeline_id: Unique pipeline identifier
             pipeline: DataflowPipeline instance
+
         """
         self.pipelines[pipeline_id] = pipeline
         register_pipeline(
@@ -305,10 +312,12 @@ class PipelineVisualizationAPI:
         logger.info("Added pipeline %s to visualization API", pipeline_id)
 
     def get_app(self) -> FastAPI:
-        """Get the FastAPI application.
+        """
+        Get the FastAPI application.
 
         Returns:
             FastAPI application instance
+
         """
         return self.app
 
@@ -317,7 +326,8 @@ def create_visualization_api(
     broker: AsyncBroker,
     app: FastAPI | None = None,
 ) -> PipelineVisualizationAPI:
-    """Create a pipeline visualization API.
+    """
+    Create a pipeline visualization API.
 
     Args:
         broker: TaskIQ broker instance
@@ -325,6 +335,7 @@ def create_visualization_api(
 
     Returns:
         PipelineVisualizationAPI instance
+
     """
     return PipelineVisualizationAPI(broker, app)
 

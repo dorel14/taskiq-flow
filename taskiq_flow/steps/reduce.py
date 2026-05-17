@@ -1,4 +1,5 @@
-"""Step de réduction pour agrégation cumulative.
+"""
+Step de réduction pour agrégation cumulative.
 
 Applique une fonction de réduction sur une liste de valeurs,
 avec support de la pré-traitement par tâche et du chunking.

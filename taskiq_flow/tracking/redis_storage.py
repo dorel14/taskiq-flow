@@ -1,4 +1,5 @@
-"""Stockage Redis pour le suivi des pipelines.
+"""
+Stockage Redis pour le suivi des pipelines.
 
 Implémentation de PipelineStorage utilisant Redis comme backend de stockage.
 Offre persistance des données et partage entre multiples instances.
@@ -117,7 +118,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             started_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(  # type: ignore[misc]
+            await self.redis.hset(
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.RUNNING.value,
@@ -135,7 +136,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(  # type: ignore[misc]
+            await self.redis.hset(
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.COMPLETED.value,
@@ -154,7 +155,7 @@ class RedisPipelineStorage(PipelineStorage):
             pipeline_key = f"pipe:{pipeline_id}"
             finished_at = datetime.now(timezone.utc).isoformat()
 
-            await self.redis.hset(  # type: ignore[misc]
+            await self.redis.hset(
                 pipeline_key,
                 mapping={
                     "status": PipelineStatus.FAILED.value,
@@ -188,7 +189,7 @@ class RedisPipelineStorage(PipelineStorage):
                 "error": None,
             }
 
-            await self.redis.lset(  # type: ignore[misc]
+            await self.redis.lset(
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -203,7 +204,7 @@ class RedisPipelineStorage(PipelineStorage):
     async def complete_step(self, pipeline_id: str, step_index: int) -> None:
         """Mark a step as completed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(  # type: ignore[misc]
+        step_json = await self.redis.lindex(
             steps_key,
             step_index,
         )
@@ -211,7 +212,7 @@ class RedisPipelineStorage(PipelineStorage):
             step_data = json.loads(step_json)
             step_data["status"] = StepStatus.COMPLETED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
-            await self.redis.lset(  # type: ignore[misc]
+            await self.redis.lset(
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -220,7 +221,7 @@ class RedisPipelineStorage(PipelineStorage):
     async def fail_step(self, pipeline_id: str, step_index: int, error: str) -> None:
         """Mark a step as failed."""
         steps_key = f"pipe:{pipeline_id}:steps"
-        step_json = await self.redis.lindex(  # type: ignore[misc]
+        step_json = await self.redis.lindex(
             steps_key,
             step_index,
         )
@@ -229,7 +230,7 @@ class RedisPipelineStorage(PipelineStorage):
             step_data["status"] = StepStatus.FAILED.value
             step_data["finished_at"] = datetime.now(timezone.utc).isoformat()
             step_data["error"] = error
-            await self.redis.lset(  # type: ignore[misc]
+            await self.redis.lset(
                 steps_key,
                 step_index,
                 json.dumps(step_data),
@@ -257,7 +258,7 @@ class RedisPipelineStorage(PipelineStorage):
         pipeline_key = f"pipe:{pipeline_id}"
         steps_key = f"pipe:{pipeline_id}:steps"
 
-        pipeline_data = await self.redis.hgetall(  # type: ignore[misc]
+        pipeline_data = await self.redis.hgetall(
             pipeline_key,
         )
         if not pipeline_data:
@@ -267,7 +268,7 @@ class RedisPipelineStorage(PipelineStorage):
         # Decode bytes to strings
         pipeline_data = {k.decode(): v.decode() for k, v in pipeline_data.items()}
 
-        steps_json = await self.redis.lrange(  # type: ignore[misc]
+        steps_json = await self.redis.lrange(
             steps_key,
             0,
             -1,

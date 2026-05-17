@@ -1,4 +1,5 @@
-"""Détection du type de broker TaskIQ.
+"""
+Détection du type de broker TaskIQ.
 
 Ce module permet de détecter automatiquement le type de broker
 (Redis, RabbitMQ, Kafka, InMemory) à partir d'une instance AsyncBroker.
@@ -27,7 +28,7 @@ from taskiq.brokers.inmemory_broker import InMemoryBroker
 from taskiq.brokers.shared_broker import AsyncSharedBroker
 
 try:
-    from taskiq_redis import RedisStreamBroker as RedisBroker  # type: ignore
+    from taskiq_redis import RedisStreamBroker as RedisBroker
 
     HAS_REDIS = True
 except ImportError:
@@ -66,8 +67,7 @@ class BrokerDetector:
         """Detect the type of the given broker."""
         # Handle SharedBroker (unwrap to actual broker)
         if isinstance(broker, AsyncSharedBroker):
-            broker = getattr(broker, "broker", broker)  # type: ignore
-
+            broker = getattr(broker, "broker", broker)
         # Try Redis
         if HAS_REDIS and isinstance(broker, RedisBroker):
             return BrokerType.REDIS

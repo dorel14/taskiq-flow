@@ -1,4 +1,5 @@
-"""Métriques pour Taskiq-Flow.
+"""
+Métriques pour Taskiq-Flow.
 
 Ce module fournit des métriques Prometheus pour le monitoring
 des pipelines, tâches et performances.

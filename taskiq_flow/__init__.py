@@ -1,17 +1,18 @@
-"""TaskIQ Flow - Orchestration de pipelines basée sur les flux de données.
+"""
+TaskIQ Flow - Orchestration de pipelines basée sur les flux de données.
 
 Ce package fournit des capacités d'orchestration de pipelines pour TaskIQ,
 combinant des workflows séquentiels avec exécution automatique de DAG
 (dataflow).
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import contextlib
 
 from taskiq_flow.exceptions import AbortPipeline, PipelineError
-from taskiq_flow.middleware import PipelineMiddleware
+from taskiq_flow.middleware import PipelineMiddleware, TransportMiddleware
 from taskiq_flow.pipeline import DataflowPipeline
 from taskiq_flow.pipeliner import Pipeline as OriginalPipeline
 
@@ -73,9 +74,39 @@ with contextlib.suppress(ImportError):
         visualize_pipeline,
     )
 
+# Storage & Cache exports (new in v1.2.0)
+with contextlib.suppress(ImportError):
+    from taskiq_flow.storage import (
+        BaseCacheAdapter,
+        BaseStorageAdapter,
+        InMemoryStorageAdapter,
+        RedisStorageAdapter,
+        StorageEntry,
+    )
+
+with contextlib.suppress(ImportError):
+    from taskiq_flow.cache import (
+        InMemoryCacheAdapter,
+        RedisCacheAdapter,
+    )
+
+with contextlib.suppress(ImportError):
+    from taskiq_flow.middlewares import (
+        CacheMiddleware,
+        PipelineRetryMiddleware,
+        StorageMiddleware,
+        calculate_exponential_backoff_delay,
+    )
+
+with contextlib.suppress(ImportError):
+    from taskiq_flow.storage.factory import StorageAdapterFactory
+
 __all__ = [
     "DAG",
     "AbortPipeline",
+    "BaseCacheAdapter",
+    "BaseStorageAdapter",
+    "CacheMiddleware",
     "DAGBuilder",
     "DAGNode",
     "DAGVisualizer",
@@ -84,15 +115,24 @@ __all__ = [
     "DataflowRegistry",
     "ExecutionEngine",
     "HookManager",
+    "InMemoryCacheAdapter",
+    "InMemoryStorageAdapter",
     "MapReduce",
     "Pipeline",
     "PipelineError",
     "PipelineMiddleware",
+    "PipelineRetryMiddleware",
     "PipelineScheduler",
     "PipelineTrackingManager",
-    # API exports
     "PipelineVisualizationAPI",
+    "RedisCacheAdapter",
+    "RedisStorageAdapter",
+    "StorageAdapterFactory",
+    "StorageEntry",
+    "StorageMiddleware",
     "TrackingStorageFactory",
+    "TransportMiddleware",
+    "calculate_exponential_backoff_delay",
     "create_visualization_api",
     "get_all_pipeline_outputs",
     "get_pipeline_metadata",

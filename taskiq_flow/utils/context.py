@@ -1,4 +1,5 @@
-"""Utilitaires de contexte de pipeline.
+"""
+Utilitaires de contexte de pipeline.
 
 Fournit PipelineContext, un accès contexteux au broker et
 aux informations de pipeline pendant l'exécution.

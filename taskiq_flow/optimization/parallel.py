@@ -1,4 +1,5 @@
-"""Resource-aware parallelism for pipeline execution.
+"""
+Resource-aware parallelism for pipeline execution.
 
 This module provides dynamic parallelism adjustment based on CPU and memory
 availability. It calculates optimal parallelism per task level based on
@@ -29,6 +30,7 @@ class TaskResourceProfile(BaseModel):
         async def extract_audio_metadata(audio_file):
             # Heavy audio processing
             ...
+
     """
 
     estimated_memory_mb: int = 100
@@ -76,6 +78,7 @@ class ResourceAwareExecutor:
 
         Returns:
             Number of tasks to run in parallel
+
         """
         try:
             cpu_available = 100 - psutil.cpu_percent(interval=0.1)

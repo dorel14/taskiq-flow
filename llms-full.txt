@@ -10,16 +10,16 @@
 
 Welcome to the official documentation for **Taskiq-Flow**, a powerful Python library for orchestrating asynchronous task workflows with pipelines, dataflow DAGs, real-time tracking, and distributed scheduling.
 
-## 🌐 Language Selection
+## Language Selection
 
 This documentation is available in two languages:
 
-- **[🇬🇧 English Documentation]({{ '/en/' | relative_url }})** — Complete technical documentation in English (source language)
-- **[🇫🇷 Documentation Française]({{ '/fr/' | relative_url }})** — Traduction française complète
+- **[ English Documentation]({{ '/en/' | relative_url }})** — Complete technical documentation in English (source language)
+- **[ Documentation Française]({{ '/fr/' | relative_url }})** — Traduction française complète
 
 Both versions are kept synchronized, with code examples remaining in English for consistency.
 
-## 📚 Documentation Structure
+## Documentation Structure
 
 The documentation is organized into the following sections:
 
@@ -56,7 +56,7 @@ The documentation is organized into the following sections:
   - WebSocket demo
   - REST API
 
-## 🚀 Quick Overview
+## Quick Overview
 
 Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataflow model**:
 
@@ -69,30 +69,183 @@ Taskiq-Flow combines **taskiq-pipelines' orchestration** with **pipefunc's dataf
 - **Parallel Execution** — Automatic concurrency for independent tasks
 - **Map-Reduce** — Built-in batch processing helpers
 
-## 📖 Read the Guides
+## Read the Guides
 
 **[→ Getting Started (English)]({{ '/en/quickstart/' | relative_url }})**
 
 **[→ Commencer (Français)]({{ '/fr/quickstart/' | relative_url }})**
 
-## 🔗 Quick Links
+## Quick Links
 
 - **Project Repository**: [GitHub - taskiq-flow](https://github.com/dorel14/taskiq-flow)
 - **PyPI Package**: [taskiq-flow](https://pypi.org/project/taskiq-flow/)
 - **Taskiq Documentation**: [taskiq-python.github.io](https://taskiq-python.github.io/)
 - **Issue Tracker**: [GitHub Issues](https://github.com/dorel14/taskiq-flow/issues)
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our [contributing guide](https://github.com/dorel14/taskiq-flow/blob/master/CONTRIBUTING.md) for details on how to submit pull requests, add features, or report bugs.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License — see the [LICENSE](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) file for details.
 
 ---
 
 *Maintained by SoniqueBay Team · Documentation last built: 2026-05-05*
+
+
+## DOCUMENT: Cache
+
+# API Reference: Cache
+
+**Dogpile-based caching with cache stampede sémantics**
+
+> **Version**: {VERSION} | **New in v1.2.0** | **Module**: `taskiq_flow.cache`, `taskiq_flow.middlewares.cache`
+
+---
+
+## Overview
+
+Taskiq-Flow v1.2.0 introduces a **cache layer** for workers built around the **Dogpile pattern**. The key principle: when a cached entry expires, only one thread/process is allowed to regenerate it. All other requestors wait and then pick up the fresh value — eliminating the stampede.
+
+```
+Concurrent requests at TTL expiry:
+
+Without Dogpile:  [task runs × 10 simultaneously] → overload
+With Dogpile:     [1 task runs, 9 wait] → one result shared
+```
+
+---
+
+## `BaseCacheAdapter` (ABC)
+
+```python
+from taskiq_flow.storage.base import BaseCacheAdapter
+
+class MyCacheAdapter(BaseCacheAdapter):
+    async def get_or_create(self, key, creator, ttl_seconds=3600) -> Any: ...
+    async def get(self, key) -> Any | None: ...
+    async def set(self, key, value, ttl_seconds=3600) -> None: ...
+    async def invalidate(self, key) -> bool: ...
+    async def clear(self) -> None: ...
+    def get_stats(self) -> dict: ...
+```
+
+Abstract interface; implement it to integrate a new cache backend.
+
+| Method | Dogpile-Safe? | Description |
+|--------|--------------|-------------|
+| `get_or_create(key, creator, ttl)` | **Yes** | Read-through with lock: creates via `creator()` only if missing/expired, atomically |
+| `get(key)` | Read side | Cache read; `None` on miss |
+| `set(key, value, ttl)` | Write side | Store with optional TTL seconds |
+| `invalidate(key)` | — | Evict a single entry immediately |
+| `clear()` | — | Flush the entire cache |
+| `get_stats()` | — | Return `{"hits", "misses", "hit_rate", "size", "keys"}` |
+
+---
+
+## `InMemoryCacheAdapter`
+
+```python
+from taskiq_flow.cache import InMemoryCacheAdapter
+
+cache = InMemoryCacheAdapter()
+
+result = await cache.get_or_create(
+    "expensive_computation",
+    lambda: compute_expensive(),
+    ttl_seconds=300,
+)
+print(cache.get_stats())
+# {"hits": 42, "misses": 3, "hit_rate": 0.93, "size": 41, "keys": [...]}
+```
+
+| Feature | Detail |
+|---------|--------|
+| Thread safety |  Per-key `threading.Lock` |
+| TTL |  Monotonic clock; no system-clock dependency |
+| Dogpile lock |  Lock released only when creator finishes |
+| Async creator |  `creator()` may return a coroutine; it is awaited automatically |
+| Stats |  `get_stats()`: hits, misses, hit_rate, size, keys |
+
+---
+
+## `RedisCacheAdapter`
+
+```python
+from taskiq_flow.cache import RedisCacheAdapter
+
+cache = RedisCacheAdapter(
+    redis_url="redis://localhost:6379",
+    default_ttl=3600,
+    lock_timeout=10,
+)
+result = await cache.get_or_create("shared_computation",
+                                    lambda: compute_expensive(),
+                                    ttl_seconds=300)
+```
+
+Distributed cache with Redis-backed Dogpile locking.
+
+| Feature | Detail |
+|---------|--------|
+| Distributed Dogpile lock |  `SETNX`-based; multiple workers safely share one entry |
+| Native Redis TTL |  `EXPIRE` per key |
+| JSON serialization |  Automatic for non-primitive types |
+| Lock timeout | Configurable; prevents deadlocks if a worker crashes mid-generation |
+
+---
+
+## `CacheMiddleware`
+
+```python
+from taskiq_flow.middlewares import CacheMiddleware
+from taskiq_flow.cache import InMemoryCacheAdapter
+
+broker.add_middlewares(
+    PipelineMiddleware(),
+    CacheMiddleware(cache=InMemoryCacheAdapter(), default_ttl=3600),
+)
+```
+
+`CacheMiddleware` is the production-ready way to enable caching on a broker. It hooks into both `pre_execute` and `post_save`:
+
+- **`pre_execute`** — Returns cached result if present; task is skipped (short-circuited).
+- **`post_save`** — Stores the successful result in cache for next time.
+
+| Constructor Parameter | Type | Default | Description |
+|----------------------|------|---------|-------------|
+| `cache` | `BaseCacheAdapter \| None` | `None` | Cache backend; `None` → `InMemoryCacheAdapter` |
+| `enabled` | `bool` | `True` | Global toggle |
+| `default_ttl` | `int` | `3600` | Default cache lifetime in seconds |
+
+**Per-task label overrides:**
+
+| Message Label | Values | Effect |
+|---------------|--------|--------|
+| `cache_ttl` | integer seconds | Override TTL for this task execution |
+| `cache_errors` | `"true"` | Cache failed (error) results too |
+
+---
+
+## Choosing a Cache Backend
+
+| Backend | When to use |
+|---------|-------------|
+| `InMemoryCacheAdapter` | Development, tests, single-worker |
+| `RedisCacheAdapter` | Production, multi-worker, distributed |
+
+---
+
+## Further Reading
+
+- **[Storage & Cache Middleware Guide]({{ '/en/guides/cache/' | relative_url }})** — Full middleware configuration
+- **[Storage API Reference]({{ '/en/api/storage/' | relative_url }})** — Storage adapters
+
+---
+
+*New in v1.2.0. Cache adapters are async and interchangeable at instantiation time.*
 
 
 ## DOCUMENT: Core
@@ -891,14 +1044,17 @@ results = await engine.execute(inputs={"audio_files": files})
 
 Complete module and class documentation for Taskiq-Flow.
 
-## 📚 Available API Docs
+## Available API Docs
 
 | Module | Description |
 |--------|-------------|
 | **[Core Components]({{ '/en/api/core/' | relative_url }})** | Pipeline, DataflowPipeline, middleware, exceptions |
 | **[Decorators]({{ '/en/api/decorators/' | relative_url }})** | `@pipeline_task` and utilities |
 | **[Execution]({{ '/en/api/execution/' | relative_url }})** | ExecutionEngine, DAG, DAGBuilder |
+| **[Storage]({{ '/en/api/storage/' | relative_url }})** new in v1.2.0 | Pluggable storage adapters (InMemory, Redis, SQLite), factory, StorageMiddleware |
+| **[Cache]({{ '/en/api/cache/' | relative_url }})** new in v1.2.0 | Dogpile-based caching (InMemory, Redis adapters), CacheMiddleware |
 | **[Tracking]({{ '/en/api/tracking/' | relative_url }})** | TrackingManager and storage backends |
+| **[Optimization]({{ '/en/api/optimization/' | relative_url }})** | ResourceAwareExecutor |
 | **[WebSocket]({{ '/en/api/websocket/' | relative_url }})** | HookManager and event system |
 
 ---
@@ -1059,6 +1215,309 @@ For mixed workloads, compute a safe `max_parallel` that accommodates the most re
 ---
 
 *The optimization module ensures pipelines scale without overwhelming the host. Always test resource profiles with realistic data volumes.*
+
+
+## DOCUMENT: Storage
+
+# API Reference: Storage
+
+**Pluggable persistence layer — adapters, factory, and `StorageMiddleware`**
+
+> **Version**: {VERSION} | **New in v1.2.0** | **Module**: `taskiq_flow.storage`, `taskiq_flow.middlewares.storage`
+
+---
+
+## Overview
+
+Taskiq-Flow v1.2.0 introduces a **centralized storage layer** that decouples all persistence concerns (tracking, scheduling, results history) from the broker implementation. The storage system provides:
+
+- **One unified interface** — `BaseStorageAdapter` works with every backend
+- **Three built-in adapters** — InMemory, Redis, SQLite/SQLAlchemy
+- **Auto-detection factory** — `StorageAdapterFactory` picks the right backend automatically
+- **Middleware integration** — `StorageMiddleware` plugs into the TaskIQ middleware pipeline
+
+Use `StorageMiddleware` instead of ad-hoc persistence code: it intercepts task events and stores results via a pluggable adapter.
+
+---
+
+## Module: `taskiq_flow.storage`
+
+### `StorageEntry`
+
+```python
+from taskiq_flow.storage import StorageEntry
+from datetime import datetime, timezone
+
+entry = StorageEntry(
+    key="pipeline:my_run:task:abc123",
+    value={"status": "completed", "result": 42},
+    expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    metadata={"pipeline_id": "my_run"},
+)
+```
+
+A typed container for a single stored value with optional TTL and metadata.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `key` | `str` | Unique storage key |
+| `value` | `Any` | Stored value (JSON-serializable recommended) |
+| `created_at` | `datetime` | Timestamp of creation (UTC) |
+| `expires_at` | `datetime \| None` | Expiration timestamp; `None` = never expires |
+| `metadata` | `dict` | Arbitrary metadata tags |
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `is_expired()` | `() -> bool` | Returns `True` if the entry has expired |
+| `remaining_ttl()` | `() -> float \| None` | Seconds until expiry; `None` if never expires |
+
+---
+
+### `BaseStorageAdapter` (ABC)
+
+```python
+from taskiq_flow.storage import BaseStorageAdapter
+
+class MyAdapter(BaseStorageAdapter):
+    async def get(self, key: str) -> Any | None: ...
+    async def set(self, key: str, value: Any, ttl_seconds: int | None = None) -> None: ...
+    async def delete(self, key: str) -> bool: ...
+    async def exists(self, key: str) -> bool: ...
+    async def keys(self, pattern: str = "*") -> list[str]: ...
+    async def cleanup(self, ttl_seconds: int = 3600) -> int: ...
+```
+
+Abstract interface that all storage backends must implement. Use this to implement a custom backend (e.g., PostgreSQL, DynamoDB).
+
+| Method | Description |
+|--------|-------------|
+| `get(key)` | Retrieve value by key; returns `None` if missing or expired |
+| `set(key, value, ttl_seconds)` | Store a value with optional TTL in seconds |
+| `delete(key)` | Remove entry by key; returns `True` if deleted |
+| `exists(key)` | Check whether a key exists |
+| `keys(pattern)` | List keys matching a glob pattern (e.g., `"pipeline:*"`) |
+| `cleanup(ttl_seconds)` | Purge expired entries; returns count deleted |
+
+---
+
+### `InMemoryStorageAdapter`
+
+```python
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+storage = InMemoryStorageAdapter()
+# Usage transparent — same interface as other adapters
+```
+
+In-process dict-based adapter with per-key TTL support. Best suited for development, testing, and single-process deployments.
+
+| Feature | Status |
+|---------|--------|
+| TTL |  Per-key TTL via `set(key, value, ttl_seconds=…)` |
+| Concurrency |  Protected by `asyncio.Lock` |
+| Persistence across restarts |  Volatile |
+| Distributed sharing |  Process-local only |
+| Pattern scanning (`keys("*")`) |  `fnmatch`-based |
+
+---
+
+### `RedisStorageAdapter`
+
+```python
+from taskiq_flow.storage import RedisStorageAdapter
+
+storage = RedisStorageAdapter(
+    redis_url="redis://localhost:6379",
+    ttl_seconds=3600,  # Default TTL
+)
+```
+
+Redis-backed persistent adapter with native TTL support, JSON serialization, and async I/O.
+
+```python
+# Store
+await storage.set("pipeline:run42:status", {"phase": "running"}, ttl_seconds=86400)
+
+# Retrieve
+status = await storage.get("pipeline:run42:status")
+
+# Pattern scan
+keys = await storage.keys("pipeline:run42:*")
+```
+
+| Feature | Status |
+|---------|--------|
+| Native TTL |  Redis `EXPIRE` per-key |
+| JSON serialization |  Automatic via `json.dumps/loads` |
+| Distributed sharing |  All workers share the same Redis |
+| Persistent across restarts |  (as long as Redis persists) |
+| Dependency | `pip install redis` |
+
+---
+
+### `SQLiteStorageAdapter`
+
+```python
+from taskiq_flow.storage import SQLiteStorageAdapter
+
+storage = SQLiteStorageAdapter(
+    db_url="sqlite+aiosqlite:///taskiq-flow.db",
+    async_mode=True,
+)
+```
+
+SQLite/SQLAlchemy-backed adapter for persistent local storage without an external service.
+
+```python
+# Store
+await storage.set("pipeline:run42:status", {"phase": "completed"})
+
+# Works with any SQLAlchemy URL: SQLite, PostgreSQL, MySQL, etc.
+pg = SQLiteStorageAdapter(db_url="postgresql+asyncpg://user:pw@host/db", async_mode=True)
+```
+
+| Feature | Status |
+|---------|--------|
+| Persistent |  On-disk SQLite (or any SQLAlchemy DB) |
+| Async mode |  `asyncio`-compatible via `aiosqlite`/`asyncpg` |
+| Distributed sharing |  Only shared via a network database (PostgreSQL, MySQL) |
+| Dependency | `aiosqlite` (bundled), `sqlalchemy` (bundled) |
+
+---
+
+## Module: `taskiq_flow.storage.factory`
+
+### `StorageAdapterFactory`
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+from taskiq_flow.config import TaskiqFlowConfig
+
+# Auto-detect best adapter from configuration
+config = TaskiqFlowConfig()  # reads from env vars or defaults
+adapter = StorageAdapterFactory.create_storage_adapter(config=config)
+
+# Or specify broker for broker-based detection
+adapter = StorageAdapterFactory.create_storage_adapter(
+    config=config,
+    broker=redis_broker,
+    redis_url="redis://localhost:6379",
+    ttl_seconds=7200,
+)
+```
+
+Priority order for `create_storage_adapter(type="auto")`:
+
+| Priority | Backend | Condition |
+|----------|---------|-----------|
+| 1 | `RedisStorageAdapter` | `storage_type="redis"` or broker is RedisBroker |
+| 2 | `SQLiteStorageAdapter` | `storage_type="sqlite"` or `"sqlalchemy"` |
+| 3 | `InMemoryStorageAdapter` | Fallback when no Redis/SQLite configured |
+
+| Factory Method | Description |
+|----------------|-------------|
+| `create_storage_adapter(config, broker, redis_url, ttl_seconds)` | Create a `BaseStorageAdapter` |
+| `create_cache_adapter(config, redis_url, default_ttl, lock_timeout)` | Create a `BaseCacheAdapter` |
+| `create_default_middlewares(config, broker)` | Create both `StorageMiddleware` and `CacheMiddleware` |
+
+---
+
+## Module: `taskiq_flow.middlewares.storage`
+
+### `StorageMiddleware`
+
+```python
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+storage = InMemoryStorageAdapter()
+middleware = StorageMiddleware(storage=storage, enabled=True)
+
+broker.add_middlewares(middleware)
+```
+
+`StorageMiddleware` intercepts the TaskIQ lifecycle and persists task results
+through the configured `BaseStorageAdapter`. It complements `PipelineMiddleware`
+by offering **a centralized and pluggable** persistence layer.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `storage` | `BaseStorageAdapter \| None` | `None` | Storage backend to use. Auto-creates `InMemoryStorageAdapter` if `None`. |
+| `enabled` | `bool` | `True` | Toggle persistence on/off globally |
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `post_save(message, result)` | Persists `TaskiqResult` to storage keyed by `task_id` (optionally prefixed by `pipeline_id`) |
+
+**Storage key format**: `pipeline:{pipeline_id}:task:{task_id}` or `task:{task_id}`.
+
+---
+
+## Examples
+
+### Using `StorageAdapterFactory` for quick setup
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+
+# Zero-config — auto-detects from environment
+storage = StorageAdapterFactory.create_storage_adapter()
+
+# From TaskiqFlowConfig
+from taskiq_flow.config import TaskiqFlowConfig
+config = TaskiqFlowConfig(
+    storage_type="redis",
+    storage_redis_url="redis://localhost:6379",
+)
+storage = StorageAdapterFactory.create_storage_adapter(config=config)
+```
+
+### Using `StorageMiddleware` in a broker
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+broker = InMemoryBroker(await_inplace=True)
+middleware = StorageMiddleware(storage=InMemoryStorageAdapter())
+broker.add_middlewares(middleware, PipelineMiddleware())
+```
+
+### Using `create_default_middlewares`
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+
+middlewares = StorageAdapterFactory.create_default_middlewares()
+broker.add_middlewares(
+    middlewares["storage"],   # StorageMiddleware
+    middlewares["cache"],     # CacheMiddleware
+    PipelineMiddleware(),
+)
+```
+
+---
+
+## Choosing a Storage Backend
+
+| Backend | Use Case | Pros | Cons |
+|---------|----------|------|------|
+| `InMemoryStorageAdapter` | Development, tests, single-process | Zero dependencies, fast | Volatile, not shared |
+| `RedisStorageAdapter` | Production, distributed | Fast, shared, survives restarts | Requires Redis |
+| `SQLiteStorageAdapter` | Lightweight persistent, no external service | No external service, SQL queries | Single-writer contention |
+
+---
+
+## Further Reading
+
+- **[Storage & Cache Middleware Guide]({{ '/en/guides/cache/' | relative_url }})** — Complete middleware setup
+- **[Cache API Reference]({{ '/en/api/cache/' | relative_url }})** — Dogpile-based caching
+- **[Pipeline Guide]({{ '/en/guides/pipelines/' | relative_url }})** — How pipelines use storage
+
+---
+
+*New in v1.2.0. Storage adapters are fully interchangeable: swap the adapter without changing any application logic.*
 
 
 ## DOCUMENT: Tracking
@@ -2774,6 +3233,8 @@ This gallery provides in-depth walkthroughs of the example scripts included in t
 | [Tracking Demo]({{ '/en/examples/tracking-demo/' | relative_url }}) | Real-time pipeline monitoring with PipelineTrackingManager | Tracking, status storage, visualization |
 | [Scheduled Pipeline]({{ '/en/examples/scheduled-pipeline/' | relative_url }}) | Cron-based recurring pipeline execution | PipelineScheduler, APScheduler, timezones |
 | [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }}) | Full DAG with parallelism, map-reduce, and visualization | DataflowPipeline, automatic DAG, parallelism |
+| [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }}) | NetworkX DAG analysis: critical path, parallel groups, multi-format export | DAGVisualizer, NetworkX, critical path, exports |
+| [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }}) | Interactive web DAG viewer via NiceGUI and MermaidGenerator | MermaidGenerator, NiceGUI, interactive web visualization |
 | [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }}) | Manual DataflowRegistry construction, DAG inspection, and low-level execution | DataflowRegistry, ExecutionEngine, DAG introspection |
 | [WebSocket Demo]({{ '/en/examples/websocket-demo/' | relative_url }}) | Real-time event streaming via WebSockets | HookManager, WebSocket transport, live tracking |
 | [REST API]({{ '/en/examples/api-example/' | relative_url }}) | FastAPI integration for remote pipeline management | PipelineVisualizationAPI, custom endpoints |
@@ -2821,6 +3282,8 @@ Some examples require additional services (Redis, etc.). See individual example 
 
 ### Advanced Workflows
 - [Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})
+- [DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }})
+- [NiceGUI DAG Demo]({{ '/en/examples/nicegui-dag-demo/' | relative_url }})
 - [Registry Discovery]({{ '/en/examples/registry-discovery/' | relative_url }})
 
 ### Integration
@@ -2833,6 +3296,272 @@ Some examples require additional services (Redis, etc.). See individual example 
 - **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Run your first pipeline
 - **[User Guides]({{ '/en/guides/' | relative_url }})** — Deep dives into each feature
 - **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module documentation
+
+
+## DOCUMENT: Nicegui Dag Demo
+
+# Example: nicegui_dag_demo.py
+
+**Interactive DAG visualization with NiceGUI and MermaidGenerator**
+
+> **Version**: {VERSION} | **File**: `examples/nicegui_dag_demo.py`
+
+---
+
+## Overview
+
+This example demonstrates how to build an interactive web application using **NiceGUI** to visualize a Taskiq-Flow `DataflowPipeline` DAG. It leverages the built-in `MermaidGenerator` to render flowcharts directly in the browser.
+
+Key themes:
+- Generating Mermaid.js diagrams from a DAG programmatically
+- Serving them via an interactive NiceGUI web app
+- Running the pipeline builder script separately from the web server
+
+---
+
+## What This Example Shows
+
+- Using `DataflowPipeline.from_tasks()` to build a simple 3-step pipeline
+- Calling the internal `_build_dataflow_dag()` to obtain the DAG without executing
+- Using `MermaidGenerator.to_mermaid_with_styling()` to produce Mermaid code
+- Serving that diagram inside a NiceGUI `ui.markdown()` page
+- A dual-mode script: async DAG builder + synchronous NiceGUI server
+
+---
+
+## Code Walkthrough
+
+### 1. Pipeline Definition
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Load raw data from a source."""
+    await asyncio.sleep(0.1)
+    return {"source": source, "values": [1, 2, 3, 4, 5]}
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Process raw data by calculating statistics."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Generate a final report from processed data."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "REPORT-001",
+        "source": processed_data["source"],
+        "statistics": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "status": "completed",
+    }
+```
+
+Pipeline DAG structure:
+```
+load_data → process_data → generate_report
+```
+
+---
+
+### 2. Building the DAG (Without Execution)
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_data, process_data, generate_report],
+)
+pipeline.pipeline_id = "data_processing_pipeline"
+
+# Build the DAG statically — no tasks are executed
+pipeline._build_dataflow_dag()
+dag = pipeline._dag
+```
+
+> **Note**: `_build_dataflow_dag()` is an internal method that inspects the
+> `@pipeline_task` annotations and assembles the dependency graph in memory.
+> If you need a public API, use `DataflowRegistry` to build a DAG explicitly
+> (see the [Registry Discovery Example]({{ '/en/examples/registry-discovery/' | relative_url }})).
+
+---
+
+### 3. Mermaid Diagram Generation
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# → flowchart LR / TD with colored nodes and arrows
+```
+
+`MermaidGenerator.to_mermaid_with_styling()` produces Mermaid.js flowchart
+code with CSS class definitions for input/process/output/decision node shapes.
+
+---
+
+### 4. NiceGUI Application
+
+```python
+@ui.page("/")
+def dag_viewer_page() -> None:
+    """Main page showing the DAG visualization."""
+    ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; font-weight: bold;")
+    ui.label("Data Processing Pipeline").style("font-size: 18px;")
+    ui.separator()
+
+    if mermaid_diagram_global:
+        ui.markdown(f"""```mermaid\n{mermaid_diagram_global}\n```""")
+    else:
+        ui.label("No DAG to display").style("color: red;")
+
+    ui.separator()
+    ui.label("DAG Statistics:").style("font-weight: bold;")
+
+ui.run(title="TaskIQ Flow DAG Viewer", port=8080)
+```
+
+NiceGUI renders `ui.markdown()` content server-side, and Mermaid.js is loaded
+client-side to render the diagram in the browser.
+
+---
+
+## Expected Output
+
+**Console (DAG builder)**:
+```
+=== Taskiq-Flow NiceGUI DAG Visualization Demo ===
+
+DAG has 3 nodes and 2 edges
+Starting NiceGUI server...
+Open your browser to http://127.0.0.1:8080 to view the DAG
+
+Mermaid diagram code:
+flowchart LR
+    classDef input fill:#e1f5fe,stroke:#01579b,...
+    classDef process fill:#fff3e0,stroke:#e65100,...
+    classDef output fill:#e8f5e9,stroke:#1b5e20,...
+    load_data["load_data"]:::process
+    process_data["process_data"]:::process
+    generate_report["generate_report"]:::output
+    load_data --> process_data
+    process_data --> generate_report
+```
+
+**Browser at `http://127.0.0.1:8080`**:
+
+A full-page NiceGUI app showing the Mermaid diagram with colored nodes,
+alongside basic DAG statistics.
+
+---
+
+## MermaidGenerator Reference
+
+| Method | Description |
+|--------|-------------|
+| `MermaidGenerator(dag)` | Create generator from a `DAG` instance |
+| `.to_mermaid(orientation="TB")` | Basic Mermaid flowchart (TB/BT/LR/RL) |
+| `.to_mermaid_with_styling(orientation="LR")` | Styled with color-coded classes per node type |
+| `.to_mermaid_interactive()` | HTML with click handlers (for web dashboards) |
+
+Orientation values:
+
+| Value | Direction |
+|-------|-----------|
+| `"TB"` | Top → Bottom (default) |
+| `"BT"` | Bottom → Top |
+| `"LR"` | Left → Right |
+| `"RL"` | Right → Left |
+
+---
+
+## Running the Demo
+
+### Prerequisites
+
+```bash
+pip install nicegui "taskiq-flow[all]"
+```
+
+### Option 1 — Build DAG and start NiceGUI
+
+```bash
+python examples/nicegui_dag_demo.py
+```
+
+The script runs `asyncio.run(main())` which builds the DAG and generates the
+Mermaid diagram, then prints instructions for launching NiceGUI.
+
+### Option 2 — Launch NiceGUI directly
+
+```bash
+python -c "from examples.nicegui_dag_demo import run_nicegui_app; run_nicegui_app()"
+```
+
+> Opens `http://127.0.0.1:8080` in your default browser.
+
+---
+
+## Key Points
+
+### NiceGUI + Taskiq-Flow Integration
+
+| Component | Role |
+|-----------|------|
+| `DataflowPipeline` | Builds the DAG from task declarations |
+| `MermaidGenerator` | Converts DAG → Mermaid.js code |
+| `ui.markdown()` | Renders Mermaid diagram in NiceGUI |
+| `ui.run()` | Starts the ASGI web server on port 8080 |
+
+### Why Separate Builder and Server
+
+The example keeps the async pipeline builder (`main()`) separate from the
+NiceGUI app (`run_nicegui_app()`) because:
+- NiceGUI's `ui.run()` is a blocking call and cannot coexist with `asyncio.run()`
+- In production, generate Mermaid code at startup or on DAG change events
+- Consider using `ui.timer()` or pub/sub to refresh the diagram dynamically
+
+### Alternatives to NiceGUI for DAG Visualization
+
+| Tool | Use Case |
+|------|----------|
+| `MermaidGenerator` | Static diagrams (docs, wikis, README) |
+| `DAGVisualizer` | NetworkX-based analysis, JSON/DOT/ Cytoscape exports |
+| `DagViewer` (NiceGUI) | Interactive web panels (when fully implemented) |
+
+---
+
+## Learning Path
+
+After this example:
+
+1. **[DAG Visualization Demo]({{ '/en/examples/dag-visualization-demo/' | relative_url }})** — NetworkX critical path, multiple export formats
+2. **[Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }})** — DAG construction and inspection
+3. **[Dataflow Audio Pipeline]({{ '/en/examples/dataflow-audio-pipeline/' | relative_url }})** — Full audio pipeline with parallelism
+4. **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** — All pipeline types and patterns
+
+---
+
+*This example shows how to combine Taskiq-Flow with NiceGUI for interactive pipeline visualization.*
 
 
 ## DOCUMENT: Quickstart
@@ -3464,7 +4193,7 @@ Pipeline structure:
   [light_results, heavy_results] --combine--> [final]
 
 Executing pipeline...
-✅ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
+ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
 
 TaskResourceProfile allows you to annotate tasks with resource requirements.
 ResourceAwareExecutor uses these profiles to compute optimal parallelism.
@@ -3704,7 +4433,7 @@ Running `python examples/retry_demo.py`:
 Executing flaky task with retry middleware...
 (Task may fail 1-2 times before succeeding)
 
-✅ Pipeline succeeded! Result: Success on attempt 2
+ Pipeline succeeded! Result: Success on attempt 2
 
 Retry count stored in middleware: {'flaky_task': 1}
 
@@ -5455,6 +6184,307 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 *Manage pipelines from anywhere. Build dashboards, automation, and integrations.*
 
 
+## DOCUMENT: Cache
+
+# Storage & Cache Middleware Guide
+
+**Centralized persistence with StorageMiddleware and Dogpile caching with CacheMiddleware**
+
+> **Version**: {VERSION} | **New in v1.2.0** | **Related**: [Execution Guide]({{ '/en/guides/execution/' | relative_url }}), [API Reference — Storage]({{ '/en/api/storage/' | relative_url }}), [API Reference — Cache]({{ '/en/api/cache/' | relative_url }})
+
+---
+
+## Overview
+
+v1.2.0 introduces **two new middlewares** that modularize persistence and caching concerns:
+
+| Middleware | Responsibility |
+|------------|----------------|
+| `StorageMiddleware` | Centralized, pluggable persistence for task results, pipeline state, and execution history |
+| `CacheMiddleware` | Dogpile-based worker caching to avoid redundant task executions |
+
+Both implement the `TaskiqMiddleware` lifecycle (`pre_execute`, `post_save`) and can be active **simultaneously** with `PipelineMiddleware`, `TransportMiddleware`, and `PipelineRetryMiddleware`.
+
+---
+
+## StorageMiddleware — Centralized Persistence
+
+`StorageMiddleware` captures every task result and stores it via a configured `BaseStorageAdapter`. Unlike the previous approach where tracking and scheduling persisted independently, there is now **one unified store**.
+
+### Why StorageMiddleware?
+
+- **Single source of truth** — all task results, pipeline history, and scheduling metadata live in one place
+- **Pluggable backend** — swap InMemory for Redis or SQLite without changing application code
+- **Auto-detection** — `StorageAdapterFactory` picks the right backend from environment and config
+- **Isolation** — storage, cache, and tracking concerns are each in their own layer
+
+### Installation
+
+No extra install required — included in `taskiq-flow`.
+
+```bash
+# For Redis backend
+pip install redis
+
+# SQLite backend included via aiosqlite (bundled)
+```
+
+### Basic Usage
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import PipelineMiddleware, DataflowPipeline, pipeline_task
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+broker = InMemoryBroker(await_inplace=True)
+
+# central persistence layer — store all task results automatically
+storage = InMemoryStorageAdapter()
+broker.add_middlewares(
+    StorageMiddleware(storage=storage, enabled=True),
+    PipelineMiddleware(),
+)
+```
+
+### Production with Redis
+
+```python
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import RedisStorageAdapter
+
+broker.add_middlewares(
+    StorageMiddleware(
+        storage=RedisStorageAdapter(
+            redis_url="redis://localhost:6379",
+            ttl_seconds=86400,   # 24-hour retention
+        ),
+    ),
+    PipelineMiddleware(),
+)
+```
+
+### Task Result Keys
+
+`StorageMiddleware` stores results under keys derived from the `TaskiqMessage` labels:
+
+| Key Pattern | Example |
+|-------------|---------|
+| `pipeline:{pipeline_id}:task:{task_id}` | `pipeline:audio_v1:task:abc123` |
+| `task:{task_id}` | `task:abc123` |
+
+Stored value shape:
+```json
+{
+  "task_id": "abc123",
+  "pipeline_id": "audio_v1",
+  "is_err": false,
+  "return_value": "{...}",
+  "error": null,
+  "execution_time": 0.42
+}
+```
+
+### Manual Inspector Usage
+
+```python
+storage = InMemoryStorageAdapter()
+await storage.set("my_key", {"status": "running"}, ttl_seconds=600)
+
+# Later...
+result = await storage.get("my_key")
+exists = await storage.exists("my_key")
+
+# Pattern-based listing
+keys = await storage.keys("pipeline:my_run:*")
+
+# Cleanup expired entries
+deleted = await storage.cleanup(ttl_seconds=3600)
+```
+
+### TTL and Expiration
+
+All three adapters support per-key TTL. Entries that have expired are lazily cleaned on access and eagerly via `cleanup()`:
+
+```python
+# Store with 24-hour TTL
+await storage.set("status", {"running": True}, ttl_seconds=86_400)
+
+# Check remaining time before it expires
+entry = StorageEntry(key="status", value={"running": True}, ...)
+seconds_left = entry.remaining_ttl()
+```
+
+---
+
+## CacheMiddleware — Dogpile Worker Caching
+
+`CacheMiddleware` prevents redundant task executions by caching task **outputs** at the worker level. The Dogpile pattern ensures that only one coroutine regenerates an expired entry while others wait.
+
+### Why CacheMiddleware?
+
+- **Reduce unnecessary work** — skip re-executing idempotent tasks whose inputs haven't changed
+- **Lower latency** — cached results are returned instantly without scheduling
+- **Stampede protection** — Dogpile lock prevents thundering-herd at TTL expiry
+- **Pluggable backend** — InMemory for single-worker, Redis for distributed
+
+### Basic Usage
+
+```python
+from taskiq_flow.middlewares import CacheMiddleware
+from taskiq_flow.cache import InMemoryCacheAdapter
+
+# Task results are cached for 1 hour by default
+broker.add_middlewares(
+    CacheMiddleware(
+        cache=InMemoryCacheAdapter(),
+        default_ttl=3600,
+        enabled=True,
+    )
+)
+```
+
+After this, every task's result is cached automatically. A second task execution with the same result is reduced to a cache lookup.
+
+### Producer/Consumer Middleware Ordering
+
+Middleware order matters. `CacheMiddleware` should be placed **before** `StorageMiddleware` in the chain so that cache hits short-circuit before any persistence write is attempted:
+
+```python
+# Correct ordering — cache checked first, then storage
+broker.add_middlewares(
+    CacheMiddleware(),      # ← checked first (pre_execute runs first)
+    StorageMiddleware(),    # ← persisted if not cached
+    PipelineMiddleware(),   # ← orchestrates downstream
+)
+```
+
+### Per-Task Overrides
+
+Set TTL and error-caching per task execution via `TaskiqMessage` labels:
+
+```python
+# In a task, override cache TTL for this execution
+result = await some_task.kiq(
+    input_data,
+    labels={"cache_ttl": "7200", "cache_errors": "true"},
+)
+```
+
+| Label | Values | Effect |
+|-------|--------|--------|
+| `cache_ttl` | `int` (seconds) | Override the `default_ttl` for this single execution |
+| `cache_errors` | `"true"` / `"false"` | Cache error results when `"true"` (disabled by default) |
+
+---
+
+## StorageAdapterFactory — Zero-Config Setup
+
+`StorageAdapterFactory` auto-creates the right adapters from `TaskiqFlowConfig` (read from env vars):
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+from taskiq_flow.config import TaskiqFlowConfig
+
+# Get both middlewares in one call — sensible defaults
+config = TaskiqFlowConfig(
+    storage_type="redis",                    # "redis" | "sqlite" | "inmemory" | "auto"
+    storage_redis_url="redis://localhost:6379",
+    storage_ttl_seconds=86_400,              # 24 h
+    cache_type="redis",
+    cache_redis_url="redis://localhost:6379",
+    cache_default_ttl=3600,
+)
+middlewares = StorageAdapterFactory.create_default_middlewares(config=config)
+
+broker.add_middlewares(
+    middlewares["cache"],      # CacheMiddleware
+    middlewares["storage"],    # StorageMiddleware
+    PipelineMiddleware(),
+)
+```
+
+Environment variables (all optional):
+
+| Env Var | Description |
+|---------|-------------|
+| `TASKIQ_FLOW_STORAGE_TYPE` | `"redis"`, `"sqlite"`, `"inmemory"`, or `"auto"` |
+| `TASKIQ_FLOW_STORAGE_REDIS_URL` | Redis URL for storage |
+| `TASKIQ_FLOW_STORAGE_TTL_SECONDS` | Default storage TTL |
+| `TASKIQ_FLOW_CACHE_TYPE` | `"redis"`, `"inmemory"`, or `"auto"` |
+| `TASKIQ_FLOW_CACHE_REDIS_URL` | Redis URL for cache |
+
+---
+
+## Comparison: Storage vs Cache
+
+| Aspect | `StorageMiddleware` | `CacheMiddleware` |
+|--------|--------------------|--------------------|
+| Purpose | Long-term persistence of task/pipeline state | Short-term deduplication of task results |
+| TTL | Hours to days (`storage_ttl_seconds`) | Minutes to hours (`default_ttl`) |
+| Scope | Pipeline IDs, task IDs, scheduling metadata | Individual task result IDs |
+| Backend | InMemory / Redis / SQLite | InMemory / Redis |
+| Dogpile stampede | N/A |  Yes |
+| Auto-dedup | N/A |  Yes |
+
+Use **both** together for a complete production setup:
+
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+from taskiq_flow.config import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    storage_type="redis",
+    storage_redis_url="redis://localhost:6379",
+    cache_type="redis",
+    cache_redis_url="redis://localhost:6379",
+)
+middlewares = StorageAdapterFactory.create_default_middlewares(config=config)
+broker.add_middlewares(
+    middlewares["cache"],
+    middlewares["storage"],
+    PipelineMiddleware(),
+)
+```
+
+---
+
+## Monitoring
+
+### Cache Hit Rate
+
+```python
+stats = cache.get_stats()
+print(f"Hit rate: {stats['hit_rate']:.1%}")  # 94.5%
+print(f"Hits: {stats['hits']}, Misses: {stats['misses']}")
+```
+
+Aim for a hit rate above 80% for reproducible pipelines with stable inputs.
+
+### Storage Size
+
+```python
+all_keys = await storage.keys("*")
+print(f"Total stored entries: {len(all_keys)}")
+```
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| Every task is a cache miss | TTL too short or inputs too variable | Increase `default_ttl`; check task arguments |
+| Cache stampede on expiry | Using `InMemoryCacheAdapter` without Dogpile | Switch to `RedisCacheAdapter` (proper distributed locking) |
+| Storage grows without bounds | No TTL set on entries | Set `ttl_seconds` on `StorageMiddleware`; run `cleanup()` periodically |
+| Workers share stale results | Redis TTL not respected | Verify Redis `EXPIRE` is applied; check Redis config |
+
+---
+
+*New in v1.2.0. Both middlewares are additive — drop them into an existing broker without redesign.*
+
+
 ## DOCUMENT: Core Concepts
 
 # Core Concepts Guide
@@ -6857,13 +7887,14 @@ See [Performance Guide]({{ '/en/guides/performance/' | relative_url }}) for deta
 
 In-depth guides covering all Taskiq-Flow features.
 
-## 📖 Available Guides
+## Available Guides
 
 | Guide | Description |
 |-------|-------------|
 | **[Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }})** | Sequential & dataflow pipeline patterns |
 | **[Tasks Guide]({{ '/en/guides/tasks/' | relative_url }})** | Task definitions & decorators |
 | **[Execution Guide]({{ '/en/guides/execution/' | relative_url }})** | Execution modes & error handling |
+| **[Storage & Cache Middleware]({{ '/en/guides/cache/' | relative_url }})** new in v1.2.0 | Centralized persistence & Dogpile worker caching |
 | **[Tracking Guide]({{ '/en/guides/tracking/' | relative_url }})** | Real-time monitoring |
 | **[WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }})** | Live dashboards |
 | **[Scheduling Guide]({{ '/en/guides/scheduling/' | relative_url }})** | Cron scheduling |
@@ -6973,6 +8004,458 @@ Once installed, continue with:
 ---
 
 *Installation completed successfully? Proceed to [Quick Start]({{ '/en/quickstart/' | relative_url }}).*
+
+
+## DOCUMENT: Migration
+
+# Migration Guide
+
+> **Version**: {VERSION} | **From**: v0.4.5 | **To**: v1.0.2
+> **Related**: [Changelog]({{ '/CHANGELOG/' | relative_url }}), [API Reference]({{ '/api/core/' | relative_url }})
+
+---
+
+## Overview
+
+This guide helps you migrate from Taskiq-Flow v0.4.5 to v1.0.2. The migration involves changes to imports, API signatures, configuration, and new features.
+
+**Breaking changes** are marked with . Non-breaking additions are marked with .
+
+---
+
+## 1. Package & Import Changes
+
+### Renamed Modules
+
+| Old Import (v0.4.5) | New Import (v1.0.2) |
+|----------------------|----------------------|
+| `taskiq_flow.pipeline` | `taskiq_flow.pipeliner` (original `Pipeline` class) |
+| `taskiq_flow.pipeline` | `taskiq_flow.pipeline` (new: `DataflowPipeline`) |
+| `taskiq_flow.decorators.pipeline_task` | `taskiq_flow.decorators.pipeline_task` (unchanged) |
+
+### New Top-Level Exports
+
+```python
+# v1.0.2 - New imports available from taskiq_flow
+from taskiq_flow import (
+    DAG,
+    DAGBuilder,
+    DAGNode,
+    DAGVisualizer,
+    DataNode,
+    DataflowPipeline,
+    DataflowRegistry,
+    ExecutionEngine,
+    HookManager,
+    MapReduce,
+    Pipeline,  # Re-exported for backward compatibility
+    PipelineMiddleware,
+    PipelineScheduler,
+    PipelineTrackingManager,
+    TrackingStorageFactory,
+    create_visualization_api,
+    visualize_pipeline,
+)
+```
+
+---
+
+## 2. Configuration Changes
+
+### Security Now Enabled by Default
+
+In v0.4.5, security was optional and required explicit setup. In v1.0.2, `TaskiqFlowConfig` enables security by default:
+
+```python
+# v0.4.5 - No default security
+config = {}  # No config needed
+
+# v1.0.2 - Security enabled by default
+from taskiq_flow.config import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    security_enabled=True,  # Default: True
+    auth_provider="api_key",  # or "jwt"
+    api_keys={
+        "my-key": {
+            "role": "admin",
+            "pipeline_whitelist": ["*"],
+            "permissions": ["read", "execute", "admin"],
+        }
+    },
+)
+
+# Optionally disable security for development
+config = TaskiqFlowConfig(security_enabled=False)
+```
+
+### New Configuration Options
+
+```python
+config = TaskiqFlowConfig(
+    # Security
+    security_enabled=True,
+    auth_provider="api_key",  # "api_key" | "jwt"
+    jwt_secret="your-secret",  # pragma: allowlist secret - Required for JWT auth 
+    api_keys={...},
+    require_https=True,
+
+    # Authorization
+    pipeline_acls={
+        "my_pipeline": {
+            "read": ["admin", "viewer"],
+            "execute": ["admin", "worker"],
+            "admin": ["admin"],
+        }
+    },
+
+    # Rate Limiting
+    rate_limit_enabled=True,
+    rate_limit_default="100/minute",
+
+    # Metrics
+    metrics_enabled=True,
+    metrics_path="/metrics",
+
+    # WebSocket
+    websocket_require_auth=True,
+    websocket_max_connections=1000,
+)
+```
+
+---
+
+## 3. Pipeline Creation
+
+### `Pipeline` Class Moved
+
+The original `Pipeline` class has been moved to `pipeliner`. The top-level `Pipeline` is now a re-export for backward compatibility.
+
+```python
+# v0.4.5
+from taskiq_flow.pipeline import Pipeline
+
+# v1.0.2 (still works via re-export)
+from taskiq_flow import Pipeline
+# Or explicitly:
+from taskiq_flow.pipeliner import Pipeline
+```
+
+### New `DataflowPipeline`
+
+The new `DataflowPipeline` is the recommended way to create pipelines with DAG support:
+
+```python
+# v1.0.2
+from taskiq_flow import DataflowPipeline, Pipeline, pipeline_task
+
+# Define tasks
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(data):
+    return await transform(data)
+
+@broker.task
+@pipeline_task(output="result")
+async def aggregate(data):
+    return await compute(data)
+
+# Create as Pipeline (backward compatible)
+pipe = Pipeline(broker, process_data).call_next(aggregate)
+
+# Or as DataflowPipeline (new)
+from taskiq import InMemoryBroker
+broker: InMemoryBroker = ...
+pipeline = DataflowPipeline(broker)
+pipeline.add_task(process_data)
+pipeline.add_task(aggregate)
+```
+
+---
+
+## 4. Execution Engine
+
+### `ExecutionEngine` Replaces Direct Pipeline Execution
+
+For DAG-based execution, use `ExecutionEngine`:
+
+```python
+# v0.4.5 - Sequential pipeline execution
+pipe = Pipeline(broker, task_a).call_next(task_b)
+result = await pipe.kiq(input_data)
+
+# v1.0.2 - DAG-based execution with ExecutionEngine
+from taskiq_flow import ExecutionEngine, DataflowPipeline
+
+pipeline = DataflowPipeline(broker)
+# ... build DAG ...
+
+engine = ExecutionEngine(
+    broker=broker,
+    dag=pipeline._dag,
+    max_parallel=10,
+)
+
+outputs = await engine.execute(
+    inputs={"data": input_data},
+    pipeline_id="my_pipeline",
+)
+```
+
+### New Execution Options
+
+```python
+engine = ExecutionEngine(
+    broker=broker,
+    dag=dag,
+    fail_fast=True,             # Stop on first error (default)
+    continue_on_error=False,    # Continue despite errors
+    skip_failed=False,          # Skip failed tasks
+    error_mode=None,            # Override fail_fast/continue_on_error
+    max_parallel=10,            # Max concurrent tasks
+    resource_aware=False,       # Enable resource-aware scheduling
+    adaptive_parallelism=False, # Dynamic parallelism per level
+)
+```
+
+---
+
+## 5. Middleware Changes
+
+### `PipelineMiddleware` Now Supports Metrics
+
+The `PipelineMiddleware` constructor accepts an optional `metrics_collector`:
+
+```python
+from taskiq_flow import PipelineMiddleware
+from taskiq_flow.metrics.collector import MetricsCollector
+
+metrics = MetricsCollector()
+middleware = PipelineMiddleware(
+    metrics_collector=metrics,
+)
+
+broker = InMemoryBroker().with_middlewares(middleware)
+```
+
+### `TransportMiddleware` Construction Changed
+
+```python
+# v0.4.5 - Implicit WebSocket
+transport = TransportMiddleware()
+
+# v1.0.2 - Explicit transport type
+from taskiq_flow.middleware import TransportMiddleware
+
+# WebSocket (default)
+transport = TransportMiddleware(transport_type="websocket")
+
+# HTTP Streaming (SSE) - NEW
+transport = TransportMiddleware(transport_type="http_stream")
+
+# Redis Pub/Sub
+transport = TransportMiddleware(
+    transport_type="redis_pubsub",
+    redis_client=my_redis_client,
+)
+```
+
+---
+
+## 6. Metrics System
+
+### New Prometheus Metrics
+
+Metrics are now collected via `MetricsCollector`:
+
+```python
+from taskiq_flow import MetricsCollector
+
+collector = MetricsCollector()  # Singleton
+
+# Available metrics:
+# - taskiq_flow_pipeline_executions_total
+# - taskiq_flow_pipeline_duration_seconds
+# - taskiq_flow_pipeline_steps_total
+# - taskiq_flow_active_pipelines
+# - taskiq_flow_task_executions_total
+# - taskiq_flow_task_duration_seconds
+# - taskiq_flow_task_retry_attempts_total
+# - taskiq_flow_websocket_messages_total
+# - taskiq_flow_sse_events_sent_total (new)
+# - taskiq_flow_worker_cpu_usage_percent
+# - taskiq_flow_worker_memory_usage_bytes
+```
+
+### Prometheus Endpoint
+
+```python
+from taskiq_flow.metrics.exporters.prometheus import get_metrics_endpoint
+
+app.get("/metrics")(get_metrics_endpoint())
+```
+
+---
+
+## 7. WebSocket Changes
+
+### New HTTP Streaming (SSE) Transport
+
+```python
+from taskiq_flow.transport.http_stream import HTTPStreamTransport, get_http_stream_transport
+
+transport = get_http_stream_transport()
+
+# Get FastAPI endpoint
+sse_endpoint = transport.get_sse_endpoint(pipeline_id="my_pipeline")
+app.get("/events")(sse_endpoint)
+
+# Or broadcast manually
+await transport.broadcast(event)
+```
+
+### WebSocket Authentication Now Properly Enforced
+
+v0.4.5 had a bypass in the WebSocket handler. v1.0.2 properly validates tokens:
+
+```python
+# Client must send auth message first
+# WebSocket connection:
+ws = new WebSocket("ws://localhost:8000/ws/my_pipeline")
+
+# First message MUST be auth
+ws.send(JSON.stringify({
+    "action": "auth",
+    "token": "your-jwt-or-api-key"
+}))
+
+# Then subscribe
+ws.send(JSON.stringify({
+    "action": "subscribe",
+    "channel": "pipeline.my_pipeline"
+}))
+```
+
+### Authorization Checks on Subscribe
+
+```python
+# Server-side ACL enforcement
+if not self.authorization.can_read(pipeline_id, self.user):
+    # Reject subscription
+```
+
+---
+
+## 8. Tracking System
+
+### Tracking Manager Improvements
+
+```python
+from taskiq_flow import PipelineTrackingManager, TrackingStorageFactory
+
+# With Redis backend
+storage = TrackingStorageFactory.create_redis_storage(redis_url="redis://localhost:6379")
+tracking = PipelineTrackingManager(storage=storage)
+
+# Or with auto-detection
+tracking = PipelineTrackingManager().with_auto_storage(broker)
+
+# Query status
+status = await tracking.get_status(pipeline_id)
+print(status.state)  # PipelineState.RUNNING, SUCCESS, FAILED, etc.
+```
+
+---
+
+## 9. Security Setup
+
+### New Security Module
+
+```python
+from taskiq_flow.security import SecurityMiddleware
+from taskiq_flow.security.auth import create_auth_provider
+from taskiq_flow.security.authorization import PipelineAuthorization
+from taskiq_flow.security.rate_limiting import RateLimiter
+
+# Auth Provider
+auth_provider = create_auth_provider(config)
+
+# Authorization
+authorization = PipelineAuthorization(pipeline_acls=config.pipeline_acls)
+
+# Rate Limiting
+rate_limiter = RateLimiter(default_limits={
+    "list_pipelines": "60/minute",
+    "get_dag": "120/minute",
+    "execute_pipeline": "10/minute",
+})
+```
+
+---
+
+## 10. Step-by-Step Migration Checklist
+
+1. **Update imports** - Replace old module paths with new ones
+2. **Add configuration** - Create `TaskiqFlowConfig` instance
+3. **Set up security** - Configure auth provider if needed
+4. **Update middleware** - Add metrics collector to `PipelineMiddleware`
+5. **Choose transport** - Decide between WebSocket, SSE, or Redis Pub/Sub
+6. **Test locally** - Run with `security_enabled=False` first
+7. **Enable security** - Set up API keys or JWT tokens
+8. **Add monitoring** - Configure Prometheus metrics endpoint
+9. **Run tests** - Verify all existing tests pass
+10. **Deploy** - Set environment variables for production
+
+---
+
+## 11. Common Issues
+
+### Error: "No API key provided"
+```
+# Fix: Add API key to headers or configure auth_provider
+X-API-Key: your-api-key
+```
+
+### Error: "Authorization required" on WebSocket
+```python
+# Fix: Send auth message before subscribing
+ws.send(JSON.stringify({"action": "auth", "token": "your-token"}))
+```
+
+### Error: "Unsupported transport type"
+```python
+# Fix: Use valid transport type
+TransportMiddleware(transport_type="websocket")  # "websocket", "http_stream", or "redis_pubsub"
+```
+
+### Metrics not showing up
+```python
+# Fix: Add metrics_collector to PipelineMiddleware
+metrics = MetricsCollector()
+middleware = PipelineMiddleware(metrics_collector=metrics)
+```
+
+---
+
+## 12. Version Compatibility
+
+| Feature | v0.4.5 | v1.0.0 | v1.0.2 |
+|---------|--------|--------|--------|
+| Basic pipeline execution |  |  |  |
+| DAG-based dataflow |  |  |  |
+| Security module |  |  |  |
+| Metrics system |  |  |  |
+| WebSocket transport |  |  |  |
+| HTTP SSE transport |  |  |  |
+| Authorization ACLs |  |  |  |
+| Rate limiting |  |  |  |
+| Resource-aware executor |  |  |  |
+| Execution engine |  |  |  |
+| Auto-configuration |  |  |  |
+
+---
+
+*Migration guide created for v1.0.2 release*
 
 
 ## DOCUMENT: Performance
@@ -7136,10 +8619,10 @@ pool = ResourceAwareWorkerPool(
 Pass references instead of full data:
 
 ```python
-# ❌ Bad: copies entire dataset per task call
+#  Bad: copies entire dataset per task call
 pipeline.map(process, large_dataset)  # Each task gets full dataset copy
 
-# ✅ Better: pass identifiers, fetch inside task
+#  Better: pass identifiers, fetch inside task
 @broker.task
 def process(item_id: str):
     item = database.get(item_id)  # Fetch on-demand
@@ -7264,11 +8747,11 @@ async def db_task(query: str):
 Instead of many small calls, batch:
 
 ```python
-# ❌ N separate calls
+#  N separate calls
 for item in items:
     await db.insert(item)
 
-# ✅ Single batch insert
+#  Single batch insert
 await db.bulk_insert(items)
 ```
 
@@ -8066,14 +9549,14 @@ A **retry** is automatically re-executing a failed task with the same inputs. Re
 
 ### When to Retry
 
-✅ **Good candidates for retry**:
+ **Good candidates for retry**:
 
 - Network timeouts (external API unavailable)
 - Database connection errors (transient)
 - Rate limit hits (retry-after header)
 - Temporary resource exhaustion
 
-❌ **Do NOT retry**:
+ **Do NOT retry**:
 
 - Validation errors (bad input won't fix itself)
 - Programming errors (bug in code)
@@ -8598,11 +10081,11 @@ scheduler = PipelineScheduler(
 
 | Store | Persistence | Multi-worker | Use case |
 |-------|-------------|--------------|----------|
-| `"memory"` | ❌ No | ❌ No | Development, single-process |
-| `"sqlite"` | ✅ Yes | ⚠️ Limited* | Single-worker production, simple persistence |
-| `"postgresql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, HA |
-| `"mysql"` (via URL) | ✅ Yes | ✅ Yes | Production multi-worker, alternative |
-| `"redis"` | ❌ | ❌ | **Not implemented** (raises `NotImplementedError`) |
+| `"memory"` |  No |  No | Development, single-process |
+| `"sqlite"` |  Yes |  Limited* | Single-worker production, simple persistence |
+| `"postgresql"` (via URL) |  Yes |  Yes | Production multi-worker, HA |
+| `"mysql"` (via URL) |  Yes |  Yes | Production multi-worker, alternative |
+| `"redis"` |  |  | **Not implemented** (raises `NotImplementedError`) |
 
 *SQLite store works with single scheduler instance; multiple workers need PostgreSQL/MySQL.
 
@@ -9243,9 +10726,9 @@ for run in history:
 
 | Backend | Async | Multi-worker | Production |
 |---------|-------|--------------|------------|
-| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / small projects |
-| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommended |
-| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supported |
+| SQLite |  `sqlite+aiosqlite` |  Single-writer | Dev / small projects |
+| PostgreSQL |  `postgresql+asyncpg` |  Full |  Recommended |
+| MySQL |  `mysql+aiomysql` |  Full |  Supported |
 
 ---
 
@@ -10386,10 +11869,10 @@ tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
 | Feature | In-Memory | Redis |
 |---------|-----------|-------|
-| **Multi-process** | ❌ No | ✅ Yes |
-| **Persistent** | ❌ No | ✅ Yes |
-| **Shared state** | ❌ No | ✅ Yes |
-| **Speed** | ⚡ Fastest | ⚡ Fast (network) |
+| **Multi-process** |  No |  Yes |
+| **Persistent** |  No |  Yes |
+| **Shared state** |  No |  Yes |
+| **Speed** |  Fastest |  Fast (network) |
 | **Config required** | None | Redis server |
 
 **Basic recipe**:
@@ -11179,42 +12662,14 @@ await server.start_server()
 
 Welcome to the English documentation for **Taskiq-Flow**.
 
-## 📖 Start Here
+## Start Here
 
 - **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Get up and running in 5 minutes
 - **[User Guides]({{ '/en/guides/' | relative_url }})** — In-depth guides on pipelines, tasks, execution, tracking, WebSocket, scheduling, retry, performance, and REST API
 - **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module and class documentation
 - **[Examples]({{ '/en/examples/' | relative_url }})** — Working code examples for all features
 
-## 🔗 Quick Links
-
-- [Project README](https://github.com/dorel14/taskiq-flow/blob/main/README.md) — Project overview and philosophy
-- [PyPI Package](https://pypi.org/project/taskiq-flow/) — Install with `pip install taskiq-flow`
-- [GitHub Repository](https://github.com/dorel14/taskiq-flow) — Source code and issue tracker
-- [Contributing Guide](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) — How to contribute
-- [License](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) — MIT License
-
----
-
-*Maintained by SoniqueBay Team*
-
----
-title: English Documentation
-nav_order: 5
-permalink: /en/
----
-# Taskiq-Flow Documentation (English)
-
-Welcome to the English documentation for **Taskiq-Flow**.
-
-## 📖 Start Here
-
-- **[Quick Start Guide]({{ '/en/quickstart/' | relative_url }})** — Get up and running in 5 minutes
-- **[User Guides]({{ '/en/guides/' | relative_url }})** — In-depth guides on pipelines, tasks, execution, tracking, WebSocket, scheduling, retry, performance, and REST API
-- **[API Reference]({{ '/en/api/' | relative_url }})** — Complete module and class documentation
-- **[Examples]({{ '/en/examples/' | relative_url }})** — Working code examples for all features
-
-## 🔗 Quick Links
+## Quick Links
 
 - [Project README](https://github.com/dorel14/taskiq-flow/blob/main/README.md) — Project overview and philosophy
 - [PyPI Package](https://pypi.org/project/taskiq-flow/) — Install with `pip install taskiq-flow`
@@ -11586,7 +13041,7 @@ await server.start_server()
 
 ---
 
-## 📚 Further Reading
+## Further Reading
 
 - **[Full API Reference]({{ '/en/api/' | relative_url }})** — Complete class and method documentation
 - **[Example Gallery]({{ '/en/examples/' | relative_url }})** — Detailed walkthroughs of each example script
@@ -11595,6 +13050,156 @@ await server.start_server()
 ---
 
 *Ready to dive deeper? Continue with the [Pipelines Guide]({{ '/en/guides/pipelines/' | relative_url }}).*
+
+
+## DOCUMENT: Cache
+
+# Référence API : Cache
+
+**Mise en cache avec sémantiques Dogpile (anti-stampede)**
+
+> **Version** : {VERSION} | **Nouveau en v1.2.0** | **Module** : `taskiq_flow.cache`, `taskiq_flow.middlewares.cache`
+
+---
+
+## Aperçu
+
+Taskiq-Flow v1.2.0 introduit une **couche de cache** pour les workers, construite autour du **pattern Dogpile**. Le principe clé : lorsqu'une entrée de cache expire, seul un thread/poste est autorisé à la régénérer. Tous les autres attendent et récupèrent la valeur fraîche — annulant complètement le stampede.
+
+```
+Requêtes concurrentes à expiration TTL :
+
+Sans Dogpile :  [tâche exécutée × 10 en parallèle] → surcharge
+Avec Dogpile :  [1 tâche s'exécute, 9 attendent] → résultat unique partagé
+```
+
+---
+
+## `BaseCacheAdapter` (ABC)
+
+```python
+from taskiq_flow.storage.base import BaseCacheAdapter
+
+class MonAdaptateurCache(BaseCacheAdapter):
+    async def get_or_create(self, key, creator, ttl_seconds=3600) -> Any: ...
+    async def get(self, key) -> Any | None: ...
+    async def set(self, key, value, ttl_seconds=3600) -> None: ...
+    async def invalidate(self, key) -> bool: ...
+    async def clear(self) -> None: ...
+    def get_stats(self) -> dict: ...
+```
+
+Interface abstraite à implémenter pour tout nouveau backend de cache.
+
+| Méthode | Anti-Stampede ? | Description |
+|---------|----------------|-------------|
+| `get_or_create(cle, creator, ttl)` | **Oui** | Lecture atomique : exécute `creator()` seulement si absent/expiré, avec verrou |
+| `get(cle)` | Côté lecture | Consultation cache ; `None` en cas de miss |
+| `set(cle, valeur, ttl)` | Côté écriture | Stockage avec TTL optionnel en secondes |
+| `invalidate(cle)` | — | Éviction immédiate d'une entrée |
+| `clear()` | — | Vider le cache entièrement |
+| `get_stats()` | — | `{"hits", "misses", "hit_rate", "size", "keys"}` |
+
+---
+
+## `InMemoryCacheAdapter`
+
+```python
+from taskiq_flow.cache import InMemoryCacheAdapter
+
+cache = InMemoryCacheAdapter()
+
+resultat = await cache.get_or_create(
+    "calcul_couteux",
+    lambda: calculer_couteux(),
+    ttl_seconds=300,
+)
+stats = cache.get_stats()
+```
+
+| Fonctionnalité | Détail |
+|---------------|--------|
+| Sécurité thread |  Verrou par clé `threading.Lock` |
+| TTL |  Horloge monotone ; indépendant de l'heure système |
+| Verrou Dogpile |  Libéré seulement quand `creator` termine |
+| `creator()` async |  Si `creator()` retourne une coroutine, elle est `await`ée |
+| Statistiques |  `get_stats()` : hits, misses, hit_rate, size, keys |
+
+---
+
+## `RedisCacheAdapter`
+
+```python
+from taskiq_flow.cache import RedisCacheAdapter
+
+cache = RedisCacheAdapter(
+    redis_url="redis://localhost:6379",
+    default_ttl=3600,
+    lock_timeout=10,
+)
+resultat = await cache.get_or_create("calcul_partage",
+                                      lambda: calculer_couteux(),
+                                      ttl_seconds=300)
+```
+
+Cache distribué avec verrouillage Redis pour Dogpile anti-stampede.
+
+| Fonctionnalité | Détail |
+|---------------|--------|
+| Verrou distribué |  `SETNX` : plusieurs workers partagent une seule entrée |
+| TTL natif Redis |  `EXPIRE` par clé |
+| Sérialisation JSON |  Automatique pour types non primitifs |
+| Délai de verrou max | Configurable ; évite les deadlocks si worker crashe |
+
+---
+
+## `CacheMiddleware`
+
+```python
+from taskiq_flow.middlewares import CacheMiddleware
+broker.add_middlewares(
+    PipelineMiddleware(),
+    CacheMiddleware(cache=InMemoryCacheAdapter(), default_ttl=3600),
+)
+```
+
+`CacheMiddleware` est la manière production-ready d'activer le cache sur un broker. Il se branche sur `pre_execute` et `post_save` :
+
+- **`pre_execute`** — Retourne le résultat en cache si présent ; la tâche est court-circuitée.
+- **`post_save`** — Stocke le résultat en cache pour la prochaine exécution.
+
+| Paramètre du Constructeur | Type | Défaut | Description |
+|--------------------------|------|--------|-------------|
+| `cache` | `BaseCacheAdapter \| None` | `None` | Backend ; `None` → `InMemoryCacheAdapter` |
+| `enabled` | `bool` | `True` | Toggle global |
+| `default_ttl` | `int` | `3600` | Durée de vie par défaut en secondes |
+
+**Surcharges par label de tâche :**
+
+| Label Message | Valeurs | Effet |
+|--------------|---------|-------|
+| `cache_ttl` | secondes (entier) | Remplacer le TTL défaut pour cette exécution |
+| `cache_errors` | `"true"` | Mettre en cache les résultats d'erreur aussi |
+
+---
+
+## Choix d'un Backend de Cache
+
+| Backend | Quand l'utiliser |
+|---------|-----------------|
+| `InMemoryCacheAdapter` | Développement, tests, worker unique |
+| `RedisCacheAdapter` | Production, multi-worker, distribué |
+
+---
+
+## Lectures Associées
+
+- **[Guide des Middlewares]({{ '/fr/guides/cache/' | relative_url }})** — Configuration complète
+- **[Référence API : Stockage]({{ '/fr/api/storage/' | relative_url }})** — Adaptateurs de stockage
+
+---
+
+*Nouveau en v1.2.0. Les adaptateurs de cache sont async et interchangeables à l'instanciation.*
 
 
 ## DOCUMENT: Core
@@ -12394,14 +13999,17 @@ results = await engine.execute(inputs={"audio_files": files})
 
 Documentation complète des modules et classes de Taskiq-Flow.
 
-## 📚 Disponible
+## Disponible
 
 | Module | Description |
 |--------|-------------|
 | **[Composants Cœurs]({{ '/fr/api/core/' | relative_url }})** | Pipeline, DataflowPipeline, middleware, exceptions |
 | **[Décorateurs]({{ '/fr/api/decorators/' | relative_url }})** | `@pipeline_task` et utilitaires |
 | **[Exécution]({{ '/fr/api/execution/' | relative_url }})** | ExecutionEngine, DAG, DAGBuilder |
+| **[Stockage]({{ '/fr/api/storage/' | relative_url }})** nouveau en v1.2.0 | Adaptateurs de stockage interchangeables (InMemory, Redis, SQLite), factory, StorageMiddleware |
+| **[Cache]({{ '/fr/api/cache/' | relative_url }})** nouveau en v1.2.0 | Cache Dogpile (adaptateurs InMemory et Redis), CacheMiddleware |
 | **[Suivi]({{ '/fr/api/tracking/' | relative_url }})** | TrackingManager et backends de stockage |
+| **[Optimisation]({{ '/fr/api/optimization/' | relative_url }})** | ResourceAwareExecutor |
 | **[WebSocket]({{ '/fr/api/websocket/' | relative_url }})** | HookManager et système d'événements |
 
 ---
@@ -12562,6 +14170,209 @@ Pour charges de travail mixtes, calculez un `max_parallel` sûr qui accommode le
 ---
 
 *Le module d'optimisation assure que les pipelines s'adaptent sans submerger l'hôte. Testez toujours les profils ressource avec volumes de données réalistes.*
+
+
+## DOCUMENT: Storage
+
+# Référence API : Stockage
+
+**Couche de persistance centralisée — adaptateurs, factory et StorageMiddleware**
+
+> **Version** : {VERSION} | **Nouveau en v1.2.0** | **Module** : `taskiq_flow.storage`, `taskiq_flow.middlewares.storage`
+
+---
+
+## Aperçu
+
+Taskiq-Flow v1.2.0 introduit une **couche de stockage centralisée** qui découple les préoccupations de persistance du broker sous-jacent. Le système de stockage offre :
+
+- **Une interface unifiée** — `BaseStorageAdapter` fonctionne avec tous les backends
+- **Trois adaptateurs natifs** — InMemory, Redis, SQLite/SQLAlchemy
+- **Factory d'auto-détection** — `StorageAdapterFactory` choisit le bon backend automatiquement
+- **Intégration middleware** — `StorageMiddleware` se branche dans le cycle de vie TaskIQ
+
+Utilisez `StorageMiddleware` plutôt que du code ad-hoc : il intercepte les événements de tâche et persiste les résultats via un adaptateur interchangeable.
+
+---
+
+## Module `taskiq_flow.storage`
+
+### `StorageEntry`
+
+```python
+from taskiq_flow.storage import StorageEntry
+from datetime import datetime, timezone
+
+entry = StorageEntry(
+    key="pipeline:run42:task:abc123",
+    value={"statut": "terminé", "resultat": 42},
+    expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    metadata={"pipeline_id": "run42"},
+)
+```
+
+Conteneur typé pour une valeur stockée avec TTL optionnel et métadonnées.
+
+| Attribut | Type | Description |
+|----------|------|-------------|
+| `key` | `str` | Clé unique de l'entrée |
+| `value` | `Any` | Valeur stockée (recommandé : sérialisable JSON) |
+| `created_at` | `datetime` | Horodatage de création (UTC) |
+| `expires_at` | `datetime \| None` | Horodatage d'expiration ; `None` = pas d'expiration |
+| `metadata` | `dict` | Métadonnées arbitraires |
+
+| Méthode | Signature | Description |
+|---------|-----------|-------------|
+| `is_expired()` | `() -> bool` | `True` si l'entrée a expiré |
+| `remaining_ttl()` | `() -> float \| None` | Secondes restantes avant expiration ; `None` si jamais |
+
+---
+
+### `BaseStorageAdapter` (ABC)
+
+```python
+from taskiq_flow.storage import BaseStorageAdapter
+
+class MonAdaptateur(BaseStorageAdapter):
+    async def get(self, key: str) -> Any | None: ...
+    async def set(self, key: str, value: Any, ttl_seconds=None) -> None: ...
+    async def delete(self, key: str) -> bool: ...
+    async def exists(self, key: str) -> bool: ...
+    async def keys(self, pattern="*") -> list[str]: ...
+    async def cleanup(self, ttl_seconds=3600) -> int: ...
+```
+
+Interface abstraite que tous les backends de stockage doivent implémenter. Utilisez-la pour créer un backend personnalisé (PostgreSQL, DynamoDB, etc.).
+
+| Méthode | Description |
+|---------|-------------|
+| `get(cle)` | Récupérer une valeur par clé ; `None` si absente ou expirée |
+| `set(cle, valeur, ttl_seconds)` | Stocker une valeur avec TTL optionnel en secondes |
+| `delete(cle)` | Supprimer l'entrée ; retourne `True` si supprimée |
+| `exists(cle)` | Vérifier l'existence d'une clé |
+| `keys(motif)` | Lister les clés correspondant à un motif glob (ex. `"pipeline:*"`) |
+| `cleanup(ttl_seconds)` | Purger les entrées expirées ; retourne le nombre supprimé |
+
+---
+
+### `InMemoryStorageAdapter`
+
+```python
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+stockage = InMemoryStorageAdapter()
+```
+
+Adaptateur en mémoire basé sur un `dict` avec support de TTL par clé. Idéal pour le développement, les tests et les déploiements mono-processus.
+
+---
+
+### `RedisStorageAdapter`
+
+```python
+from taskiq_flow.storage import RedisStorageAdapter
+
+stockage = RedisStorageAdapter(
+    redis_url="redis://localhost:6379",
+    ttl_seconds=3600,
+)
+```
+
+Adaptateur persistant basé sur Redis avec TTL natif et sérialisation JSON.
+
+| Fonctionnalité | Statut |
+|---------------|--------|
+| TTL natif |  Par clé via `EXPIRE` Redis |
+| Sérialisation JSON |  Automatique |
+| Partage distribué |  Tous les workers partagent le même Redis |
+| Persistance |  Tant que Redis persiste |
+
+---
+
+### `SQLiteStorageAdapter`
+
+```python
+from taskiq_flow.storage import SQLiteStorageAdapter
+
+stockage = SQLiteStorageAdapter(
+    db_url="sqlite+aiosqlite:///taskiq-flow.db",
+    async_mode=True,
+)
+```
+
+Adaptateur SQLite/SQLAlchemy pour une persistance locale sans service externe.
+
+---
+
+## Module `taskiq_flow.storage.factory`
+
+### `StorageAdapterFactory`
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+config = TaskiqFlowConfig()
+adaptateur = StorageAdapterFactory.create_storage_adapter(config=config)
+```
+
+Ordre de priorité pour `create_storage_adapter(type="auto")` :
+
+| Priorité | Backend | Condition |
+|----------|---------|-----------|
+| 1 | `RedisStorageAdapter` | `storage_type="redis"` ou broker est RedisBroker |
+| 2 | `SQLiteStorageAdapter` | `storage_type="sqlite"` ou `"sqlalchemy"` |
+| 3 | `InMemoryStorageAdapter` | Fallback |
+
+| Méthode de Factory | Description |
+|-------------------|-------------|
+| `create_storage_adapter(config, broker, …)` | Crée un `BaseStorageAdapter` |
+| `create_cache_adapter(config, …)` | Crée un `BaseCacheAdapter` |
+| `create_default_middlewares(config, broker)` | Crée `StorageMiddleware` et `CacheMiddleware` |
+
+---
+
+## Module `taskiq_flow.middlewares.storage`
+
+### `StorageMiddleware`
+
+```python
+from taskiq_flow.middlewares import StorageMiddleware
+broker.add_middlewares(
+    StorageMiddleware(storage=InMemoryStorageAdapter(), enabled=True),
+    PipelineMiddleware(),
+)
+```
+
+Intercepte le cycle de vie TaskIQ et persiste les résultats de tâche via l'adaptateur de stockage configuré.
+
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `storage` | `BaseStorageAdapter \| None` | `None` | Backend de stockage |
+| `enabled` | `bool` | `True` | Active/désactive la persistance |
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `post_save(message, result)` | Persiste `TaskiqResult` dans le stockage | Clé : `task:{task_id}` ou `pipeline:{pipeline_id}:task:{task_id}` |
+
+---
+
+## Choix d'un Backend
+
+| Backend | Cas d'usage | Avantages | Inconvénients |
+|---------|------------|-----------|---------------|
+| `InMemoryStorageAdapter` | Dev, tests, mono-processus | Zéro dépendance, rapide | Volatile, non partagé |
+| `RedisStorageAdapter` | Production, distribué | Rapide, partagé, persisté | Requiert Redis |
+| `SQLiteStorageAdapter` | Persistance légère sans service externe | Pas de service externe | Contention mono-écriture |
+
+---
+
+## Lectures Associées
+
+- **[Guide Stockage & Cache]({{ '/fr/guides/cache/' | relative_url }})** — Configuration complète des middlewares
+- **[Référence API : Cache]({{ '/fr/api/cache/' | relative_url }})** — Adaptateurs de cache Dogpile
+
+---
+
+*Nouveau en v1.2.0. Les adaptateurs de stockage sont entièrement interchangeables : changez l'adaptateur sans toucher la logique métier.*
 
 
 ## DOCUMENT: Tracking
@@ -14321,6 +16132,8 @@ Cette galerie propose des parcours détaillés des scripts d'exemple inclus dans
 | [Démonstration Suivi]({{ '/fr/examples/tracking-demo/' | relative_url }}) | Surveillance en temps réel avec PipelineTrackingManager | Suivi, stockage d'état, visualisation |
 | [Pipeline Planifié]({{ '/fr/examples/scheduled-pipeline/' | relative_url }}) | Exécution périodique de pipeline via cron | PipelineScheduler, APScheduler, fuseaux horaires |
 | [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }}) | DAG complet avec parallélisme, map-reduce et visualisation | DataflowPipeline, DAG automatique, parallélisme |
+| [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }}) | Analyse DAG NetworkX : chemin critique, groupes parallèles, export | DAGVisualizer, NetworkX, chemin critique, exports |
+| [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }}) | Visualiseur web interactif de DAG via NiceGUI et MermaidGenerator | MermaidGenerator, NiceGUI, visualisation web interactive |
 | [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }}) | Construction manuelle de DataflowRegistry, introspection DAG, exécution bas niveau | DataflowRegistry, ExecutionEngine, introspection |
 | [Démo WebSocket]({{ '/fr/examples/websocket-demo/' | relative_url }}) | Streaming d'événements en temps réel via WebSockets | HookManager, transport WebSocket, suivi live |
 | [API REST]({{ '/fr/examples/api-example/' | relative_url }}) | Intégration FastAPI pour gestion distante de pipelines | PipelineVisualizationAPI, endpoints personnalisés |
@@ -14368,6 +16181,8 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 
 ### Workflows Avancés
 - [Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})
+- [Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }})
+- [Démo NiceGUI DAG]({{ '/fr/examples/nicegui-dag-demo/' | relative_url }})
 - [Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})
 
 ### Intégration
@@ -14380,6 +16195,275 @@ Certains exemples nécessitent des services additionnels (Redis, etc.). Voir les
 - **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Lancez votre premier pipeline
 - **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Approfondissements par fonctionnalité
 - **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules
+
+
+## DOCUMENT: Nicegui Dag Demo
+
+# Exemple: nicegui_dag_demo.py
+
+**Visualisation interactive de DAG avec NiceGUI et MermaidGenerator**
+
+> **Version** : {VERSION} | **Fichier** : `examples/nicegui_dag_demo.py`
+
+---
+
+## Aperçu
+
+Cet exemple montre comment construire une application web interactive avec
+**NiceGUI** pour visualiser le DAG d'un `DataflowPipeline` Taskiq-Flow. Il
+s'appuie sur le `MermaidGenerator` intégré pour générer un diagramme Mermaid.js
+visible directement dans le navigateur.
+
+Thèmes abordés :
+- Génération de diagrammes Mermaid.js depuis un DAG de façon programmatique
+- Diffusion du diagramme par une application web NiceGUI
+- Séparation entre la construction du pipeline (async) et le serveur web (synchrone)
+
+---
+
+## Ce Que Cet Exemple Montre
+
+- Utilisation de `DataflowPipeline.from_tasks()` pour créer un pipeline à 3 étapes
+- Appel à `_build_dataflow_dag()` pour obtenir le DAG **sans exécuter les tâches**
+- Utilisation de `MermaidGenerator.to_mermaid_with_styling()` pour générer le code Mermaid
+- Affichage du diagramme dans une page `ui.markdown()` NiceGUI
+- Script en mode double : builder async + serveur web synchrone
+
+---
+
+## Parcours Du Code
+
+### 1. Définition du Pipeline
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import DataflowPipeline, pipeline_task
+
+broker = InMemoryBroker(await_inplace=True)
+
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Charge les données brutes depuis une source."""
+    await asyncio.sleep(0.1)
+    return {"source": source, "values": [1, 2, 3, 4, 5]}
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Traite les données brutes en calculant des statistiques."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Génère un rapport final depuis les données traitées."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "RAPPORT-001",
+        "source": processed_data["source"],
+        "statistiques": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "statut": "terminé",
+    }
+```
+
+Structure du DAG :
+```
+load_data → process_data → generate_report
+```
+
+---
+
+### 2. Construction du DAG (Sans Exécution)
+
+```python
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [load_data, process_data, generate_report],
+)
+pipeline.pipeline_id = "pipeline_traitement_donnees"
+
+# Construit le DAG de façon statique — aucune tâche n'est exécutée
+pipeline._build_dataflow_dag()
+dag = pipeline._dag
+```
+
+> **Note** : `_build_dataflow_dag()` est une méthode interne qui parcourt
+> les annotations `@pipeline_task` pour assembler le graphe de dépendances
+> en mémoire. Pour une approche publique, utilisez `DataflowRegistry`
+> (voir [Exemple Découverte Registry]({{ '/fr/examples/registry-discovery/' | relative_url }})).
+
+---
+
+### 3. Génération du Diagramme Mermaid
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# → flowchart LR / TD avec nœuds colorés et flèches
+```
+
+`MermaidGenerator.to_mermaid_with_styling()` génère du code Mermaid.js
+avec des classes CSS par type de nœud (entrée, processus, sortie, décision).
+
+---
+
+### 4. Application NiceGUI
+
+```python
+@ui.page("/")
+def page_visualisation_dag() -> None:
+    """Page principale de visualisation du DAG."""
+    ui.label("Visualisation DAG TaskIQ Flow").style("font-size: 24px; font-weight: bold;")
+    ui.label("Pipeline de Traitement de Données").style("font-size: 18px;")
+    ui.separator()
+
+    if mermaid_diagramme_global:
+        ui.markdown(f"""```mermaid\n{mermaid_diagramme_global}\n```""")
+    else:
+        ui.label("Aucun DAG à afficher").style("color: red;")
+
+    ui.separator()
+    ui.label("Statistiques du DAG:").style("font-weight: bold;")
+
+ui.run(title="Visionneuse DAG TaskIQ Flow", port=8080)
+```
+
+NiceGUI interprète le contenu `ui.markdown()` côté serveur, et Mermaid.js
+charge le rendu du diagramme côté navigateur.
+
+---
+
+## Sortie Attendue
+
+**Console (builder DAG)** :
+```
+=== Démo Visualisation DAG NiceGUI Taskiq-Flow ===
+
+DAG: 3 nœuds et 2 arêtes
+Serveur NiceGUI démarré...
+Ouvrez http://127.0.0.1:8080 dans votre navigateur
+
+Code du diagramme Mermaid :
+flowchart LR
+    classDef input fill:#e1f5fe,stroke:#01579b,...
+    classDef process fill:#fff3e0,stroke:#e65100,...
+    classDef output fill:#e8f5e9,stroke:#1b5e20,...
+    load_data["load_data"]:::process
+    process_data["process_data"]:::process
+    generate_report["generate_report"]:::output
+    load_data --> process_data
+    process_data --> generate_report
+```
+
+**Navigateur sur `http://127.0.0.1:8080`** :
+
+Application web NiceGUI complète affichant le diagramme Mermaid avec nœuds
+colorés et les statistiques de base du DAG.
+
+---
+
+## Référence MermaidGenerator
+
+| Méthode | Description |
+|---------|-------------|
+| `MermaidGenerator(dag)` | Crée un générateur depuis une instance de `DAG` |
+| `.to_mermaid(orientation="TB")` | Flowchart Mermaid basique (TB/BT/LR/RL) |
+| `.to_mermaid_with_styling(orientation="LR")` | Stylisé avec couleurs par type de nœud |
+| `.to_mermaid_interactive()` | HTML avec gestionnaires de clic (pour tableaux de bord web) |
+
+Valeurs d'orientation :
+
+| Valeur | Direction |
+|--------|-----------|
+| `"TB"` | Haut → Bas (défaut) |
+| `"BT"` | Bas → Haut |
+| `"LR"` | Gauche → Droite |
+| `"RL"` | Droite → Gauche |
+
+---
+
+## Lancer la Démo
+
+### Prérequis
+
+```bash
+pip install nicegui "taskiq-flow[all]"
+```
+
+### Option 1 — Construire le DAG et démarrer NiceGUI
+
+```bash
+python examples/nicegui_dag_demo.py
+```
+
+Le script exécute `asyncio.run(main())`, qui construit le DAG et génère le
+diagramme, puis affiche les instructions pour lancer NiceGUI.
+
+### Option 2 — Lancer NiceGUI directement
+
+```bash
+python -c "from examples.nicegui_dag_demo import run_nicegui_app; run_nicegui_app()"
+```
+
+> Ouvre `http://127.0.0.1:8080` dans votre navigateur par défaut.
+
+---
+
+## Points Clés
+
+### Intégration NiceGUI + Taskiq-Flow
+
+| Composant | Rôle |
+|-----------|------|
+| `DataflowPipeline` | Construit le DAG depuis les déclarations de tâches |
+| `MermaidGenerator` | Convertit le DAG → code Mermaid.js |
+| `ui.markdown()` | Affiche le diagramme Mermaid dans NiceGUI |
+| `ui.run()` | Démarre le serveur web ASGI sur le port 8080 |
+
+### Pourquoi Séparer Builder et Serveur
+
+L'exemple dissocie la construction du pipeline (`main()`) du serveur
+NiceGUI (`run_nicegui_app()`) car :
+- `ui.run()` est un appel bloquant et ne peut pas coexister avec `asyncio.run()`
+- En production, générez le code Mermaid au démarrage ou lors des changements de DAG
+- Utilisez `ui.timer()` ou un système pub/sub pour rafraîchir le diagramme dynamiquement
+
+### Alternatives à NiceGUI pour la Visualisation de DAG
+
+| Outil | Cas d'usage |
+|-------|-------------|
+| `MermaidGenerator` | Diagrammes statiques (docs, wikis, README) |
+| `DAGVisualizer` | Analyse NetworkX, exports JSON/DOT/Cytoscape |
+| `DAGViewer` (NiceGUI) | Panneaux web interactifs (en cours d'implémentation) |
+
+---
+
+## Chemin d'Apprentissage
+
+Après cet exemple :
+
+1. **[Démonstration Visualisation DAG]({{ '/fr/examples/dag-visualization-demo/' | relative_url }})** — Réseau critique, exports multi-formats NetworkX
+2. **[Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }})** — Construction et inspection du DAG
+3. **[Pipeline Audio Dataflow]({{ '/fr/examples/dataflow-audio-pipeline/' | relative_url }})** — Pipeline audio complet avec parallélisme
+4. **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** — Tous les types et patterns de pipelines
+
+---
+
+*Cet exemple montre comment combiner Taskiq-Flow avec NiceGUI pour une visualisation interactive de pipelines.*
 
 
 ## DOCUMENT: Quickstart
@@ -15011,7 +17095,7 @@ Pipeline structure:
   [light_results, heavy_results] --combine--> [final]
 
 Executing pipeline...
-✅ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
+ Pipeline completed: {'light_results': [...], 'heavy_results': [...], 'final': {...}}
 
 TaskResourceProfile allows you to annotate tasks with resource requirements.
 ResourceAwareExecutor uses these profiles to compute optimal parallelism.
@@ -15243,7 +17327,7 @@ Lancer `python examples/retry_demo.py` :
 Executing flaky task with retry middleware...
 (Task may fail 1-2 times before succeeding)
 
-✅ Pipeline succeeded! Result: Success on attempt 2
+ Pipeline succeeded! Result: Success on attempt 2
 
 Retry count stored in middleware: {'flaky_task': 1}
 
@@ -17084,6 +19168,252 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 *Gérez des pipelines de n'importe où. Construisez tableaux de bord, automatisation, intégrations.*
 
 
+## DOCUMENT: Cache
+
+# Guide des Middlewares Stockage & Cache
+
+**Persistance centralisée avec StorageMiddleware et cache Dogpile avec CacheMiddleware**
+
+> **Version** : {VERSION} | **Nouveau en v1.2.0** | **Lié** : [Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }}), [Référence API — Stockage]({{ '/fr/api/storage/' | relative_url }}), [Référence API — Cache]({{ '/fr/api/cache/' | relative_url }})
+
+---
+
+## Aperçu
+
+v1.2.0 introduit **deux nouveaux middlewares** qui modularisent la persistance et le cache :
+
+| Middleware | Responsabilité |
+|------------|----------------|
+| `StorageMiddleware` | Persistance centralisée et pluggable des résultats, de l'état pipeline et de l'historique d'exécution |
+| `CacheMiddleware` | Cache de workers Dogpile pour éviter les exécutions redondantes |
+
+Implémentent tous deux le cycle de vie `TaskiqMiddleware` (`pre_execute`, `post_save`) et peuvent être **actifs simultanément** avec `PipelineMiddleware`, `TransportMiddleware` et `PipelineRetryMiddleware`.
+
+---
+
+## StorageMiddleware — Persistance Centralisée
+
+`StorageMiddleware` capture chaque résultat de tâche et le stocke via un `BaseStorageAdapter` configuré. Contrairement à l'ancienne approche où le suivi et la planification persistaient indépendamment, il y a maintenant **un seul magasin unifié**.
+
+### Pourquoi StorageMiddleware ?
+
+- **Source de vérité unique** — tous les résultats, l'état des pipelines et la planification dans un seul endroit
+- **Backend interchangeable** — passez de InMemory à Redis ou SQLite sans modifier le code métier
+- **Auto-détection** — `StorageAdapterFactory` choisit automatiquement le bon backend
+- **Isolation** — stockage, cache et suivi sont chacun dans leur propre couche
+
+### Utilisation Basique
+
+```python
+from taskiq import InMemoryBroker
+from taskiq_flow import PipelineMiddleware, DataflowPipeline, pipeline_task
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import InMemoryStorageAdapter
+
+broker = InMemoryBroker(await_inplace=True)
+broker.add_middlewares(
+    StorageMiddleware(storage=InMemoryStorageAdapter(), enabled=True),
+    PipelineMiddleware(),
+)
+```
+
+### Production avec Redis
+
+```python
+from taskiq_flow.middlewares import StorageMiddleware
+from taskiq_flow.storage import RedisStorageAdapter
+
+broker.add_middlewares(
+    StorageMiddleware(
+        storage=RedisStorageAdapter(
+            redis_url="redis://localhost:6379",
+            ttl_seconds=86400,
+        ),
+    ),
+    PipelineMiddleware(),
+)
+```
+
+### Clés de Stockage
+
+`StorageMiddleware` stocke les résultats sous des clés dérivées des labels `TaskiqMessage` :
+
+| Motif de Clé | Exemple |
+|-------------|---------|
+| `pipeline:{pipeline_id}:task:{task_id}` | `pipeline:audio_v1:task:abc123` |
+| `task:{task_id}` | `task:abc123` |
+
+Forme de la valeur stockée :
+```json
+{
+  "task_id": "abc123",
+  "pipeline_id": "audio_v1",
+  "is_err": false,
+  "return_value": "{...}",
+  "error": null,
+  "execution_time": 0.42
+}
+```
+
+### TTL et Expiration
+
+Tous les adaptateurs supportent le TTL par clé. Les entrées expirées sont nettoyées paresseusement à l'accès et activement via `cleanup()` :
+
+---
+
+## CacheMiddleware — Cache Dogpile Workers
+
+`CacheMiddleware` évite les exécutions redondantes de tâches en mettant en cache les **résultats** des tâches au niveau worker. Le pattern Dogpile garantit qu'un seul coroutine régénère une entrée expirée.
+
+### Pourquoi CacheMiddleware ?
+
+- **Réduire le travail inutile** — sauter les tâches idempotentes dont les entrées n'ont pas changé
+- **Latence plus faible** — les résultats en cache sont retournés instantanément
+- **Protection anti-stampede** — verrou Dogpile empêche la foule à l'expiration TTL
+- **Backend interchangeable** — InMemory pour mono-worker, Redis pour distribué
+
+### Ordre des Middlewares
+
+L'ordre des middlewares importe. `CacheMiddleware` doit être placé **avant** `StorageMiddleware` :
+
+```python
+# Ordre correct — cache vérifié d'abord, stockage ensuite
+broker.add_middlewares(
+    CacheMiddleware(),      # ← vérifié en premier
+    StorageMiddleware(),    # ← écrit en base seulement si pas en cache
+    PipelineMiddleware(),   # ← orchestre les tâches en aval
+)
+```
+
+### Surcharges par Tâche via Labels
+
+```python
+# Sur une tâche spécifique, augmenter TTL à 2 heures et cacher les erreurs
+result = await tache_couteuse.kiq(
+    donnees_entree,
+    labels={"cache_ttl": "7200", "cache_errors": "true"},
+)
+```
+
+---
+
+## StorageAdapterFactory — Configuration Zéro
+
+`StorageAdapterFactory` crée automatiquement les bons adaptateurs depuis `TaskiqFlowConfig` :
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+from taskiq_flow.config import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    storage_type="redis",
+    storage_redis_url="redis://localhost:6379",
+    storage_ttl_seconds=86400,
+    cache_type="redis",
+    cache_redis_url="redis://localhost:6379",
+)
+middlewares = StorageAdapterFactory.create_default_middlewares(config=config)
+
+broker.add_middlewares(
+    middlewares["cache"],     # CacheMiddleware
+    middlewares["storage"],   # StorageMiddleware
+    PipelineMiddleware(),
+)
+```
+
+Variables d'environnement (toutes optionnelles) :
+
+| Var d'env | Description |
+|-----------|-------------|
+| `TASKIQ_FLOW_STORAGE_TYPE` | `"redis"`, `"sqlite"`, `"inmemory"`, `"auto"` |
+| `TASKIQ_FLOW_CACHE_TYPE` | `"redis"`, `"inmemory"`, `"auto"` |
+
+---
+
+## Comparatif : Stockage vs Cache
+
+| Aspect | `StorageMiddleware` | `CacheMiddleware` |
+|--------|--------------------|-------------------|
+| Objectif | Persistance long terme (état, résultats, planification) | Déduplication court terme des résultats de tâches |
+| TTL typique | Heures à jours | Minutes à heures |
+| Portée | IDs de pipelines et de tâches | IDs de résultats de tâches individuelles |
+| Backend | InMemory / Redis / SQLite | InMemory / Redis |
+| Anti-stampede | N/A |  Oui |
+| Auto-dédup | N/A |  Oui |
+
+---
+
+## Monitoring
+
+### Taux de Hits de Cache
+
+```python
+stats = cache.get_stats()
+print(f"Taux de hit : {stats['hit_rate']:.1%}")
+print(f"Hits: {stats['hits']}, Misses: {stats['misses']}")
+```
+
+Ciblez un taux de hit > 80 % pour des pipelines reproduductibles avec entrées stables.
+
+### Surveillance du Stockage
+
+```python
+from datetime import datetime, timezone
+
+# Lister tous les pipelines suivis
+toutes_cles = await storage.keys("pipeline:*")
+print(f"Entrées totales : {len(toutes_cles)}")
+
+# Nettoyage périodique des entrées expirées
+supprimes = await storage.cleanup(ttl_seconds=3600)
+print(f"Entrées expirées supprimées : {supprimes}")
+```
+
+---
+
+## Dépannage
+
+| Symptôme | Cause Probable | Correctif |
+|---------|----------------|-----------|
+| Tous les caches sont misses | TTL trop court ou entrées trop variables | Augmenter `default_ttl` ; vérifier les arguments des tâches |
+| Stampede sur expirations | `InMemoryCacheAdapter` sans Dogpile distribué | Passer à `RedisCacheAdapter` pour verrou distribué |
+| Croissance stockage illimitée | Aucun TTL défini | Définir `ttl_seconds` ; exécuter `cleanup()` régulièrement |
+| Workers partagent résultats périmés | Redis TTL non appliqué | Vérifier `EXPIRE` Redis ; contrôler la configuration Redis |
+
+---
+
+## Installation Complète Production
+
+```bash
+pip install "taskiq-flow[all]"    # Toutes les fonctionnalités
+docker run -p 6379:6379 redis:7   # Redis pour stockage et cache distribué
+```
+
+```python
+from taskiq_flow.storage.factory import StorageAdapterFactory
+from taskiq_flow.config import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    storage_type="redis",
+    storage_redis_url="redis://localhost:6379",
+    storage_ttl_seconds=86_400,
+    cache_type="redis",
+    cache_redis_url="redis://localhost:6379",
+)
+middlewares = StorageAdapterFactory.create_default_middlewares(config=config)
+
+broker.add_middlewares(
+    middlewares["cache"],
+    middlewares["storage"],
+    PipelineMiddleware(),
+)
+```
+
+---
+
+*Nouveau en v1.2.0. Les deux middlewares sont additifs — ajoutez-les à un broker existant sans refactoring.*
+
+
 ## DOCUMENT: Core Concepts
 
 # Guide des Concepts Fondamentaux
@@ -18487,13 +20817,14 @@ Voir [Guide de Performance]({{ '/fr/guides/performance/' | relative_url }}) pour
 
 Guides détaillés couvrant toutes les fonctionnalités de Taskiq-Flow.
 
-## 📖 Guides Disponibles
+## Guides Disponibles
 
 | Guide | Description |
 |-------|-------------|
 | **[Guide des Pipelines]({{ '/fr/guides/pipelines/' | relative_url }})** | Patterns de pipelines séquentiels et dataflow |
 | **[Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }})** | Définitions de tâches et décorateurs |
 | **[Guide d'Exécution]({{ '/fr/guides/execution/' | relative_url }})** | Modes d'exécution et gestion d'erreurs |
+| **[Guide Stockage & Cache]({{ '/fr/guides/cache/' | relative_url }})** nouveau en v1.2.0 | Persistance centralisée & cache Dogpile workers |
 | **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** | Monitoring en temps réel |
 | **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** | Tableaux de bord en direct |
 | **[Guide de Planification]({{ '/fr/guides/scheduling/' | relative_url }})** | Planification cron |
@@ -18766,10 +21097,10 @@ pool = ResourceAwareWorkerPool(
 Passez des références au lieu des données complètes :
 
 ```python
-# ❌ Mauvais : copie le jeu de données complet pour chaque appel de tâche
+#  Mauvais : copie le jeu de données complet pour chaque appel de tâche
 pipeline.map(process, large_dataset)  # Chaque tâche reçoit une copie complète
 
-# ✅ Mieux : passez des identifiants, récupérez dans la tâche
+#  Mieux : passez des identifiants, récupérez dans la tâche
 @broker.task
 def process(item_id: str):
     item = database.get(item_id)  # Récupération à la demande
@@ -18894,11 +21225,11 @@ async def db_task(query: str):
 Au lieu de nombreux petits appels, faites des lots :
 
 ```python
-# ❌ N appels séparés
+#  N appels séparés
 for item in items:
     await db.insert(item)
 
-# ✅ Insertion par lot unique
+#  Insertion par lot unique
 await db.bulk_insert(items)
 ```
 
@@ -19094,9 +21425,39 @@ engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
 
----
+### 11.1. ResourceAwareExecutor et TaskResourceProfile
 
-## 12. Résumé
+TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
+pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
+
+```python
+from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
+
+# Définir un profil de ressources pour les tâches lourdes
+heavy_profile = TaskResourceProfile(
+    estimated_memory_mb=2048,
+    estimated_cpu_cores=4.0,
+)
+
+@broker.task
+@heavy_profile
+def heavy_computation(data):
+    # Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM
+    return process_heavy_data(data)
+
+# Utiliser ResourceAwareExecutor pour l'exécution
+executor = ResourceAwareExecutor(
+    broker=broker,
+    max_parallel=10,
+)
+```
+
+`ResourceAwareExecutor` évalue les profils de ressources des tâches et les
+distribue aux workers disponibles en fonction de leur capacité.
+`TaskResourceProfile` permet d'annoter chaque tâche avec ses besoins estimés
+en mémoire et CPU.
+
+## 13. Résumé
 
 L'optimisation des performances est itérative :
 
@@ -19739,14 +22100,14 @@ Une **retry** (réessai) est la ré-exécution automatique d'une tâche échoué
 
 ### Quand Retenter
 
-✅ **Bons candidats pour le retry** :
+ **Bons candidats pour le retry** :
 
 - Timeouts réseau (API externe indisponible)
 - Erreurs de connexion base de données (transitoires)
 - Limitation de débit (header retry-after)
 - Épuisement temporaire des ressources
 
-❌ **Ne PAS retenter** :
+ **Ne PAS retenter** :
 
 - Erreurs de validation (mauvaise entrée ne se corrigera pas)
 - Erreurs de programmation (bug dans le code)
@@ -20271,11 +22632,11 @@ scheduler = PipelineScheduler(
 
 | Store | Persistance | Multi-worker | Cas d'usage |
 |-------|-------------|--------------|-------------|
-| `"memory"` | ❌ Non | ❌ Non | Développement, mono-processus |
-| `"sqlite"` | ✅ Oui | ⚠️ Limité* | Production mono-worker, persistance simple |
-| `"postgresql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, haute disponibilité |
-| `"mysql"` (via URL) | ✅ Oui | ✅ Oui | Production multi-worker, alternative PostgreSQL |
-| `"redis"` | ❌ | ❌ | **Non implémenté** (placeholder lève `NotImplementedError`) |
+| `"memory"` |  Non |  Non | Développement, mono-processus |
+| `"sqlite"` |  Oui |  Limité* | Production mono-worker, persistance simple |
+| `"postgresql"` (via URL) |  Oui |  Oui | Production multi-worker, haute disponibilité |
+| `"mysql"` (via URL) |  Oui |  Oui | Production multi-worker, alternative PostgreSQL |
+| `"redis"` |  |  | **Non implémenté** (placeholder lève `NotImplementedError`) |
 
 *Le store sqlite fonctionne avec une seule instance de scheduler ; multiples workers nécessitent DB externe (PostgreSQL/MySQL).
 
@@ -20906,9 +23267,9 @@ for run in history:
 
 | Backend | Async | Multi-worker | Production |
 |---------|-------|--------------|------------|
-| SQLite | ✅ `sqlite+aiosqlite` | ⚠️ Single-writer | Dev / petits projets |
-| PostgreSQL | ✅ `postgresql+asyncpg` | ✅ Full | ✅ Recommandé |
-| MySQL | ✅ `mysql+aiomysql` | ✅ Full | ✅ Supporté |
+| SQLite |  `sqlite+aiosqlite` |  Single-writer | Dev / petits projets |
+| PostgreSQL |  `postgresql+asyncpg` |  Full |  Recommandé |
+| MySQL |  `mysql+aiomysql` |  Full |  Supporté |
 
 ---
 
@@ -22056,10 +24417,10 @@ tracking = PipelineTrackingManager().with_storage(InMemoryPipelineStorage())
 
 | Fonctionnalité | Mémoire | Redis |
 |----------------|---------|-------|
-| **Multi-processus** | ❌ Non | ✅ Oui |
-| **Persistant** | ❌ Non | ✅ Oui |
-| **État partagé** | ❌ Non | ✅ Oui |
-| **Vitesse** | ⚡ Plus rapide | ⚡ Rapide (réseau) |
+| **Multi-processus** |  Non |  Oui |
+| **Persistant** |  Non |  Oui |
+| **État partagé** |  Non |  Oui |
+| **Vitesse** |  Plus rapide |  Rapide (réseau) |
 | **Configuration requise** | Aucune | Serveur Redis |
 
 **Recette basique**:
@@ -22855,44 +25216,14 @@ await server.start_server()
 
 Bienvenue dans la documentation française de **Taskiq-Flow**.
 
-## 📖 Commencer
+## Commencer
 
 - **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Prenez en main en 5 minutes
 - **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Guides détaillés sur les pipelines, tâches, exécution, suivi, WebSocket, planification, retry, performance et API REST
 - **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules et classes
 - **[Exemples]({{ '/fr/examples/' | relative_url }})** — Scripts d'exemple fonctionnels pour toutes les fonctionnalités
 
-## 🔗 Liens Rapides
-
-- [README du Projet](https://github.com/dorel14/taskiq-flow/blob/main/README.fr.md) — Vue d'ensemble et philosophie du projet
-- [Package PyPI](https://pypi.org/project/taskiq-flow/) — Installez avec `pip install taskiq-flow`
-- [Dépôt GitHub](https://github.com/dorel14/taskiq-flow) — Code source et suivi d'issues
-- [Guide de Contribution](https://github.com/dorel14/taskiq-flow/blob/main/CONTRIBUTING.md) — Comment contribuer
-- [Licence](https://github.com/dorel14/taskiq-flow/blob/main/LICENSE) — Licence MIT
-
----
-
-*Maintenu par l'équipe SoniqueBay*
-
----
-
-title: Documentation Française
-nav_order: 5
-permalink: /fr/
----
-
-# Taskiq-Flow Documentation (Français)
-
-Bienvenue dans la documentation française de **Taskiq-Flow**.
-
-## 📖 Commencer
-
-- **[Guide de Démarrage Rapide]({{ '/fr/quickstart/' | relative_url }})** — Prenez en main en 5 minutes
-- **[Guides Utilisateur]({{ '/fr/guides/' | relative_url }})** — Guides détaillés sur les pipelines, tâches, exécution, suivi, WebSocket, planification, retry, performance et API REST
-- **[Référence API]({{ '/fr/api/' | relative_url }})** — Documentation complète des modules et classes
-- **[Exemples]({{ '/fr/examples/' | relative_url }})** — Scripts d'exemple fonctionnels pour toutes les fonctionnalités
-
-## 🔗 Liens Rapides
+## Liens Rapides
 
 - [README du Projet](https://github.com/dorel14/taskiq-flow/blob/main/README.fr.md) — Vue d'ensemble et philosophie du projet
 - [Package PyPI](https://pypi.org/project/taskiq-flow/) — Installez avec `pip install taskiq-flow`
@@ -23264,7 +25595,7 @@ await server.start_server()
 
 ---
 
-## 📚 Lectures Complémentaires
+## Lectures Complémentaires
 
 - **[Référence API Complète]({{ '/fr/api/' | relative_url }})** — Documentation complète des classes et méthodes
 - **[Galerie d'Exemples]({{ '/fr/examples/' | relative_url }})** — Explications détaillées de chaque script d'exemple
@@ -23281,7 +25612,8 @@ await server.start_server()
 ### Example: __init__.py
 
 ```python
-"""Examples for taskiq-flow.
+"""
+Examples for taskiq-flow.
 
 This package contains example scripts demonstrating various features
 of the taskiq-flow library.
@@ -23305,7 +25637,8 @@ Run any example directly:
 ### Example: api_example.py
 
 ```python
-"""Example: Using the REST API for pipeline visualization and management.
+"""
+Example: Using the REST API for pipeline visualization and management.
 
 This example demonstrates how to set up a FastAPI server with
 the PipelineVisualizationAPI to expose pipeline management
@@ -23550,13 +25883,20 @@ if __name__ == "__main__":
 ### Example: dag_visualization_demo.py
 
 ```python
-"""DAG Visualization Demo.
+"""
+Démonstration de visualisation avancée de DAG pour Taskiq-Flow.
 
-This example demonstrates the advanced DAG visualization capabilities
-using NetworkX, Mermaid, and NiceGUI integration.
+Ce module démontre les capacités de visualisation et d'analyse de DAG
+utilisant NetworkX pour l'analyse de graphes, Mermaid pour les diagrammes
+et les formats d'export JSON, DOT, Cytoscape et ASCII.
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples inclus :
+    - DAGVisualizer : analyse critique, groupes parallèles, exports multiples
+    - MermaidGenerator : génération de diagrammes stylisés
+    - Visualisation ASCII pour terminal
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -23694,7 +26034,8 @@ if __name__ == "__main__":
 ### Example: dataflow_audio_pipeline.py
 
 ```python
-"""Example: Audio processing pipeline using dataflow architecture.
+"""
+Example: Audio processing pipeline using dataflow architecture.
 
 This example demonstrates how to build an audio processing pipeline
 using the dataflow-based approach, where tasks automatically determine
@@ -24003,6 +26344,187 @@ if __name__ == "__main__":
 
 ```
 
+### Example: nicegui_dag_demo.py
+
+```python
+"""
+Démonstration NiceGUI de visualisation de DAG pour Taskiq-Flow.
+
+Ce module utilise le MermaidGenerator intégré pour générer un diagramme
+Mermaid.js depuis un pipeline DataflowPipeline et l'affiche dans une
+application web interactive construite avec NiceGUI.
+
+Permissions d'exécution :
+    - Dépendances : pip install nicegui taskiq-flow[all]
+    - Lancement   : python examples/nicegui_dag_demo.py
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
+"""
+
+import asyncio
+import logging
+from typing import Any
+
+from taskiq import InMemoryBroker
+
+from taskiq_flow import DataflowPipeline, pipeline_task
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create broker
+broker = InMemoryBroker(await_inplace=True)
+
+
+# Define sample tasks for a data processing pipeline
+@broker.task
+@pipeline_task(output="raw_data")
+async def load_data(source: str) -> dict[str, Any]:
+    """Load raw data from a source."""
+    await asyncio.sleep(0.1)
+    return {
+        "source": source,
+        "values": [1, 2, 3, 4, 5],
+    }
+
+
+@broker.task
+@pipeline_task(output="processed_data")
+async def process_data(raw_data: dict[str, Any]) -> dict[str, Any]:
+    """Process raw data by calculating statistics."""
+    await asyncio.sleep(0.2)
+    values = raw_data["values"]
+    return {
+        "source": raw_data["source"],
+        "count": len(values),
+        "sum": sum(values),
+        "mean": sum(values) / len(values),
+    }
+
+
+@broker.task
+@pipeline_task(output="result")
+async def generate_report(processed_data: dict[str, Any]) -> dict[str, Any]:
+    """Generate a final report from processed data."""
+    await asyncio.sleep(0.1)
+    return {
+        "report_id": "REPORT-001",
+        "source": processed_data["source"],
+        "statistics": {
+            "count": processed_data["count"],
+            "sum": processed_data["sum"],
+            "mean": processed_data["mean"],
+        },
+        "status": "completed",
+    }
+
+
+async def main() -> None:
+    """Run the NiceGUI DAG visualization demo."""
+    logger.info("=== Taskiq-Flow NiceGUI DAG Visualization Demo ===\n")
+
+    # Create pipeline from tasks
+    pipeline = DataflowPipeline.from_tasks(
+        broker,
+        [
+            load_data,  # type: ignore
+            process_data,  # type: ignore
+            generate_report,  # type: ignore
+        ],
+    )
+    pipeline.pipeline_id = "data_processing_pipeline"
+
+    # Build the DAG (without executing)
+    pipeline._build_dataflow_dag()
+    dag = pipeline._dag
+
+    if dag is None:
+        logger.error("Failed to build DAG")
+        return
+
+    logger.info(f"DAG has {len(dag.nodes)} nodes and {len(dag.edges)} edges")
+    logger.info("Starting NiceGUI server...")
+    logger.info("Open your browser to http://127.0.0.1:8080 to view the DAG")
+
+    # Generate Mermaid code for the DAG
+    mermaid_gen = MermaidGenerator(dag)
+    mermaid_code = mermaid_gen.to_mermaid_with_styling()
+
+    # Store for the NiceGUI app
+    global mermaid_diagram_global  # noqa: PLW0603
+    mermaid_diagram_global = mermaid_code
+
+    # logger.info the mermaid diagram for reference
+    logger.info("Mermaid diagram code:")
+    logger.info(mermaid_code)
+
+
+# Global to store mermaid diagram
+mermaid_diagram_global = ""
+
+
+def run_nicegui_app() -> None:
+    """
+    Run the NiceGUI application to display the DAG.
+
+    This function requires NiceGUI to be installed.
+    Install with: pip install nicegui
+    """
+    try:
+        from nicegui import ui  # type: ignore # noqa: PLC0415
+    except ImportError:
+        logger.error("NiceGUI is not installed. Install with: pip install nicegui")
+        raise
+
+    @ui.page("/")
+    def dag_viewer_page() -> None:
+        """Main page showing the DAG visualization."""
+        ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; \
+                                                        font-weight: bold;")
+        ui.label("Data Processing Pipeline").style("font-size: 18px;")
+        ui.separator()
+
+        # Display the Mermaid diagram
+        if mermaid_diagram_global:
+            ui.markdown(f"""
+```mermaid
+{mermaid_diagram_global}
+```
+            """)
+        else:
+            ui.label("No DAG to display").style("color: red;")
+
+        # Display DAG statistics
+        ui.separator()
+        ui.label("DAG Statistics:").style("font-weight: bold;")
+
+    ui.run(title="TaskIQ Flow DAG Viewer", port=8080)
+
+
+if __name__ in {"__main__", "__mp_main__"}:
+    # Run the async demo first to build the DAG and generate mermaid code
+    asyncio.run(main())
+
+    # Then run the NiceGUI app
+    # Note: In practice, you would want to generate the mermaid code
+    # before starting NiceGUI, or use the asyncio pattern properly
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("To run the NiceGUI DAG visualization demo:")
+    logger.info("1. Make sure you have nicegui installed: pip install nicegui")
+    logger.info("2. Run: python -m examples.nicegui_dag_demo")
+    logger.info("3. Open http://127.0.0.1:8080 in your browser")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info("The Mermaid diagram code has been generated above.")
+    logger.info("You can also view the DAG by running the NiceGUI app:")
+    logger.info("  python -c 'from examples.nicegui_dag_demo import\
+                run_nicegui_app; run_nicegui_app()'")
+
+```
+
 ### Example: quickstart.py
 
 ```python
@@ -24066,7 +26588,8 @@ if __name__ == "__main__":
 ### Example: registry_discovery_example.py
 
 ```python
-"""Example: Automatic task discovery and pipeline construction using DataflowRegistry.
+"""
+Example: Automatic task discovery and pipeline construction using DataflowRegistry.
 
 This example demonstrates how to use DataflowRegistry to:
 - Manually register tasks with their data dependencies
@@ -24558,13 +27081,22 @@ if __name__ == "__main__":
 ### Example: resource_aware_demo.py
 
 ```python
-"""Resource-Aware Parallelism Demo.
+"""
+Démonstration du parallélisme adaptatif basé sur les ressources pour Taskiq-Flow.
 
-This example demonstrates dynamic parallelism adjustment based on
-CPU and memory availability using ResourceAwareExecutor.
+Ce module démontre l'ajustement dynamique du degré de parallélisme selon
+la disponibilité CPU et mémoire via `ResourceAwareExecutor` :
+- Suivi en temps réel de l'utilisation CPU et mémoire
+- Ajustement automatique de la concurrence
+- Mode dry-run pour observer les décisions sans exécuter
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Exemples :
+    - Pipeline resource-aware via ExecutionEngine
+    - Monitoring dynamique CPU/mémoire par tâche
+    - Comparaison parallélisme fixe vs adaptatif
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -24742,13 +27274,17 @@ if __name__ == "__main__":
 ### Example: retry_demo.py
 
 ```python
-"""Retry Demo.
+"""
+Démonstration des politiques de retry et de gestion d'erreurs pour Taskiq-Flow.
 
-This example demonstrates the retry middleware and error handling modes
-in Taskiq-Flow v0.4.5.
+Ce module démontre le middleware de retry (`PipelineRetryMiddleware`) et les
+différents modes de gestion d'erreurs dans Taskiq-Flow 1.2.0 :
+- Retry avec backoff exponentiel
+- Mode FAIL_FAST, CONTINUE_ON_ERROR, SKIP_FAILED
+- Politique de retry par tâche et par pipeline
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio
@@ -24925,7 +27461,8 @@ if __name__ == "__main__":
 ### Example: scheduled_pipeline.py
 
 ```python
-"""Scheduled pipeline example.
+"""
+Scheduled pipeline example.
 
 This example demonstrates how to schedule a pipeline to run periodically
 using the LabelBasedScheduler with TaskIQ's label-based scheduling mechanism.
@@ -25001,13 +27538,23 @@ if __name__ == "__main__":
 ### Example: secure_api_example.py
 
 ```python
-"""Secure API Example.
+"""
+Exemple d'API sécurisée pour Taskiq-Flow.
 
-This example demonstrates how to secure your Taskiq-Flow API with
-authentication, authorization, rate limiting, and audit logging.
+Ce module démontre la sécurisation d'une API Taskiq-Flow avec :
+- Authentification par clé API (API-Key header)
+- Autorisation par rôle (admin/user)
+- Rate limiting par clé API
+- Journalisation d'audit (audit log) de toutes les requêtes
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Routes protégées :
+    - GET  /pipelines          — Liste tous les pipelines (auth requis)
+    - POST /pipelines          — Crée un pipeline (auth + admin)
+    - GET  /pipelines/{id}     — Détails d'un pipeline (auth requis)
+    - DELETE /pipelines/{id}   — Supprime un pipeline (auth + admin)
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import logging
@@ -25050,7 +27597,7 @@ pipeline.pipeline_id = "secure_demo_pipeline"
 
 
 # 4. Create FastAPI app with security
-app = FastAPI(title="Secure Taskiq-Flow API", version="0.4.5")
+app = FastAPI(title="Secure Taskiq-Flow API", version="1.2.0")
 viz_api = create_visualization_api(broker, app)
 viz_api.add_pipeline("secure_demo_pipeline", pipeline)
 
@@ -25165,14 +27712,19 @@ if __name__ == "__main__":
 ### Example: websocket_demo.py
 
 ```python
-"""Example demonstrating WebSocket integration for real-time pipeline tracking.
+"""
+Exemple démontrant l'intégration WebSocket pour le suivi temps réel des pipelines.
 
-This example shows both FastAPI and picows WebSocket implementations:
-- FastAPI WebSocket: Integrated with FastAPI routes (preferred)
-- picows WebSocket: Standalone WebSocket server
+Ce module montre les deux implémentations WebSocket :
+- WebSocket FastAPI : intégré aux routes FastAPI (recommandé)
+- WebSocket picows : serveur WebSocket autonome
 
-Author: SoniqueBay Team
-Version: 0.4.5
+Implémentations :
+    - FastAPI WebSocket : Endpoint `/ws/{pipeline_id}` dans un serveur FastAPI
+    - picows WebSocket : Serveur dédié avec hook d'événements pipelines
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
 """
 
 import asyncio

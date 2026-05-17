@@ -1,4 +1,5 @@
-"""Fonction reduce pour l'agrégation de résultats.
+"""
+Fonction reduce pour l'agrégation de résultats.
 
 Ce module fournit la fonction `reduce` qui agrège une liste de valeurs
 en un seul résultat en appliquant une fonction de réduction.
@@ -49,6 +50,7 @@ async def reduce(
             output="aggregated",
             initial=0,
         )
+
     """
     return await MapReduce.reduce(
         broker,

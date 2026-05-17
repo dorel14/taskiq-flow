@@ -1,4 +1,5 @@
-"""Execution engine for DAG-based pipelines.
+"""
+Execution engine for DAG-based pipelines.
 
 Executes tasks respecting dependencies, running in parallel when possible.
 Handles retries, error modes (fail_fast, continue_on_error, skip_failed),
@@ -82,6 +83,7 @@ class ExecutionEngine:
         max_parallel: Limite de tâches simultanées
         error_mode: Mode de gestion des erreurs
         resource_aware: Utiliser le parallélisme basé sur les ressources
+
     """
 
     def __init__(
@@ -115,6 +117,7 @@ class ExecutionEngine:
             resource_aware: Use resource-aware parallelism
             resource_profiles: Task resource profiles for parallelism calculation
             adaptive_parallelism: Calculate parallelism dynamically per level
+
         """
         self.broker = broker
         self.dag = dag
@@ -170,13 +173,15 @@ class ExecutionEngine:
         task_node: DAGNode | None = None,
         **kwargs: Any,
     ) -> None:
-        """Log a message with pipeline and task context.
+        """
+        Log a message with pipeline and task context.
 
         Args:
             level: Logging level
             message: Log message
             task_node: Task node for context
             **kwargs: Additional context to include in log
+
         """
         extra = {
             "pipeline_id": self.pipeline_id,
@@ -188,13 +193,15 @@ class ExecutionEngine:
         logger.log(level, message, extra=extra)
 
     def _get_step_index(self, task_node: DAGNode) -> int:
-        """Get step index for a task node.
+        """
+        Get step index for a task node.
 
         Args:
             task_node: Task node
 
         Returns:
             Step index
+
         """
         # Find index in topological order
         try:
@@ -233,6 +240,7 @@ class ExecutionEngine:
                - Gère les résultats (succès, échec, retry)
             3. Collecte toutes les sorties des tâches complétées
             4. Retourne le dictionnaire de sorties
+
         """
         self.pipeline_id = pipeline_id
 
@@ -391,6 +399,7 @@ class ExecutionEngine:
 
         Args:
             tasks: List of tasks to execute
+
         """
         # Mark tasks as running
         for task_node in tasks:
@@ -416,6 +425,7 @@ class ExecutionEngine:
 
         Returns:
             Task result
+
         """
         execution = self.task_states[task_node.task]
         task = task_node.task
@@ -574,6 +584,7 @@ class ExecutionEngine:
         Args:
             task_node: Task that completed
             result: Result or exception
+
         """
         execution = self.task_states[task_node.task]
 
@@ -678,6 +689,7 @@ class ExecutionEngine:
 
         Returns:
             Dictionary mapping output names to values
+
         """
         outputs = {}
 
@@ -703,6 +715,7 @@ class ExecutionEngine:
 
         Returns:
             Dictionary with execution statistics
+
         """
         total = len(self.dag.nodes)
         completed = len(self.completed_tasks)

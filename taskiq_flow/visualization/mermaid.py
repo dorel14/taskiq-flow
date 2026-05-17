@@ -1,4 +1,5 @@
-"""Générateur de diagrammes Mermaid pour l'intégration NiceGUI.
+"""
+Générateur de diagrammes Mermaid pour l'intégration NiceGUI.
 
 Ce module fournit MermaidGenerator pour créer des diagrammes
 Mermaid.js à partir des DAG TaskIQ-Flow.
@@ -21,6 +22,7 @@ class MermaidGenerator:
 
         Args:
             dag: DAG à convertir
+
         """
         self.dag = dag
 
@@ -33,6 +35,7 @@ class MermaidGenerator:
 
         Returns:
             Code Mermaid
+
         """
         orientations = {"TB": "TD", "BT": "BT", "LR": "LR", "RL": "RL"}
         direction = orientations.get(orientation, "TD")
@@ -58,6 +61,7 @@ class MermaidGenerator:
 
         Returns:
             Code Mermaid avec styles
+
         """
         directions = {"TB": "TD", "BT": "BT", "LR": "LR", "RL": "RL"}
         direction = directions.get(orientation, "LR")
@@ -120,6 +124,7 @@ class MermaidGenerator:
 
         Returns:
             Métadonnées de la tâche
+
         """
         # Vérifier si la tâche a des métadonnées attachées
         if hasattr(task, "original_function"):
@@ -147,6 +152,7 @@ class MermaidGenerator:
 
         Returns:
             Code HTML/JavaScript pour NiceGUI
+
         """
         mermaid_code = self.to_mermaid_with_styling()
 
