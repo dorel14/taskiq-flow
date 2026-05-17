@@ -8,7 +8,6 @@ to/from JSON-compatible format using base64 encoding.
 import base64
 import json
 import pickle
-from io import BytesIO
 from typing import Any
 
 # Optional imports
@@ -51,30 +50,23 @@ class ScientificArrayEncoder(json.JSONEncoder):
                 "data": data,
             }
         if HAS_XARRAY and isinstance(obj, (xr.Dataset, xr.DataArray)):
-            buffer = BytesIO()
-            obj.to_netcdf(buffer)  # type: ignore[call-overload]
-            data = base64.b64encode(buffer.getvalue()).decode("ascii")
+            # Serialize XArray to dict representation (no netcdf dependency)
+            data_dict = obj.to_dict()
             return {
                 "__scientific_array__": True,
-                "type": "xarray",
-                "data": data,
+                "type": "xarray_dict",
+                "data": data_dict,
             }
         if HAS_ZARR and isinstance(obj, (zarr.Array, zarr.Group)):
-            store = zarr.MemoryStore()  # type: ignore[attr-defined]
-            zarr.store(store, obj, path="zarr_data")  # type: ignore[attr-defined]
-            if hasattr(obj, "to_bytes"):
-                data = base64.b64encode(obj.to_bytes()).decode("ascii")
-            else:
-                # Fallback: pickle (not ideal but works)
-
-                data = base64.b64encode(pickle.dumps(obj)).decode("ascii")
+            # Serialize Zarr objects using pickle as fallback
+            data = base64.b64encode(pickle.dumps(obj)).decode("ascii")
             return {
                 "__scientific_array__": True,
                 "type": "zarr",
                 "data": data,
             }
-        # Fallback: return string representation for any other object
-        return str(obj)
+        # Fallback: raise TypeError by delegating to base class
+        return super().default(obj)
 
 
 def scientific_array_hook(dct: Any) -> Any:
@@ -83,22 +75,25 @@ def scientific_array_hook(dct: Any) -> Any:
         return dct
     if dct.get("__scientific_array__"):
         arr_type = dct.get("type")
-        data = base64.b64decode(dct["data"])
         if arr_type == "numpy" and HAS_NUMPY:
+            data = base64.b64decode(dct["data"])
             dtype = np.dtype(dct["dtype"])
             shape = dct["shape"]
             return np.frombuffer(data, dtype=dtype).reshape(shape)
-        if arr_type == "xarray" and HAS_XARRAY:
-            return xr.open_dataset(BytesIO(data), engine="netcdf4")
+        if arr_type == "xarray_dict" and HAS_XARRAY:
+            # Reconstruct XArray from dict representation
+            data_dict = dct["data"]
+            if "data_vars" in data_dict:
+                return xr.Dataset.from_dict(data_dict)
+            return xr.DataArray.from_dict(data_dict)
+        if arr_type == "xarray_pickle" and HAS_XARRAY:
+            # Deserialize XArray from pickle bytes
+            data = base64.b64decode(dct["data"])
+            return pickle.loads(data)  # noqa: S301
         if arr_type == "zarr" and HAS_ZARR:
-            try:
-                if hasattr(zarr, "from_bytes"):
-                    return zarr.from_bytes(data)
-                # pickle is safe here for trusted data only; may be unsafe
-                return pickle.loads(data)  # noqa: S301
-            except Exception:
-                # Last resort: return raw data
-                return data
+            # Deserialize Zarr objects using pickle (fallback)
+            data = base64.b64decode(dct["data"])
+            return pickle.loads(data)  # noqa: S301
     return dct
 
 

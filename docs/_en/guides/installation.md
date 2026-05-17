@@ -10,7 +10,7 @@ nav_order: 11
 
 ## Prerequisites
 
-- **Python** 3.9 or higher
+- **Python** ≥3.10
 - **pip** (Python package installer)
 - Optional: **Redis** (for distributed tracking/storage)
 
@@ -33,18 +33,27 @@ That's it! You're ready to start building pipelines.
 Taskiq-Flow supports additional features via optional extras:
 
 ```bash
-# All features (tracking, scheduling, visualization)
+# Everything
 pip install "taskiq-flow[all]"
 
-# Redis support for tracking/storage backends
-pip install "taskiq-flow[redis]"
+# Brokers support (Kafka + RabbitMQ + Redis)
+pip install "taskiq-flow[brokers]"
 
-# Scheduling capabilities (APScheduler)
+# Scheduling capabilities (APScheduler + SQLAlchemy)
 pip install "taskiq-flow[scheduler]"
 
-# Development dependencies (including all above)
-pip install "taskiq-flow[dev]"
+# Scientific data types (numpy, xarray, zarr)
+pip install "taskiq-flow[scientific]"
 ```
+
+| Extra | Installs |
+|-------|----------|
+| `all` | Every optional feature |
+| `brokers` | `taskiq-aio-kafka`, `taskiq-aio-pika`, `taskiq-redis` |
+| `scheduler` | `apscheduler[sqlalchemy]` (DB-backed job persistence) |
+| `scientific` | `numpy`, `xarray`, `zarr` |
+
+> **Note**: `fastapi` and `uvicorn` are included in the core install and are always available.
 
 ---
 

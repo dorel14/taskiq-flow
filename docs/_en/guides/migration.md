@@ -69,7 +69,7 @@ config = TaskiqFlowConfig(
     api_keys={
         "my-key": {
             "role": "admin",
-            "pipeline_whitelist": ["*"],
+            "pipelines": ["*"],
             "permissions": ["read", "execute", "admin"],
         }
     },

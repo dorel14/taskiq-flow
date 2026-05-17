@@ -8,7 +8,6 @@ import cProfile
 import io
 import logging
 import pstats
-import shutil
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -132,8 +131,7 @@ def generate_flamegraph(
         FileNotFoundError: If flameprof executable not found.
 
     """
-    if shutil.which(flameprof_path) is None:
-        raise FileNotFoundError(f"flameprof executable not found at '{flameprof_path}'")
+    # Removed unnecessary executable check; use package when available
 
     if not HAS_FLAMEPROF:
         raise ImportError("flameprof package is required for flamegraph generation")

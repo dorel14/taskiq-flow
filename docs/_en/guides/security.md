@@ -5,15 +5,16 @@ color_scheme: dark
 ---
 # Security Guide
 
-This guide explains how to secure your TaskIQ-Flow installation using the built-in security features: authentication, authorization, rate limiting, and audit logging.
+This guide explains how to secure your TaskIQ-Flow installation using the built-in security features: authentication, authorization, rate limiting, HTTPS enforcement, and audit logging.
 
 ## Overview
 
-TaskIQ-Flow provides a flexible security system that can be enabled via configuration. When security is enabled (`security.enabled = true`), the following features are active:
+TaskIQ-Flow provides a flexible security system that can be enabled via configuration. When security is enabled (`security_enabled = True`), the following features are active:
 
 - **Authentication**: Verify client identities using API keys or JWT tokens.
 - **Authorization**: Enforce access control lists (ACLs) on pipelines and tasks.
-- **Rate Limiting**: Limit the number of requests per client or IP address.
+- **HTTPS Enforcement**: Block plain HTTP requests when `require_https` is `True`.
+- **Rate Limiting**: Limit the number of requests per client or IP address, per endpoint.
 - **Audit Logging**: Log security-relevant events for monitoring and compliance.
 
 ## Configuration
@@ -24,34 +25,57 @@ Security features are configured in the `TaskiqFlowConfig` object or via environ
 from taskiq_flow import TaskiqFlowConfig
 
 config = TaskiqFlowConfig(
-    security=SecurityConfig(
-        enabled=True,
-        api_keys={
-            "admin-key": {
-                "role": "admin",
-                "permissions": ["read", "write", "execute"],
-                "pipeline_whitelist": ["*"],
-            },
-            "viewer-key": {
-                "role": "viewer",
-                "permissions": ["read"],
-                "pipeline_whitelist": ["pipeline1", "pipeline2"],
-            },
+    # ---- Security toggle ----
+    security_enabled=True,
+    # ---- Authentication ----
+    auth_provider="api_key",           # "api_key" or "jwt"
+    api_keys={
+        "admin-key": {
+            "role": "admin",
+            "pipelines": ["*"],
+            "permissions": ["read", "execute", "admin"],
         },
-        jwt_secret_key="your-secret-key", #pragma: allowlist secret
-        rate_limit_per_minute=60,
-        audit_log_path="audit.log",
-    )
+        "viewer-key": {
+            "role": "viewer",
+            "pipelines": ["pipeline1", "pipeline2"],
+            "permissions": ["read"],
+        },
+    },
+    jwt_secret="your-jwt-secret",      # required when auth_provider="jwt"
+    # ---- HTTPS enforcement ----
+    require_https=True,
+    # ---- Authorization (ACLs) ----
+    pipeline_acls={
+        "pipeline1": {
+            "read": ["admin", "viewer"],
+            "execute": ["admin"],
+        },
+    },
+    # ---- Rate limiting ----
+    rate_limit_enabled=True,
+    rate_limit_default="100/minute",
+    # ---- WebSocket ----
+    websocket_require_auth=True,
+    websocket_max_connections=1000,
 )
 ```
 
+Audit logs are handled by :class:`~taskiq_flow.security.audit.AuditLogger`,
+instantiated automatically by the API (no configuration field needed).
+
 Alternatively, you can set environment variables:
 
-- `TASKIQ_FLOW_SECURITY_ENABLED=true`
-- `TASKIQ_FLOW_SECURITY_API_KEYS` (JSON string)
-- `TASKIQ_FLOW_SECURITY_JWT_SECRET_KEY`
-- `TASKIQ_FLOW_SECURITY_RATE_LIMIT_PER_MINUTE`
-- `TASKIQ_FLOW_SECURITY_AUDIT_LOG_PATH`
+| Environment variable | Config field | Description |
+|---|---|---|
+| `TASKIQ_FLOW_SECURITY_ENABLED` | `security_enabled` | Enable/disable security (`true`/`false`) |
+| `TASKIQ_FLOW_AUTH_PROVIDER` | `auth_provider` | Auth provider: `api_key` or `jwt` |
+| `TASKIQ_FLOW_API_KEYS` | `api_keys` | JSON string of API key configs |
+| `TASKIQ_FLOW_JWT_SECRET` | `jwt_secret` | JWT signing secret |
+| `TASKIQ_FLOW_REQUIRE_HTTPS` | `require_https` | Enforce HTTPS (`true`/`false`) |
+| `TASKIQ_FLOW_PIPELINE_ACLS` | `pipeline_acls` | JSON string of pipeline ACLs |
+| `TASKIQ_FLOW_RATE_LIMIT_ENABLED` | `rate_limit_enabled` | Enable/disable rate limiting |
+| `TASKIQ_FLOW_RATE_LIMIT_DEFAULT` | `rate_limit_default` | Default rate limit string (e.g. `"100/minute"`) |
+| `TASKIQ_FLOW_WEBSOCKET_REQUIRE_AUTH` | `websocket_require_auth` | Require auth on WebSocket connections |
 
 ## Authentication
 
@@ -62,128 +86,153 @@ TaskIQ-Flow supports two authentication methods:
 Clients must include their API key in the `X-API-Key` header for HTTP requests or in the `auth` field of WebSocket connect messages.
 
 Example HTTP request:
+
 ```http
 GET /api/pipelines
-X-API-Key: admin-key 
+X-API-Key: admin-key #pragma: allowlist secret
 ```
 
 ### JWT Authentication
 
-If a JWT secret is configured, clients can authenticate using a JSON Web Token (JWT) in the `Authorization` header:
+If a JWT secret is configured (via `jwt_secret`), clients can authenticate using a JSON Web Token (JWT) in the `Authorization` header:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-The JWT must contain a `sub` (subject) field identifying the user and optionally a `role` field.
+The JWT must contain a `sub` (subject) field identifying the user and a `roles` list.
 
 ## Authorization
 
-Once authenticated, users are assigned a role and permissions. The system checks these permissions against the requested action and resource.
+Once authenticated, users are assigned a role and permissions. The system checks these permissions against the requested action and resource using two mechanisms:
+
+- **Pipeline ACLs** (`pipeline_acls`) — per-pipeline, per-permission access control.
+- **Pipeline whitelist** (`pipelines` key in each API key entry) — simple allow-list of pipeline IDs; `"*"` means all pipelines.
 
 ### Permissions
 
 - `read`: View pipeline metadata, status, and results.
-- `write`: Create, update, or delete pipelines.
 - `execute`: Trigger pipeline execution.
 - `admin`: Full access to all features, including security configuration.
 
 ### Pipeline Whitelist
 
-Each API key can optionally specify a list of pipelines the user is allowed to access. If the whitelist is empty or contains `"*"`, the user can access all pipelines.
+Each API key entry may specify a `pipelines` list of pipeline IDs the key is allowed to access. If the list is empty or contains `"*"`, the key can access all pipelines.
+
+## HTTPS Enforcement
+
+When `require_https` is `True` (default), the :class:`~taskiq_flow.security.https.HTTPSEnforcementMiddleware` rejects all plain HTTP requests with HTTP 403.
+
+The middleware respects the `X-Forwarded-Proto` header so deployments behind a TLS-terminating reverse proxy continue to work correctly.
 
 ## Rate Limiting
 
-To prevent abuse, TaskIQ-Flow limits the number of requests per client (identified by API key or IP address) per minute. The limit is configurable via `rate_limit_per_minute` (default: 60).
+To prevent abuse, TaskIQ-Flow limits the number of requests per endpoint per client IP address. The default limits are:
 
-When the limit is exceeded, the server responds with HTTP 429 (Too Many Requests) or closes the WebSocket connection with a policy violation.
+| Endpoint | Default limit |
+|---|---|
+| List pipelines | 60/minute |
+| Get DAG | 120/minute |
+| Get critical path | 120/minute |
+| Get parallel groups | 120/minute |
+| Execute pipeline | 10/minute |
+| Get status | 30/minute |
+| WebSocket connect | 5/minute |
+
+The default limit for unknown endpoints is `rate_limit_default` (default: `"100/minute"`).
+
+When the limit is exceeded, the server responds with HTTP 429 (Too Many Requests).
 
 ## Audit Logging
 
-Security-relevant events are logged to the audit log (if configured) for later analysis. Events include:
+Security-relevant events are logged by :class:`~taskiq_flow.security.audit.AuditLogger` for later analysis. Events include:
 
 - Authentication successes and failures
 - Authorization denials
-- Rate limit throttling
+- Rate limit throttling events
+- Pipeline actions (read, execute)
 - Security configuration changes
 
-The audit log is a simple text file with one JSON object per line, making it easy to parse with tools like `jq` or ingest into a SIEM system.
+Audit entries are emitted as Python ``logging`` records with structured ``extra`` fields, making them easy to ship to a SIEM. The built-in logger name is ``taskiq_flow.audit``.
 
 ## WebSocket Security
 
 WebSocket connections follow the same security model as HTTP:
 
 1. During the WebSocket upgrade handshake, the client must authenticate via the `X-API-Key` header or a JWT in the `Authorization` header.
-2. After authentication, each WebSocket message (e.g., subscribe/unsubscribe) is checked for permissions.
+2. After authentication, each WebSocket subscription message is checked against the user's pipeline ACLs.
 3. Unauthorized attempts result in an error message and connection termination.
 
 ## Example: Securing a Pipeline
 
-Here's a complete example of securing a pipeline that processes sensitive data:
+Here is a complete example of securing a TaskIQ-Flow API with the **current** API (`create_visualization_api`, flat `TaskiqFlowConfig` fields):
 
 ```python
 from taskiq import Taskiq, InMemoryBroker
-from taskiq_flow import TaskiqFlowConfig, SecurityConfig
-from taskiq_flow.api import create_api
-from taskiq_flow.events import HookManager
+from taskiq_flow import TaskiqFlowConfig, create_visualization_api
+from taskiq_flow.security import AuditLogger
 
-# Configure security
-security_config = SecurityConfig(
-    enabled=True,
+# ── 1. Configure security ──────────────────────────────────────────
+config = TaskiqFlowConfig(
+    security_enabled=True,
+    auth_provider="api_key",
     api_keys={
         "processor-key": {
             "role": "processor",
+            "pipelines": ["data-pipeline"],
             "permissions": ["read", "execute"],
-            "pipeline_whitelist": ["data-pipeline"],
         },
         "admin-key": {
             "role": "admin",
-            "permissions": ["read", "write", "execute", "admin"],
-            "pipeline_whitelist": ["*"],
+            "pipelines": ["*"],
+            "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret_key="super-secret", #pragma: allowlist secret
-    rate_limit_per_minute=30,
-    audit_log_path="security-audit.log",
+    jwt_secret="super-secret",  # pragma: allowlist secret
+    require_https=True,
+    pipeline_acls={
+        "data-pipeline": {
+            "read": ["processor", "admin"],
+            "execute": ["processor", "admin"],
+        },
+    },
+    rate_limit_enabled=True,
+    rate_limit_default="30/minute",
+    websocket_require_auth=True,
 )
 
-config = TaskiqFlowConfig(security=security_config)
-
-# Initialize broker and app
+# ── 2. Initialize broker and API ───────────────────────────────────
 broker = InMemoryBroker()
 taskiq = Taskiq(broker)
-taskiq_app = create_api(taskiq, config=config)
+app = create_visualization_api(broker)
 
-# Define a secure pipeline
-@taskiq.task
-def process_sensitive_data(data: str) -> str:
-    # Simulate processing
-    return data.upper()
+# ── 3. Optional: custom audit logger ───────────────────────────────
+audit_logger = AuditLogger()
 
-# Register the pipeline with the broker (optional, for manual triggering)
+# ── 4. Start ───────────────────────────────────────────────────────
+# uvicorn app:app --host 0.0.0.0 --port 8000
+# All endpoints now require authentication.
 ```
-
-Start the application with `uvicorn taskiq_app:app --host 0.0.0.0 --port 8000`. All endpoints will now require authentication.
 
 ## Testing Security
 
-To verify your security setup, try accessing an endpoint without credentials:
-
 ```bash
-curl -i http://localhost:8000/api/pipelines
-# Should return 401 Unauthorized
+# No credentials → 401 Unauthorized
+curl -i http://localhost:8000/pipelines
 
-curl -i -H "X-API-Key: invalid-key" http://localhost:8000/api/pipelines
-# Should return 401 Unauthorized
+# Invalid key → 403 Forbidden
+curl -i -H "X-API-Key: invalid-key" http://localhost:8000/pipelines
 
-curl -i -H "X-API-Key: processor-key" http://localhost:8000/api/pipelines
-# Should return 200 OK with pipeline list (if processor-key has read permission)
+# Valid viewer key → 200 OK
+curl -i -H "X-API-Key: viewer-key" http://localhost:8000/pipelines
 ```
 
 For WebSocket testing, use a WebSocket client library and include the `X-API-Key` header during the upgrade request.
 
 ## Conclusion
 
-By following this guide, you can secure your TaskIQ-Flow instance to protect sensitive data and ensure that only authorized users can perform specific actions. For more details, refer to the API reference documentation.
+By following this guide you can secure your TaskIQ-Flow instance to protect
+sensitive data and ensure that only authorized users can perform specific
+actions. For full API reference, see the API documentation.
 
 ---

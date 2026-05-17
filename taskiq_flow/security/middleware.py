@@ -1,11 +1,17 @@
 """
 Middleware de sécurité pour Taskiq-Flow.
 
-Ce module fournit un middleware FastAPI pour la sécurité globale,
-incluant l'authentification, l'autorisation et la limitation de débit.
+Ce module fournit le middleware FastAPI :class:`SecurityMiddleware` qui
+applique les contrôles de sécurité sur chaque requête entrante :
+
+1. **Authentification** via le fournisseur configuré (API key ou JWT).
+2. **Audit** : journalisation de la requête après passage au handler.
+
+Le rate limiting est géré séparément par ``SlowAPIMiddleware`` (slowapi),
+ajouté par :meth:`PipelineVisualizationAPI._setup_security`.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import logging

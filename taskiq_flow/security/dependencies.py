@@ -1,12 +1,20 @@
 """
 Dépendances FastAPI pour l'authentification et l'autorisation.
 
-Ce module fournit des dépendances injectables dans les routes
-pour l'authentification (via SecurityMiddleware) et l'autorisation
-basée sur les ACLs de pipelines.
+Ce module expose des dépendances injectables FastAPI utilisées dans les
+routes REST et WebSocket pour :
+
+- Récupérer le fournisseur d'authentification depuis l'état de l'application
+  (:func:`get_auth_provider`).
+- Récupérer le gestionnaire d'autorisation depuis l'état de l'application
+  (:func:`get_authorization`).
+- Extraire l'utilisateur authentifié depuis l'état de la requête
+  (:func:`get_current_user`).
+- Vérifier les droits d'accès à un pipeline avant de servir une route
+  (:func:`verify_pipeline_access`).
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 from typing import Any, cast

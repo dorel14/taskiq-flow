@@ -1,4 +1,25 @@
-"""REST API for pipeline visualization and management."""
+"""
+API REST pour la visualisation et la gestion des pipelines Taskiq-Flow.
+
+Ce module expose la classe :class:`PipelineVisualizationAPI` et la factory
+:func:`create_visualization_api` qui construisent une application FastAPI
+prête à l'emploi, avec :
+
+- Endpoints de liste et d'enregistrement des pipelines
+  (``GET /pipelines``, ``POST /pipelines/{id}``).
+- Endpoints de visualisation DAG
+  (``GET /pipelines/{id}/dag``, ``GET /pipelines/{id}/dag/dot``,
+  ``GET /pipelines/{id}/visualize``).
+- Sécurité (authentification API key / JWT, ACLs, rate limiting,
+  enforcement HTTPS) si ``config.security_enabled`` est ``True``.
+- Métriques Prometheus sur ``/metrics`` si ``config.metrics_enabled``
+  est ``True``.
+
+Routes WebSocket temps réel : voir :mod:`taskiq_flow.api.routes.websocket`.
+
+Auteur: SoniqueBay Team
+Version: 1.2.0
+"""
 
 import logging
 from typing import Any

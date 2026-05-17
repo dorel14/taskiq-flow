@@ -8,14 +8,30 @@ Auteur: SoniqueBay Team
 Version: 1.2.0
 """
 
-from .scheduler import LabelBasedScheduler, PipelineScheduler
-from .storage import (
-    JobPersistenceManager,
-    PersistenceAdapter,
+from .scheduler import (
+    LabelBasedScheduler,
+)  # always works (no APScheduler import at top of scheduler.py)
+
+try:
+    from .scheduler import PipelineScheduler
+except ImportError:
+    PipelineScheduler = None  # type: ignore
+
+try:
+    from .storage import JobPersistenceManager
+except ImportError:
+    JobPersistenceManager = None  # type: ignore
+
+try:
+    from .storage import PersistenceAdapter
+except ImportError:
+    PersistenceAdapter = None  # type: ignore
+
+from .storage import (  # Pydantic, independent of SQLAlchemy
     PipelineExecution,
     SchedulerJob,
 )
-from .triggers import (
+from .triggers import (  # all guarded in triggers.py itself
     create_cron_trigger,
     create_date_trigger,
     create_interval_trigger,

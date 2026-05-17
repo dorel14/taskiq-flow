@@ -7,8 +7,10 @@ système de publication-abonnement avec weak references pour éviter
 les fuites mémoire, et supporte des transports multiples (WebSocket,
 etc.) pour la diffusion des événements.
 
+FastAPI WebSocket integration only (picows removed in 1.1).
+
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.1.0
 """
 
 import asyncio
@@ -18,13 +20,6 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from .events import PipelineEvent
-
-try:
-    from taskiq_flow.integration.websocket.server import get_websocket_server
-
-    WEBSOCKET_AVAILABLE = True
-except ImportError:
-    WEBSOCKET_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -79,14 +74,9 @@ class TransportMiddleware:
         if self._try_fastapi_websocket():
             return self._fastapi_manager
 
-        # Fall back to picows
-        if not WEBSOCKET_AVAILABLE:
-            logger.warning("picows not available, WebSocket transport disabled")
-            return None
-        return get_websocket_server(
-            host=self.config.get("host", "127.0.0.1"),
-            port=self.config.get("port", 8765),
-        )
+        # No picows fallback - FastAPI WebSocket only
+        logger.warning("FastAPI WebSocket not available, WebSocket transport disabled")
+        return None
 
     def _try_fastapi_websocket(self) -> bool:
         """Try to create FastAPI WebSocket transport."""

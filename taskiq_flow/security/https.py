@@ -1,11 +1,16 @@
 """
 Middleware d'enforcement HTTPS pour Taskiq-Flow.
 
-Ce module fournit un middleware qui enforce l'utilisation de HTTPS
-pour les requêtes entrantes, configurable via la configuration.
+Ce module fournit le middleware :class:`HTTPSEnforcementMiddleware` qui
+rejette les requêtes HTTP non chiffrées lorsque ``config.require_https``
+est défini à ``True``.
+
+Respecte l'en-tête ``X-Forwarded-Proto`` pour les déploiements derrière
+un reverse proxy ou un load-balancer qui termine TLS, afin d'éviter les
+faux positifs dans les environnements conteneurisés ou cloud.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import logging

@@ -2,10 +2,16 @@
 Authentification pour Taskiq-Flow.
 
 Ce module fournit des fournisseurs d'authentification pour sécuriser
-l'API et les connexions WebSocket.
+l'API REST et les connexions WebSocket. Les deux modes supportés sont :
+
+- **Clé API** : le client transmet sa clé dans l'en-tête ``X-API-Key``.
+- **JWT** : le client transmet un jeton Bearer dans l'en-tête ``Authorization``.
+
+La factory :func:`create_auth_provider` sélectionne automatiquement le bon
+fournisseur en fonction de ``config.auth_provider``.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import logging
