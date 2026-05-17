@@ -9,7 +9,7 @@ Auteur: SoniqueBay Team
 Version: 1.0.2
 """
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Depends, HTTPException, Request, status
 
@@ -37,7 +37,7 @@ def get_auth_provider(request: Request) -> AuthProvider:
             status_code=500,
             detail="Authentication provider not configured",
         )
-    return provider
+    return cast(AuthProvider, provider)
 
 
 def get_authorization(request: Request) -> PipelineAuthorization:
@@ -60,7 +60,7 @@ def get_authorization(request: Request) -> PipelineAuthorization:
             status_code=500,
             detail="Authorization manager not configured",
         )
-    return authorization
+    return cast(PipelineAuthorization, authorization)
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
@@ -84,7 +84,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return user
+    return cast(dict[str, Any], user)
 
 
 async def verify_pipeline_access(

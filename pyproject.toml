@@ -29,6 +29,7 @@ dependencies = [
   "apscheduler[sqlalchemy]>=3.11.2",
   "dogpile-cache>=1.5.0",
   "fastapi>=0.136.1",
+  "flameprof>=0.4",
   "mypy>=1.20.2",
   "networkx>=3.4.2",
   "picows>=1.19.0",
@@ -48,7 +49,30 @@ dependencies = [
 [project.optional-dependencies]
 scheduler = ["apscheduler>=3.10,<4"]
 redis = ["redis>=5.0,<6"]
-all = ["apscheduler", "redis"]
+scientific = [
+    "numpy>=2.0",
+    "xarray>=2024.7",
+    "zarr>=2.18",
+    "netCDF4>=1.6",
+]
+profiling = [
+    "gprof2dot>=2025.02.09; platform_system != \"Windows\"",
+    "flameprof>=0.4",
+    "py-spy>=0.3.8",
+]
+dev = [
+    "anyio>=4",
+    "mypy>=1.8,<2",
+    "pre-commit>=4",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist[psutil]>=3",
+    "pytest-benchmark>=5.2.3",
+    "ruff>=0.15.0",
+    "isort>=8.0.1",
+]
+all = ["apscheduler", "redis", "numpy", "xarray", "zarr", "netCDF4", "flameprof", "py-spy"]
 
 [project.urls]
 Homepage = "https://github.com/dorel14/taskiq-flow"

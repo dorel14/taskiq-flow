@@ -8,7 +8,6 @@ Auteur: SoniqueBay Team
 Version: 1.2.0
 """
 
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -18,6 +17,7 @@ try:
 except ImportError:
     redis_mod = None  # type: ignore
 
+from taskiq_flow.serialization import dumps_scientific, loads_scientific
 from taskiq_flow.storage.base import BaseStorageAdapter, StorageEntry
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class RedisStorageAdapter(BaseStorageAdapter):
             data = await self._redis.get(full_key)
             if data is None:
                 return None
-            entry_data = json.loads(data)
+            entry_data = loads_scientific(data)
             # Convert ISO format strings back to datetime objects
             if entry_data.get("created_at"):
                 entry_data["created_at"] = datetime.fromisoformat(
@@ -87,18 +87,16 @@ class RedisStorageAdapter(BaseStorageAdapter):
                 value=value,
                 expires_at=datetime.now(timezone.utc) + timedelta(seconds=ttl),
             )
-            serialized = json.dumps(
-                {
-                    "key": entry.key,
-                    "value": entry.value,
-                    "created_at": entry.created_at.isoformat(),
-                    "expires_at": (
-                        entry.expires_at.isoformat() if entry.expires_at else None
-                    ),
-                    "metadata": entry.metadata,
-                },
-                default=str,
-            )
+            payload = {
+                "key": entry.key,
+                "value": entry.value,
+                "created_at": entry.created_at.isoformat(),
+                "expires_at": (
+                    entry.expires_at.isoformat() if entry.expires_at else None
+                ),
+                "metadata": entry.metadata,
+            }
+            serialized = dumps_scientific(payload)
             await self._redis.setex(full_key, ttl, serialized)
         except Exception as e:
             logger.error("Redis set failed for key %s: %s", key, e)

@@ -112,16 +112,19 @@ class PipelineWebSocketListener(WSListener):
                 if action == "subscribe":
                     channel = data.get("channel")
                     if channel:
-                        if self.authorization and self.user:
-                            pipeline_id = channel.replace("pipeline.", "").split(".")[0]
-                            if not self.authorization.can_read(pipeline_id, self.user):
-                                transport.send(
-                                    WSMsgType.TEXT,
-                                    json.dumps(
-                                        {"error": "Access denied to pipeline"}
-                                    ).encode(),
-                                )
-                                return
+                        pipeline_id = channel.replace("pipeline.", "").split(".")[0]
+                        if (
+                            self.authorization
+                            and self.user
+                            and not self.authorization.can_read(pipeline_id, self.user)
+                        ):
+                            transport.send(
+                                WSMsgType.TEXT,
+                                json.dumps(
+                                    {"error": "Access denied to pipeline"}
+                                ).encode(),
+                            )
+                            return
                         task = asyncio.create_task(
                             self.server.subscribe(channel, cast(Any, transport))
                         )
@@ -165,9 +168,9 @@ class PipelineWebSocketListener(WSListener):
                     "type": "http",
                     "method": "GET",
                     "path": "/ws",
-                    "headers": {
-                        "authorization": f"Bearer {token}",
-                    },
+                    "headers": [
+                        (b"authorization", f"Bearer {token}".encode()),
+                    ],
                 }
             )
             if self.auth_provider is None:

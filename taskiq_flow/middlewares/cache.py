@@ -115,9 +115,7 @@ class CacheMiddleware(TaskiqMiddleware):
 
             cached_value: dict[str, Any] = {
                 "is_err": result.is_err,
-                "return_value": (
-                    str(result.return_value) if not result.is_err else None
-                ),
+                "return_value": (result.return_value if not result.is_err else None),
                 "error": str(result.error) if result.is_err else None,
                 "execution_time": result.execution_time,
             }

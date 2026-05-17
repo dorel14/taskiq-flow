@@ -9,7 +9,7 @@ Version: 1.0.2
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -78,7 +78,7 @@ class HTTPSEnforcementMiddleware(BaseHTTPMiddleware):
                     content="HTTPS required",
                 )
 
-        return await call_next(request)
+        return cast(Response, await call_next(request))
 
 
 __all__ = ["HTTPSEnforcementMiddleware"]

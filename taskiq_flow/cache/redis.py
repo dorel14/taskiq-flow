@@ -20,6 +20,7 @@ try:
 except ImportError:
     redis_mod = None  # type: ignore
 
+from taskiq_flow.serialization import dumps_scientific, loads_scientific
 from taskiq_flow.storage.base import BaseCacheAdapter
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class RedisCacheAdapter(BaseCacheAdapter):
             data = await self._redis.get(cache_key)
             if data is not None:
                 self._hits += 1
-                return json.loads(data)
+                return loads_scientific(data)
         except Exception as e:
             logger.error("Redis cache get failed for key %s: %s", key, e)
             raise
@@ -158,7 +159,7 @@ class RedisCacheAdapter(BaseCacheAdapter):
             data = await self._redis.get(self._cache_key(key))
             if data is not None:
                 self._hits += 1
-                return json.loads(data)
+                return loads_scientific(data)
             self._misses += 1
             return None
         except Exception as e:
@@ -174,7 +175,7 @@ class RedisCacheAdapter(BaseCacheAdapter):
         """Stocke une valeur dans le cache avec TTL."""
         try:
             ttl = ttl_seconds if ttl_seconds > 0 else self._default_ttl
-            serialized = json.dumps(value, default=str)
+            serialized = dumps_scientific(value)
             await self._redis.setex(self._cache_key(key), ttl, serialized)
         except Exception as e:
             logger.error("Redis cache set failed for key %s: %s", key, e)

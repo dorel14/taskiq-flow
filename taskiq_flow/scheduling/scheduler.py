@@ -468,7 +468,7 @@ class PipelineScheduler:
             misfire_grace_time=misfire_grace_time,
             jobstore="default",
         )
-        return job.id
+        return cast(str, job.id)
 
     async def schedule_at(
         self,
@@ -488,7 +488,7 @@ class PipelineScheduler:
             misfire_grace_time=misfire_grace_time,
             jobstore="default",
         )
-        return job.id
+        return cast(str, job.id)
 
     async def schedule_interval(
         self,
@@ -517,7 +517,7 @@ class PipelineScheduler:
             misfire_grace_time=misfire_grace_time,
             jobstore="default",
         )
-        return job.id
+        return cast(str, job.id)
 
     async def _run_pipeline(
         self,
