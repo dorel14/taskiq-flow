@@ -8411,24 +8411,28 @@ rate_limiter = RateLimiter(default_limits={
 ## 11. Common Issues
 
 ### Error: "No API key provided"
+
 ```
 # Fix: Add API key to headers or configure auth_provider
 X-API-Key: your-api-key
 ```
 
 ### Error: "Authorization required" on WebSocket
+
 ```python
 # Fix: Send auth message before subscribing
 ws.send(JSON.stringify({"action": "auth", "token": "your-token"}))
 ```
 
 ### Error: "Unsupported transport type"
+
 ```python
 # Fix: Use valid transport type
 TransportMiddleware(transport_type="websocket")  # "websocket", "http_stream", or "redis_pubsub"
 ```
 
 ### Metrics not showing up
+
 ```python
 # Fix: Add metrics_collector to PipelineMiddleware
 metrics = MetricsCollector()
@@ -9516,6 +9520,101 @@ Before running a pipeline, verify:
 ---
 
 *Master pipelines to orchestrate any workflow. Next, learn about [Task Definition]({{ '/en/guides/tasks/' | relative_url }}).*
+
+
+## DOCUMENT: Renderer_Registry
+
+# Renderer Registry Guide
+
+This guide explains how to use the Renderer Registry in TaskIQ-Flow to manage and extend rendering capabilities for task results and pipeline visualizations.
+
+## Overview
+
+The Renderer Registry is a central registry that maps data types to rendering functions. It allows you to customize how different types of data are displayed in the TaskIQ-Flow dashboard, API responses, and visualizations.
+
+## Using the Renderer Registry
+
+### Registering a Custom Renderer
+
+To register a custom renderer for a specific data type, use the `register_renderer` function from the `taskiq_flow.registry` module:
+
+```python
+from taskiq_flow.registry import register_renderer
+from typing import Any
+
+def render_my_data(data: Any) -> str:
+    """Custom renderer for MyData objects."""
+    return f"<div class='my-data'>My data: {data}</div>"
+
+register_renderer(MyData, render_my_data)
+```
+
+### Built-in Renderers
+
+TaskIQ-Flow comes with several built-in renderers for common data types:
+
+- `str`: Rendered as plain text
+- `int`, `float`: Rendered as numbers
+- `list`, `tuple`: Rendered as JSON arrays
+- `dict`: Rendered as JSON objects
+- `bytes`: Rendered as base64-encoded string
+- `None`: Rendered as empty string
+
+You can override any of these by registering your own renderer for the same type.
+
+### Accessing the Renderer Registry
+
+The renderer registry is accessible via the `taskiq_flow.renderer_registry` module:
+
+```python
+from taskiq_flow import renderer_registry
+
+# Get a renderer for a specific type
+renderer = renderer_registry.get(MyData)
+
+# Check if a renderer is registered for a type
+if renderer_registry.has(MyData):
+    print("Renderer found")
+```
+
+## Extending the Registry
+
+You can extend the registry by creating a custom registry instance and registering it with the application:
+
+```python
+from taskiq_flow.registry import RendererRegistry
+from taskiq_flow import set_renderer_registry
+
+custom_registry = RendererRegistry()
+custom_registry.register(MyData, lambda data: f"Custom: {data}")
+
+set_renderer_registry(custom_registry)
+```
+
+This is useful when you want to isolate renderer registrations for different applications or testing environments.
+
+## Example: Rendering Pandas DataFrames
+
+Here's an example of registering a renderer for Pandas DataFrames to display them as HTML tables:
+
+```python
+import pandas as pd
+from taskiq_flow.registry import register_renderer
+
+def render_dataframe(df: pd.DataFrame) -> str:
+    """Render a Pandas DataFrame as an HTML table."""
+    return df.to_html(index=False, table_id="dataframe-table")
+
+register_renderer(pd.DataFrame, render_dataframe)
+```
+
+Now, when a task returns a Pandas DataFrame, it will be displayed as an interactive HTML table in the dashboard.
+
+## API Reference
+
+For more details, see the [Renderer Registry API](../api/renderer_registry.md).
+
+---
 
 
 ## DOCUMENT: Retry
@@ -10872,6 +10971,194 @@ await scheduler.start()
 ---
 
 *Schedule pipelines like cron jobs. Track them like never before.*
+
+
+## DOCUMENT: Security
+
+# Security Guide
+
+This guide explains how to secure your TaskIQ-Flow installation using the built-in security features: authentication, authorization, rate limiting, and audit logging.
+
+## Overview
+
+TaskIQ-Flow provides a flexible security system that can be enabled via configuration. When security is enabled (`security.enabled = true`), the following features are active:
+
+- **Authentication**: Verify client identities using API keys or JWT tokens.
+- **Authorization**: Enforce access control lists (ACLs) on pipelines and tasks.
+- **Rate Limiting**: Limit the number of requests per client or IP address.
+- **Audit Logging**: Log security-relevant events for monitoring and compliance.
+
+## Configuration
+
+Security features are configured in the `TaskiqFlowConfig` object or via environment variables. The main security settings are:
+
+```python
+from taskiq_flow import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    security=SecurityConfig(
+        enabled=True,
+        api_keys={
+            "admin-key": {
+                "role": "admin",
+                "permissions": ["read", "write", "execute"],
+                "pipeline_whitelist": ["*"],
+            },
+            "viewer-key": {
+                "role": "viewer",
+                "permissions": ["read"],
+                "pipeline_whitelist": ["pipeline1", "pipeline2"],
+            },
+        },
+        jwt_secret_key="your-secret-key",
+        rate_limit_per_minute=60,
+        audit_log_path="audit.log",
+    )
+)
+```
+
+Alternatively, you can set environment variables:
+
+- `TASKIQ_FLOW_SECURITY_ENABLED=true`
+- `TASKIQ_FLOW_SECURITY_API_KEYS` (JSON string)
+- `TASKIQ_FLOW_SECURITY_JWT_SECRET_KEY`
+- `TASKIQ_FLOW_SECURITY_RATE_LIMIT_PER_MINUTE`
+- `TASKIQ_FLOW_SECURITY_AUDIT_LOG_PATH`
+
+## Authentication
+
+TaskIQ-Flow supports two authentication methods:
+
+### API Key Authentication
+
+Clients must include their API key in the `X-API-Key` header for HTTP requests or in the `auth` field of WebSocket connect messages.
+
+Example HTTP request:
+```http
+GET /api/pipelines
+X-API-Key: admin-key
+```
+
+### JWT Authentication
+
+If a JWT secret is configured, clients can authenticate using a JSON Web Token (JWT) in the `Authorization` header:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+The JWT must contain a `sub` (subject) field identifying the user and optionally a `role` field.
+
+## Authorization
+
+Once authenticated, users are assigned a role and permissions. The system checks these permissions against the requested action and resource.
+
+### Permissions
+
+- `read`: View pipeline metadata, status, and results.
+- `write`: Create, update, or delete pipelines.
+- `execute`: Trigger pipeline execution.
+- `admin`: Full access to all features, including security configuration.
+
+### Pipeline Whitelist
+
+Each API key can optionally specify a list of pipelines the user is allowed to access. If the whitelist is empty or contains `"*"`, the user can access all pipelines.
+
+## Rate Limiting
+
+To prevent abuse, TaskIQ-Flow limits the number of requests per client (identified by API key or IP address) per minute. The limit is configurable via `rate_limit_per_minute` (default: 60).
+
+When the limit is exceeded, the server responds with HTTP 429 (Too Many Requests) or closes the WebSocket connection with a policy violation.
+
+## Audit Logging
+
+Security-relevant events are logged to the audit log (if configured) for later analysis. Events include:
+
+- Authentication successes and failures
+- Authorization denials
+- Rate limit throttling
+- Security configuration changes
+
+The audit log is a simple text file with one JSON object per line, making it easy to parse with tools like `jq` or ingest into a SIEM system.
+
+## WebSocket Security
+
+WebSocket connections follow the same security model as HTTP:
+
+1. During the WebSocket upgrade handshake, the client must authenticate via the `X-API-Key` header or a JWT in the `Authorization` header.
+2. After authentication, each WebSocket message (e.g., subscribe/unsubscribe) is checked for permissions.
+3. Unauthorized attempts result in an error message and connection termination.
+
+## Example: Securing a Pipeline
+
+Here's a complete example of securing a pipeline that processes sensitive data:
+
+```python
+from taskiq import Taskiq, InMemoryBroker
+from taskiq_flow import TaskiqFlowConfig, SecurityConfig
+from taskiq_flow.api import create_api
+from taskiq_flow.events import HookManager
+
+# Configure security
+security_config = SecurityConfig(
+    enabled=True,
+    api_keys={
+        "processor-key": {
+            "role": "processor",
+            "permissions": ["read", "execute"],
+            "pipeline_whitelist": ["data-pipeline"],
+        },
+        "admin-key": {
+            "role": "admin",
+            "permissions": ["read", "write", "execute", "admin"],
+            "pipeline_whitelist": ["*"],
+        },
+    },
+    jwt_secret_key="super-secret",
+    rate_limit_per_minute=30,
+    audit_log_path="security-audit.log",
+)
+
+config = TaskiqFlowConfig(security=security_config)
+
+# Initialize broker and app
+broker = InMemoryBroker()
+taskiq = Taskiq(broker)
+taskiq_app = create_api(taskiq, config=config)
+
+# Define a secure pipeline
+@taskiq.task
+def process_sensitive_data(data: str) -> str:
+    # Simulate processing
+    return data.upper()
+
+# Register the pipeline with the broker (optional, for manual triggering)
+```
+
+Start the application with `uvicorn taskiq_app:app --host 0.0.0.0 --port 8000`. All endpoints will now require authentication.
+
+## Testing Security
+
+To verify your security setup, try accessing an endpoint without credentials:
+
+```bash
+curl -i http://localhost:8000/api/pipelines
+# Should return 401 Unauthorized
+
+curl -i -H "X-API-Key: invalid-key" http://localhost:8000/api/pipelines
+# Should return 401 Unauthorized
+
+curl -i -H "X-API-Key: processor-key" http://localhost:8000/api/pipelines
+# Should return 200 OK with pipeline list (if processor-key has read permission)
+```
+
+For WebSocket testing, use a WebSocket client library and include the `X-API-Key` header during the upgrade request.
+
+## Conclusion
+
+By following this guide, you can secure your TaskIQ-Flow instance to protect sensitive data and ensure that only authorized users can perform specific actions. For more details, refer to the API reference documentation.
+
+---
 
 
 ## DOCUMENT: Tasks
@@ -22069,6 +22356,101 @@ Avant d'exécuter un pipeline, vérifier :
 *Maîtriser les pipelines pour orchestrer n'importe quel workflow. Ensuite, apprendre sur la [Définition des Tâches]({{ '/fr/guides/tasks/' | relative_url }}).*
 
 
+## DOCUMENT: Renderer_Registry
+
+# Guide du registre de rendu
+
+Ce guide explique comment utiliser le registre de rendu dans TaskIQ-Flow pour gérer et étendre les capacités de rendu des résultats des tâches et des visualisations de pipelines.
+
+## Vue d'ensemble
+
+Le registre de rendu est un registre central qui associe des types de données à des fonctions de rendu. Il permet de personnaliser la façon dont différents types de données sont affichés dans le tableau de bord TaskIQ-Flow, les réponses API et les visualisations.
+
+## Utilisation du registre de rendu
+
+### Enregistrement d'un rendu personnalisé
+
+Pour enregistrer un rendu personnalisé pour un type de données spécifique, utilisez la fonction `register_renderer` du module `taskiq_flow.registry` :
+
+```python
+from taskiq_flow.registry import register_renderer
+from typing import Any
+
+def render_my_data(data: Any) -> str:
+    """Rendu personnalisé pour les objets MyData."""
+    return f"<div class='my-data'>My data : {data}</div>"
+
+register_renderer(MyData, render_my_data)
+```
+
+### Rendus intégrés
+
+TaskIQ-Flow est livré avec plusieurs rendus intégrés pour les types de données courants :
+
+- `str` : Rendu sous forme de texte brut
+- `int`, `float` : Rendu sous forme de nombres
+- `list`, `tuple` : Rendu sous forme de tableaux JSON
+- `dict` : Rendu sous forme d'objets JSON
+- `bytes` : Rendu sous forme de chaîne codée en base64
+- `None` : Rendu sous forme de chaîne vide
+
+Vous pouvez remplacer l'un de ces rendus en enregistrant votre propre rendu pour le même type.
+
+### Accès au registre de rendu
+
+Le registre de rendu est accessible via le module `taskiq_flow.renderer_registry` :
+
+```python
+from taskiq_flow import renderer_registry
+
+# Obtenir un rendu pour un type spécifique
+renderer = renderer_registry.get(MyData)
+
+# Vérifier si un rendu est enregistré pour un type
+if renderer_registry.has(MyData):
+    print("Rendu trouvé")
+```
+
+## Extension du registre
+
+Vous pouvez étendre le registre en créant une instance de registre personnalisée et en l'enregistrant avec l'application :
+
+```python
+from taskiq_flow.registry import RendererRegistry
+from taskiq_flow import set_renderer_registry
+
+custom_registry = RendererRegistry()
+custom_registry.register(MyData, lambda data: f"Personnalisé : {data}")
+
+set_renderer_registry(custom_registry)
+```
+
+Ceci est utile lorsque vous souhaitez isoler les enregistrements de rendu pour différentes applications ou environnements de test.
+
+## Exemple : Rendu des DataFrames Pandas
+
+Voici un exemple d'enregistrement d'un rendu pour les DataFrames Pandas afin de les afficher sous forme de tableaux HTML :
+
+```python
+import pandas as pd
+from taskiq_flow.registry import register_renderer
+
+def render_dataframe(df: pd.DataFrame) -> str:
+    """Rendu d'un DataFrame Pandas sous forme de tableau HTML."""
+    return df.to_html(index=False, table_id="dataframe-table")
+
+register_renderer(pd.DataFrame, render_dataframe)
+```
+
+Désormais, lorsqu'une tâche renvoie un DataFrame Pandas, il sera affiché sous la forme d'un tableau HTML interactif dans le tableau de bord.
+
+## Référence API
+
+Pour plus de détails, consultez l'[API du registre de rendu](../api/renderer_registry.md).
+
+---
+
+
 ## DOCUMENT: Retry
 
 # Guide des Retentatives et de la Gestion d'Erreurs
@@ -23413,6 +23795,194 @@ await scheduler.start()
 ---
 
 *Planifiez des pipelines comme des cron jobs. Suivez-les comme jamais.*
+
+
+## DOCUMENT: Security
+
+# Guide de sécurité
+
+Ce guide explique comment sécuriser votre installation TaskIQ-Flow en utilisant les fonctionnalités de sécurité intégrées : authentification, autorisation, limitation de débit et journalisation d'audit.
+
+## Vue d'ensemble
+
+TaskIQ-Flow fournit un système de sécurité flexible pouvant être activé via la configuration. Lorsque la sécurité est activée (`security.enabled = true`), les fonctionnalités suivantes sont actives :
+
+- **Authentification** : Vérifie les identités des clients à l'aide de clés API ou de jetons JWT.
+- **Autorisation** : Applique des listes de contrôle d'accès (ACL) aux pipelines et aux tâches.
+- **Limitation de débit** : Limite le nombre de requêtes par client ou adresse IP.
+- **Journalisation d'audit** : Journalise les événements liés à la sécurité pour la surveillance et la conformité.
+
+## Configuration
+
+Les fonctionnalités de sécurité sont configurées dans l'objet `TaskiqFlowConfig` ou via des variables d'environnement. Les principaux paramètres de sécurité sont :
+
+```python
+from taskiq_flow import TaskiqFlowConfig
+
+config = TaskiqFlowConfig(
+    security=SecurityConfig(
+        enabled=True,
+        api_keys={
+            "admin-key": {
+                "role": "admin",
+                "permissions": ["read", "write", "execute"],
+                "pipeline_whitelist": ["*"],
+            },
+            "viewer-key": {
+                "role": "viewer",
+                "permissions": ["read"],
+                "pipeline_whitelist": ["pipeline1", "pipeline2"],
+            },
+        },
+        jwt_secret_key="your-secret-key",
+        rate_limit_per_minute=60,
+        audit_log_path="audit.log",
+    )
+)
+```
+
+Vous pouvez également définir des variables d'environnement :
+
+- `TASKIQ_FLOW_SECURITY_ENABLED=true`
+- `TASKIQ_FLOW_SECURITY_API_KEYS` (chaîne JSON)
+- `TASKIQ_FLOW_SECURITY_JWT_SECRET_KEY`
+- `TASKIQ_FLOW_SECURITY_RATE_LIMIT_PER_MINUTE`
+- `TASKIQ_FLOW_SECURITY_AUDIT_LOG_PATH`
+
+## Authentification
+
+TaskIQ-Flow prend en charge deux méthodes d'authentification :
+
+### Authentification par clé API
+
+Les clients doivent inclure leur clé API dans l'en-tête `X-API-Key` pour les requêtes HTTP ou dans le champ `auth` des messages de connexion WebSocket.
+
+Exemple de requête HTTP :
+```http
+GET /api/pipelines
+X-API-Key: admin-key
+```
+
+### Authentification JWT
+
+Si une clé secrète JWT est configurée, les clients peuvent s'authentifier à l'aide d'un jeton Web Token (JWT) dans l'en-tête `Authorization` :
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+Le JWT doit contenir un champ `sub` (sujet) identifiant l'utilisateur et éventuellement un champ `role`.
+
+## Autorisation
+
+Une fois authentifiés, les utilisateurs se voient attribuer un rôle et des permissions. Le système vérifie ces permissions par rapport à l'action demandée et à la ressource.
+
+### Permissions
+
+- `read` : Visualiser les métadonnées, l'état et les résultats des pipelines.
+- `write` : Créer, mettre à jour ou supprimer des pipelines.
+- `execute` : Déclencher l'exécution des pipelines.
+- `admin` : Accès complet à toutes les fonctionnalités, y compris la configuration de sécurité.
+
+### Liste blanche de pipelines
+
+Chaque clé API peut éventuellement spécifier une liste de pipelines auxquels l'utilisateur est autorisé à accéder. Si la liste blanche est vide ou contient `"*"`, l'utilisateur peut accéder à tous les pipelines.
+
+## Limitation de débit
+
+Pour prévenir les abus, TaskIQ-Flow limite le nombre de requêtes par client (identifié par une clé API ou une adresse IP) par minute. La limite est configurable via `rate_limit_per_minute` (par défaut : 60).
+
+Lorsque la limite est dépassée, le serveur répond avec le code HTTP 429 (Trop de requêtes) ou ferme la connexion WebSocket avec une violation de politique.
+
+## Journalisation d'audit
+
+Les événements liés à la sécurité sont enregistrés dans le journal d'audit (s'il est configuré) pour une analyse ultérieure. Les événements comprennent :
+
+- Les succès et échecs d'authentification
+- Les refus d'autorisation
+- Le throttling de limitation de débit
+- Les modifications de la configuration de sécurité
+
+Le journal d'audit est un fichier texte simple contenant un objet JSON par ligne, ce qui le rend facile à analyser avec des outils comme `jq` ou à ingérer dans un système SIEM.
+
+## Sécurité WebSocket
+
+Les connexions WebSocket suivent le même modèle de sécurité que HTTP :
+
+1. Lors de la négociation de mise à niveau WebSocket, le client doit s'authentifier via l'en-tête `X-API-Key` ou un JWT dans l'en-tête `Authorization`.
+2. Après authentification, chaque message WebSocket (par exemple, s'abonner/se désabonner) est vérifié pour les permissions.
+3. Les tentatives non autorisées entraînent un message d'erreur et la terminaison de la connexion.
+
+## Exemple : Sécurisation d'un pipeline
+
+Voici un exemple complet de sécurisation d'un pipeline qui traite des données sensibles :
+
+```python
+from taskiq import Taskiq, InMemoryBroker
+from taskiq_flow import TaskiqFlowConfig, SecurityConfig
+from taskiq_flow.api import create_api
+from taskiq_flow.events import HookManager
+
+# Configurer la sécurité
+security_config = SecurityConfig(
+    enabled=True,
+    api_keys={
+        "processor-key": {
+            "role": "processor",
+            "permissions": ["read", "execute"],
+            "pipeline_whitelist": ["data-pipeline"],
+        },
+        "admin-key": {
+            "role": "admin",
+            "permissions": ["read", "write", "execute", "admin"],
+            "pipeline_whitelist": ["*"],
+        },
+    },
+    jwt_secret_key="super-secret",
+    rate_limit_per_minute=30,
+    audit_log_path="security-audit.log",
+)
+
+config = TaskiqFlowConfig(security=security_config)
+
+# Initialiser le courtier et l'application
+broker = InMemoryBroker()
+taskiq = Taskiq(broker)
+taskiq_app = create_api(taskiq, config=config)
+
+# Définir un pipeline sécurisé
+@taskiq.task
+def process_sensitive_data(data: str) -> str:
+    # Simuler le traitement
+    return data.upper()
+
+# Enregistrer le pipeline avec le courtier (optionnel, pour un déclenchement manuel)
+```
+
+Lancez l'application avec `uvicorn taskiq_app:app --host 0.0.0.0 --port 8000`. Tous les endpoints nécessiteront désormais une authentification.
+
+## Test de la sécurité
+
+Pour vérifier votre configuration de sécurité, essayez d'accéder à un point de terminaison sans identifiants :
+
+```bash
+curl -i http://localhost:8000/api/pipelines
+# Doit retourner 401 Non autorisé
+
+curl -i -H "X-API-Key: invalid-key" http://localhost:8000/api/pipelines
+# Doit retourner 401 Non autorisé
+
+curl -i -H "X-API-Key: processor-key" http://localhost:8000/api/pipelines
+# Doit retourner 200 OK avec la liste des pipelines (si processor-key a la permission de lecture)
+```
+
+Pour tester WebSocket, utilisez une bibliothèque client WebSocket et incluez l'en-tête `X-API-Key` lors de la requête de mise à niveau.
+
+## Conclusion
+
+En suivant ce guide, vous pouvez sécuriser votre instance TaskIQ-Flow pour protéger les données sensibles et garantir que seuls les utilisateurs autorisés puissent effectuer des actions spécifiques. Pour plus de détails, consultez la documentation de référence de l'API.
+
+---
 
 
 ## DOCUMENT: Tasks
@@ -26481,8 +27051,10 @@ def run_nicegui_app() -> None:
     @ui.page("/")
     def dag_viewer_page() -> None:
         """Main page showing the DAG visualization."""
-        ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; \
-                                                        font-weight: bold;")
+        ui.label("TaskIQ Flow DAG Visualization").style(
+            "font-size: 24px; \
+                                                        font-weight: bold;"
+        )
         ui.label("Data Processing Pipeline").style("font-size: 18px;")
         ui.separator()
 
@@ -26520,8 +27092,10 @@ if __name__ in {"__main__", "__mp_main__"}:
     logger.info("")
     logger.info("The Mermaid diagram code has been generated above.")
     logger.info("You can also view the DAG by running the NiceGUI app:")
-    logger.info("  python -c 'from examples.nicegui_dag_demo import\
-                run_nicegui_app; run_nicegui_app()'")
+    logger.info(
+        "  python -c 'from examples.nicegui_dag_demo import\
+                run_nicegui_app; run_nicegui_app()'"
+    )
 
 ```
 
