@@ -38,7 +38,7 @@ config = TaskiqFlowConfig(
                 "pipeline_whitelist": ["pipeline1", "pipeline2"],
             },
         },
-        jwt_secret_key="your-secret-key",
+        jwt_secret_key="your-secret-key", #pragma: allowlist secret
         rate_limit_per_minute=60,
         audit_log_path="audit.log",
     )
@@ -64,7 +64,7 @@ Les clients doivent inclure leur clé API dans l'en-tête `X-API-Key` pour les r
 Exemple de requête HTTP :
 ```http
 GET /api/pipelines
-X-API-Key: admin-key
+X-API-Key: admin-key #pragma: allowlist secret
 ```
 
 ### Authentification JWT
@@ -142,7 +142,7 @@ security_config = SecurityConfig(
             "pipeline_whitelist": ["*"],
         },
     },
-    jwt_secret_key="super-secret",
+    jwt_secret_key="super-secret", #pragma: allowlist secret
     rate_limit_per_minute=30,
     audit_log_path="security-audit.log",
 )
