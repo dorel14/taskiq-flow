@@ -1,15 +1,14 @@
-# """
-# Composants d'intégration NiceGUI pour la visualisation des DAG.
-#
-# Ce module fournit des composants NiceGUI pour afficher les DAG
-# avec des fonctionnalités interactives.
-#
-# Auteur: SoniqueBay Team
-# Version: 1.0.2
-# """
+"""
+Composants d'intégration NiceGUI pour la visualisation des DAG.
 
-# L'implémentation complète est prévue en v1.2.0.
-# En attendant, nous définissons des stubs de type pour éviter les erreurs mypy.
+Ce module fournit des composants NiceGUI pour afficher les DAG
+avec des fonctionnalités interactives.
+
+Auteur: SoniqueBay Team
+Version: 1.0.2
+"""
+
+
 
 from __future__ import annotations
 

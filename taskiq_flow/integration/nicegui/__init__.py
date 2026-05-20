@@ -8,11 +8,6 @@ Auteur: SoniqueBay Team
 Version: 1.0.2
 """
 
-from taskiq_flow.integration.nicegui.dag_viewer import (
-    DAGViewer,
-    LiveDAGPreview,
-    view_dag,
-)
 from taskiq_flow.integration.nicegui.mermaid import MermaidGenerator
 
-__all__ = ["DAGViewer", "LiveDAGPreview", "MermaidGenerator", "view_dag"]
+__all__ = ["MermaidGenerator"]

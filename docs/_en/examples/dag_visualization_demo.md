@@ -6,7 +6,7 @@ color_scheme: dark
 ---
 # Example: dag_visualization_demo.py
 
-**NetworkX DAG analysis: critical path, parallel groups, exports**
+**DAG NetworkX Analysis: Critical Path, Parallel Groups, Export**
 
 > **Version**: {VERSION} | **File**: `examples/dag_visualization_demo.py`
 
@@ -14,30 +14,32 @@ color_scheme: dark
 
 ## Overview
 
-This example showcases the advanced DAG visualization and analysis capabilities introduced in Taskiq-Flow v0.4.5 using NetworkX. It demonstrates:
+This demo showcases advanced DAG visualization and analysis capabilities
+introduced in Taskiq-Flow v0.4.5 with NetworkX, Mermaid diagramming,
+and multiple export formats.
 
-- Building a DAG from a DataflowPipeline
-- NetworkX-based analysis (critical path detection, parallel group identification)
-- Exporting to multiple formats: JSON, Mermaid, DOT, Cytoscape
-- ASCII art visualization for terminal
-- Integration with NiceGUI for interactive viewing
+- Build a DAG from a DataflowPipeline
+- NetworkX-based analysis (critical path, parallel groups)
+- Export to JSON, Mermaid, DOT, Cytoscape
+- Terminal ASCII visualization
+- NiceGUI integration for interactive view
 
 ---
 
 ## What This Example Shows
 
 - Using `DAGVisualizer` for rich DAG analysis
-- Detecting the critical path (longest execution chain)
-- Finding parallelizable task groups (execution levels)
-- Generating Mermaid diagrams for documentation
-- Exporting DOT format for Graphviz rendering
-- Creating Cytoscape JSON for web-based interactive visualization
+- Critical path detection (longest execution chain)
+- Parallel task group identification (execution levels)
+- Mermaid diagram generation for documentation
+- DOT export for Graphviz rendering
+- Cytoscape JSON for interactive web visualization
 
 ---
 
 ## Code Walkthrough
 
-### Pipeline Definition
+### 1. Pipeline Definition
 
 ```python
 from taskiq import InMemoryBroker
@@ -76,47 +78,44 @@ pipeline = DataflowPipeline.from_tasks(
 pipeline.pipeline_id = "audio_analysis_demo"
 ```
 
-The DAG structure:
+DAG structure:
 - `extract_features` runs first (no dependencies)
-- `generate_tags` and `compute_embedding` run in parallel (both depend only on `audio_features`)
-- `create_metadata` runs last (depends on all three previous outputs)
+- `generate_tags` and `compute_embedding` run in parallel (both depend on `audio_features`)
+- `create_metadata` runs last (depends on all three predecessors)
 
 ---
 
-### NetworkX Analysis with DAGVisualizer
+### 2. NetworkX Analysis with DAGVisualizer
 
 ```python
 from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 
-# Build DAG (static, without execution)
 dag = pipeline.build_dag()
 visualizer = DAGVisualizer(dag)
 
-# 1. Basic JSON export
+# JSON export
 json_data = visualizer.to_json()
 print(f"Nodes: {len(json_data['nodes'])}")
 print(f"Edges: {len(json_data['edges'])}")
-print(f"Is DAG: {not json_data['is_cyclic']}")
-print(f"Topological order: {json_data['topological_order'][:3]}...")
 
-# 2. Critical path detection
+# Critical path
 critical_path = visualizer.detect_critical_path()
 print(f"Critical path: {' -> '.join(critical_path)}")
 
-# 3. Parallel groups identification
+# Parallel groups
 parallel_groups = visualizer.find_parallelizable_groups()
 print(f"Parallel groups: {len(parallel_groups)} levels")
 for i, group in enumerate(parallel_groups):
     print(f"  Level {i}: {group}")
 ```
 
-**Critical path**: Longest path through the DAG, indicating minimum execution time assuming unlimited parallelism.
+**Critical Path**: Longest path in the DAG — minimum execution time with unlimited parallelism.
 
-**Parallel groups**: Tasks at the same level can execute concurrently.
+**Parallel Groups**: Tasks on the same level can run concurrently.
 
 ---
 
-### Mermaid Diagrams
+### 3. Mermaid Diagrams
 
 ```python
 from taskiq_flow.visualization.mermaid import MermaidGenerator
@@ -126,7 +125,7 @@ mermaid_code = mermaid_gen.to_mermaid_with_styling(orientation="LR")
 print(mermaid_code)
 ```
 
-Outputs Mermaid.js code:
+Output:
 
 ```mermaid
 flowchart LR
@@ -136,19 +135,16 @@ flowchart LR
     C --> D
 ```
 
-Useful for embedding in docs, NiceGUI dashboards, or wikis.
-
 ---
 
-### ASCII Art (Terminal)
+### 4. ASCII Art (Terminal)
 
 ```python
 ascii_art = visualizer.visualize_ascii()
 print(ascii_art)
 ```
 
-Output example:
-
+Output:
 ```
 extract_features
     |
@@ -159,42 +155,27 @@ extract_features
             +--> create_metadata
 ```
 
-Quick visual debugging without external tools.
-
 ---
 
-### Graphviz DOT Export
+### 5. Graphviz DOT Export
 
 ```python
 dot = visualizer.to_graphviz()
-print(dot)
+# Save and render: dot -Tpng pipeline.dot -o pipeline.png
 ```
-
-Save to file and render:
-
-```bash
-echo "$dot" > pipeline.dot
-dot -Tpng pipeline.dot -o pipeline.png
-```
-
-Professional vector graphics for presentations.
 
 ---
 
-### Cytoscape JSON for Web UIs
+### 6. Cytoscape JSON (Web)
 
 ```python
 cytoscape = visualizer.to_cytoscape_json()
-# Contains nodes[] and edges[] arrays ready for Cytoscape.js
+# Contains nodes[] and edges[] ready for Cytoscape.js
 ```
-
-Integrate with interactive web-based DAG viewers.
 
 ---
 
 ## Expected Output
-
-Running `python examples/dag_visualization_demo.py` produces:
 
 ```
 === Taskiq-Flow DAG Visualization Demo ===
@@ -205,8 +186,6 @@ DAG has 4 nodes and 4 edges
 ----------------------------------------
    Nodes: 4
    Edges: 4
-   Is DAG: True
-   Topological order: ['extract_features', 'generate_tags', 'compute_embedding', 'create_metadata']...
    Critical path: extract_features -> generate_tags -> create_metadata
    Parallel groups: 3 levels
      Level 0: ['extract_features']
@@ -217,37 +196,27 @@ DAG has 4 nodes and 4 edges
 ----------------------------------------
 flowchart LR
     extract_features --> generate_tags
-    extract_features --> compute_embedding
-    generate_tags --> create_metadata
-    compute_embedding --> create_metadata
+    ...
 
 3. ASCII Art
 ----------------------------------------
 extract_features
     |
     +--> generate_tags
-    |
-    +--> compute_embedding
-            |
-            +--> create_metadata
+    ...
 
 4. Graphviz DOT
 ----------------------------------------
 digraph "audio_analysis_demo" {
   "extract_features" -> "generate_tags";
-  "extract_features" -> "compute_embedding";
-  "generate_tags" -> "create_metadata";
-  "compute_embedding" -> "create_metadata";
+  ...
 }
-...
 
-5. Cytoscape JSON (for web visualization)
+5. Cytoscape JSON
 ----------------------------------------
    Elements: 4 nodes, 4 edges
 
 === Demo Complete ===
-
-All visualization formats generated successfully!
 ```
 
 ---
@@ -256,10 +225,10 @@ All visualization formats generated successfully!
 
 ### DAGVisualizer Methods
 
-| Method | Returns | Use case |
+| Method | Returns | Use Case |
 |--------|---------|----------|
 | `to_json()` | dict | API responses, web UIs |
-| `detect_critical_path()` | list[str] | Identify bottleneck tasks |
+| `detect_critical_path()` | list[str] | Find bottleneck tasks |
 | `find_parallelizable_groups()` | list[list[str]] | Optimize parallelism |
 | `to_graphviz()` | str | Graphviz rendering |
 | `to_cytoscape_json()` | dict | Interactive web viz |
@@ -273,16 +242,18 @@ All visualization formats generated successfully!
 | `to_mermaid_with_styling(orientation)` | Colored nodes by type |
 | `to_mermaid_interactive()` | With click handlers |
 
-### Integration with NiceGUI
+### NiceGUI Integration
 
 ```python
-from taskiq_flow.integration.nicegui import DAGViewer
+from taskiq_flow.visualization.mermaid import MermaidGenerator
 
-viewer = DAGViewer(dag)
-viewer.render_interactive()  # Split-panel UI
-# or
-viewer.render_mermaid()  # Mermaid-based view
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# Embed in a NiceGUI page:
+#   ui.markdown(f"```mermaid\n{mermaid_code}\n```")
 ```
+
+`MermaidGenerator` produces Mermaid.js source; NiceGUI `ui.markdown()` renders it in the browser.
 
 ---
 
@@ -291,9 +262,9 @@ viewer.render_mermaid()  # Mermaid-based view
 After this example:
 
 1. **[Visualization Guide]({{ '/en/guides/pipelines/#pipeline-visualization' | relative_url }})** — Full DAG visualization features
-2. **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Using DAG analysis for optimization
-3. **[NiceGUI Integration]({{ '/en/guides/pipelines/#nicegui-interactive-viewer' | relative_url }})** — Building interactive dashboards
+2. **[Performance Guide]({{ '/en/guides/performance/' | relative_url }})** — Use DAG analysis for optimization
+3. **[NiceGUI Integration]({{ '/en/guides/pipelines/#nicegui-interactive-viewer' | relative_url }})** — Build interactive dashboards
 
 ---
 
-*This example covers all major visualization outputs. Use `DAGVisualizer` for programmatic analysis and `MermaidGenerator` for documentation.*
+*This example covers all major visualization output formats. Use `DAGVisualizer` for programmatic analysis and `MermaidGenerator` for documentation.*

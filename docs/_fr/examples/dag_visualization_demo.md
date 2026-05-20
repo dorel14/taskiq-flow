@@ -276,13 +276,15 @@ All visualization formats generated successfully!
 ### Intégration NiceGUI
 
 ```python
-from taskiq_flow.integration.nicegui import DAGViewer
+from taskiq_flow.visualization.mermaid import MermaidGenerator
 
-viewer = DAGViewer(dag)
-viewer.render_interactive()  # UI panneau divisé
-# ou
-viewer.render_mermaid()  # Vue basée Mermaid
+mermaid_gen = MermaidGenerator(dag)
+mermaid_code = mermaid_gen.to_mermaid_with_styling()
+# Intégrer le code Mermaid dans une page NiceGUI :
+#   ui.markdown(f"```mermaid\n{mermaid_code}\n```")
 ```
+
+`MermaidGenerator` génère le code Mermaid.js ; `ui.markdown()` de NiceGUI l'affiche dans l'UI.
 
 ---
 
