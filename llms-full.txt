@@ -1840,9 +1840,9 @@ All storage methods must be async.
 
 # API Reference: WebSocket Integration
 
-**HookManager, WebSocket bridge, and real-time event transport**
+**HookManager, WebSocket bridge, and real-time event transport via FastAPI**
 
-> **Version**: {VERSION} | **Module**: `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version**: {VERSION} | **Module**: `taskiq_flow.hooks`, `taskiq_flow.integration.websocket`
 
 ---
 
@@ -2028,25 +2028,74 @@ pipeline_error = PipelineErrorEvent(
 
 ---
 
-## WebSocket Transport
+## WebSocket Integration (FastAPI)
+
+Taskiq-Flow uses a **FastAPI-only** WebSocket integration. WebSocket events are served via a FastAPI `WebSocket` route at `/ws/{pipeline_id}` in your application.
 
 ### setup_websocket_bridge
 
-Connects `HookManager` to the WebSocket transport layer:
+Connects the `HookManager` event system to the WebSocket transport layer:
 
 ```python
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 
 hook_manager = HookManager()
 setup_websocket_bridge(hook_manager)
-# Now all hooks are forwarded to WebSocket server
+# Now all pipeline events are forwarded to the WebSocket transport
 ```
 
-This installs a bridge that forwards events from the `HookManager` to any connected WebSocket servers.
+Once the bridge is active, mount the FastAPI WebSocket endpoint in your application:
 
-### get_websocket_server
+```python
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-Factory function to obtain or create a WebSocket server:
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+Clients connect to `ws://<host>:<port>/ws/<pipeline_id>` and receive real-time pipeline events. The `pipeline_id` in the URL path is used to subscribe the client to that specific pipeline's event channel.
+
+### get_fastapi_ws_manager
+
+Get the singleton FastAPIWebSocketManager instance:
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import get_fastapi_ws_manager
+
+manager = get_fastapi_ws_manager()
+print(f"Active channels: {manager.get_channel_ids()}")
+print(f"Client count: {manager.get_client_count('pipeline_1')}")
+```
+
+### fastapi_websocket_endpoint
+
+The FastAPI WebSocket route handler. Use it as a route callback:
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+The endpoint:
+- Accepts the WebSocket connection
+- Subscribes the client to the `pipeline_id` channel
+- Tracks the connection metric
+- Disconnects cleanly on client disconnect
+
+---
+
+### get_websocket_server ⚠️ Deprecated
+
+:::warning Deprecated since v1.1
+The function `get_websocket_server()` and class `PipelineWebSocketServer` were removed in v1.1. The standalone picows WebSocket server is no longer supported. Use the FastAPI WebSocket integration instead.
+:::
 
 ```python
 from taskiq_flow.integration.websocket import get_websocket_server
@@ -2059,15 +2108,20 @@ server = get_websocket_server(
 await server.start_server()
 ```
 
-**Parameters**:
+:::danger Raises RuntimeError
+Calling `get_websocket_server()` always raises `RuntimeError`. Use the FastAPI integration instead:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `host` | `str` | `"0.0.0.0"` | Bind address |
-| `port` | `int` | `8765` | Bind port |
-| `transport` | `WebSocketTransport | None` | Auto-created if None |
+```python
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-The server is a singleton per configuration; subsequent calls to `get_websocket_server()` with same host/port return the same instance.
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+:::
 
 ---
 
@@ -2099,7 +2153,7 @@ hook_manager.add_filter(filter)
 Event → Check pipeline_id match? → Check event_type match? → Emit?
 ```
 
-Both filters are **ORed** internally: an event passes if it matches *both* the pipeline_ids AND event_types filters. Use `"*"` to match all.
+Both filters are **ANDed** internally: an event passes if it matches *both* the pipeline_ids AND event_types filters. Use `"*"` to match all.
 
 ---
 
@@ -2107,17 +2161,17 @@ Both filters are **ORed** internally: an event passes if it matches *both* the p
 
 ### Connection
 
-Client connects via standard WebSocket:
+Clients connect via standard WebSocket to the FastAPI route:
 
 ```
-ws://localhost:8765
+ws://localhost:8000/ws/my_pipeline
 ```
 
-For secure connections (WSS), terminate SSL at reverse proxy (nginx, Traefik).
+For secure connections (WSS), terminate TLS at a reverse proxy (nginx, Traefik).
 
 ### Subscription
 
-After connecting, client sends a subscription message:
+After connecting, the client is already subscribed to the pipeline identified by the URL path. Additional subscribe/unsubscribe messages can be sent:
 
 ```json
 {
@@ -2158,41 +2212,60 @@ All messages are JSON with a `type` field:
 }
 ```
 
-Full field reference in the WebSocket Guide.
+Full field reference in the [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}).
 
 ---
 
-## Custom Transport
+## FastAPI Route Reference
 
-For advanced use cases, implement your own transport:
+### Mounting the WebSocket Endpoint
 
 ```python
-from taskiq_flow.transport import WebSocketTransport
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-class MyTransport(WebSocketTransport):
-    async def broadcast(self, event: BaseEvent):
-        # Custom routing logic (e.g., to Redis Pub/Sub, Kafka, etc.)
-        await self.redis.publish("pipeline_events", event.json())
+app = FastAPI()
 
-transport = MyTransport()
-server = get_websocket_server(transport=transport)
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+### Querying Connected Clients
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import get_fastapi_ws_manager
+
+manager = get_fastapi_ws_manager()
+client_count = manager.get_client_count("pipeline_1")
+```
+
+Full REST endpoints for querying clients and pipelines are available in the API routes module:
+
+```python
+from taskiq_flow.api.routes.websocket import router as ws_router
+app.include_router(ws_router, prefix="/api")
 ```
 
 ---
 
 ## Multi-Worker Coordination
 
-For multiple Python workers sharing event state:
+For multiple workers sharing event state via Redis:
 
 ```python
 from taskiq_flow.transport import RedisPubSubTransport
+from taskiq_flow.hooks.bridge import setup_websocket_bridge
+import redis
 
+redis_client = redis.Redis(host="localhost", port=6379)
 transport = RedisPubSubTransport(redis_client)
-server = get_websocket_server(transport=transport)
-# All workers connected to same Redis channel share events
+setup_websocket_bridge(hook_manager, use_fastapi=True)
 ```
 
-All workers subscribe to the same Redis pub/sub channel; events from any worker are broadcast to all WebSocket clients connected to any worker.
+All workers subscribe to the same Redis pub/sub channel; events from any worker are broadcast to all WebSocket clients connected to any worker. WebSocket connections are always served through the FastAPI application.
+
+> **Prerequisite**: Install the `[brokers]` extra: `pip install "taskiq-flow[brokers]"` for Redis support.
 
 ---
 
@@ -2222,23 +2295,40 @@ async def handle_connection(websocket):
 
 ```python
 async def shutdown():
-    await server.close()  # Stop accepting new connections
-    await server.wait_closed()  # Wait for existing connections to close
+    manager = get_fastapi_ws_manager()
+    await manager.close_all()
 ```
 
 ### Monitoring
 
-Expose metrics:
+Expose metrics via the built-in metrics endpoint:
 
 ```python
 @app.get("/ws/metrics")
 async def ws_metrics():
+    manager = get_fastapi_ws_manager()
     return {
-        "connections": server.connection_count(),
-        "messages_sent": server.messages_sent,
-        "messages_per_second": server.rate()
+        "channels": manager.get_channel_ids(),
     }
 ```
+
+### SSL/TLS
+
+Terminate TLS at a reverse proxy (nginx, Traefik) — never inline in the application:
+
+```nginx
+server {
+    listen 443 ssl;
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+> **Note**: The legacy `PipelineWebSocketServer` with inline SSL (`ssl_cert`/`ssl_key` parameters) was removed in v1.1. Use a reverse proxy for TLS termination.
 
 ---
 
@@ -2247,7 +2337,7 @@ async def ws_metrics():
 | Issue | Diagnosis | Fix |
 |-------|-----------|-----|
 | Clients not receiving events | `setup_websocket_bridge()` not called | Call before pipeline starts |
-| Connection refused | Server not started | Call `await server.start_server()` |
+| Connection refused | FastAPI app not running | Start with `uvicorn app:app` |
 | Events delayed | Event filter blocking | Check filter configuration |
 | High CPU | Too many connections | Enforce connection limits |
 
@@ -2260,23 +2350,32 @@ async def ws_metrics():
 | `HookManager` | Collect events from pipelines |
 | `BaseEvent` subclasses | Structured event data |
 | `EventFilter` | Selectively broadcast events |
-| `WebSocketTransport` | Low-level transport (default or custom) |
-| `WebSocketServer` | Manage client connections |
-| `get_websocket_server()` | Factory/singleton accessor |
+| `setup_websocket_bridge()` | Connects HookManager to WebSocket transport |
+| `FastAPIWebSocketManager` | WebSocket client management (singleton) |
+| `fastapi_websocket_endpoint()` | FastAPI WebSocket route handler |
+| `FastAPI route /ws/{pipeline_id}` | Client-facing WebSocket endpoint |
 
-**Minimum setup**:
+**Minimum FastAPI setup**:
 
 ```python
-hooks = HookManager()
-setup_websocket_bridge(hooks)
-pipeline = Pipeline(broker).with_hooks(hooks)
-server = get_websocket_server()
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+from taskiq_flow.hooks import HookManager, setup_websocket_bridge
+
+hook_manager = HookManager()
+setup_websocket_bridge(hook_manager)
+pipeline = Pipeline(broker).with_hooks(hook_manager)
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
 ```
 
 ---
 
-*For client implementation details, see [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}). For event filtering strategies, see that guide's Section 7.*
+*For client implementation details, see the [WebSocket Guide]({{ '/en/guides/websocket/' | relative_url }}). For event filtering strategies, see that guide's Section 7.*
 
 
 ## DOCUMENT: Api Example
@@ -5166,14 +5265,24 @@ After this example:
 
 ## Overview
 
-This example demonstrates how to set up a WebSocket server that streams real-time pipeline execution events. It covers:
+This example demonstrates how to set up WebSocket real-time pipeline event streaming using **FastAPI-only WebSocket integration**.
 
-- Creating a `HookManager` and connecting it to WebSocket transport
-- Starting a WebSocket server on a specific host/port
-- Subscribing to pipeline events from a client
+This example covers:
+
+- Creating a `HookManager` and connecting it to the WebSocket transport via `setup_websocket_bridge()`
+- Running a pipeline with WebSocket events active
+- Connecting a JavaScript client to the FastAPI WebSocket route
 - Observing live step completion events
 
-**Note**: This is a minimal demo. For production use, add authentication, error handling, and proper connection management.
+**Note**: WebSocket events are served through your FastAPI application at `/ws/{pipeline_id}`. The standalone `get_websocket_server()` and `PipelineWebSocketServer` were removed in v1.1. Use the FastAPI WebSocket route instead.
+
+---
+
+## Prerequisites
+
+```bash
+pip install "taskiq-flow[brokers]" fastapi uvicorn
+```
 
 ---
 
@@ -5181,21 +5290,26 @@ This example demonstrates how to set up a WebSocket server that streams real-tim
 
 - Setting up `HookManager` with `setup_websocket_bridge()`
 - Attaching hooks to a pipeline
-- Starting the WebSocket server
-- How clients can connect and subscribe
-- The event messages that are broadcast
+- Executing the pipeline and broadcasting events to connected WebSocket clients
+- Connecting a WebSocket client via FastAPI at `/ws/{pipeline_id}`
 
 ---
 
-## Code Walkthrough
+## Part 1: The Pipeline Script (Python)
+
+This script sets up the pipeline, hooks, and FastAPI application. Start this first.
 
 ```python
 import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 from taskiq_flow.middleware import PipelineMiddleware
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    fastapi_websocket_endpoint,
+    get_fastapi_ws_manager,
+)
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
@@ -5209,41 +5323,92 @@ def add_one(x: int) -> int:
 def multiply_by_two(x: int) -> int:
     return x * 2
 
-async def main():
-    # 1. Set up hook manager and WebSocket bridge
-    hook_manager = HookManager()
-    setup_websocket_bridge(hook_manager)
+# -- WebSocket setup --------------------------------------------------------
 
-    # 2. Create pipeline and attach hooks
+# 1. Create hook manager
+hook_manager = HookManager()
+
+# 2. Set up the WebSocket bridge (connects HookManager → FastAPI WebSocket transport)
+setup_websocket_bridge(hook_manager)
+
+# 3. Mount the FastAPI WebSocket route
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    """
+    WebSocket endpoint for real-time pipeline events.
+    Clients connect to: ws://localhost:8000/ws/{pipeline_id}
+    """
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# -- Pipeline ---------------------------------------------------------------
+
+async def main():
+    # 4. Create pipeline and attach hooks
     pipeline = Pipeline(broker)
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(add_one, param_name="x")
     pipeline.call_next(multiply_by_two, param_name="x")
     pipeline.with_hooks(hook_manager)
 
-    # 3. Start WebSocket server in background
-    websocket_server = get_websocket_server()
-    _ = asyncio.create_task(
-        websocket_server.start_server("127.0.0.1", 8765),
-    )
-
-    print("WebSocket server started on ws://127.0.0.1:8765")
-    msg = '{"pipeline_id": "websocket_demo"}'
-    print(f"Connect a WebSocket client and subscribe with: {msg}")
-    print("Then run the pipeline to see real-time events...")
-
-    # Wait for server to start
-    await asyncio.sleep(1)
-
-    # 4. Execute the pipeline
+    # 5. Execute the pipeline (events are broadcast to any connected WS clients)
     result = await pipeline.kiq(5)  # Start with 5 → 6 → 12
     print(f"Pipeline result: {result}")
 
-    # Keep server running briefly
+    # Keep FastAPI app running briefly (in production, use uvicorn separately)
     await asyncio.sleep(5)
-    print("Demo complete. Server will shut down.")
+    print("Demo complete. Shutting down.")
 
 asyncio.run(main())
+```
+
+Start the script with:
+
+```bash
+uvicorn examples.websocket_demo:app --host 0.0.0.0 --port 8000
+```
+
+Or during development:
+
+```bash
+uvicorn examples.websocket_demo:app --reload
+```
+
+---
+
+## Part 2: The WebSocket Client (JavaScript)
+
+Open a browser console or a Node.js script and connect to your FastAPI app:
+
+```javascript
+// Connect to the FastAPI WebSocket route
+const ws = new WebSocket('ws://localhost:8000/ws/websocket_demo');
+
+// Subscribe to the demo pipeline (already done by connecting to /ws/websocket_demo)
+ws.onopen = () => {
+    console.log('Connected to WebSocket server');
+    ws.send(JSON.stringify({
+        type: 'subscribe',
+        pipeline_id: 'websocket_demo'
+    }));
+};
+
+// Handle incoming events
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Event:', data.type, data);
+
+    switch (data.type) {
+        case 'StepCompleteEvent':
+            console.log(`Step ${data.step_name} finished:`, data.result);
+            break;
+        case 'PipelineCompleteEvent':
+            console.log('Pipeline finished with status:', data.status);
+            console.log('Final result:', data.result);
+            break;
+    }
+};
 ```
 
 ---
@@ -5278,42 +5443,6 @@ When the pipeline runs, the following events are broadcast:
 
 ---
 
-## Client Implementation (JavaScript)
-
-Open a browser console or Node.js script:
-
-```javascript
-// Connect to WebSocket server
-const ws = new WebSocket('ws://127.0.0.1:8765');
-
-// Subscribe to the demo pipeline
-ws.onopen = () => {
-    console.log('Connected to WebSocket server');
-    ws.send(JSON.stringify({
-        type: 'subscribe',
-        pipeline_id: 'websocket_demo'
-    }));
-};
-
-// Handle incoming events
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Event:', data.type, data);
-
-    switch (data.type) {
-        case 'StepCompleteEvent':
-            console.log(`Step ${data.step_name} finished:`, data.result);
-            break;
-        case 'PipelineCompleteEvent':
-            console.log('Pipeline finished with status:', data.status);
-            console.log('Final result:', data.result);
-            break;
-    }
-};
-```
-
----
-
 ## Key Setup Steps
 
 ### 1. Create HookManager
@@ -5327,32 +5456,29 @@ setup_websocket_bridge(hook_manager)
 ```
 This connects the HookManager's event system to the WebSocket transport layer.
 
-### 3. Attach Hooks to Pipeline
+### 3. Mount FastAPI WebSocket Route
+```python
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+The WebSocket endpoint is served by your FastAPI application.
+
+### 4. Attach Hooks to Pipeline
 ```python
 pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 Without this, the pipeline won't emit events to the WebSocket.
 
-### 4. Set pipeline_id
+### 5. Set pipeline_id
 ```python
 pipeline.pipeline_id = "my_pipeline"
 ```
 Required for clients to subscribe to specific pipelines.
 
-### 5. Start Server
-```python
-server = get_websocket_server(host="127.0.0.1", port=8765)
-await server.start_server()
-```
-
 ---
 
 ## Customization
-
-### Change Port
-```python
-server = get_websocket_server(port=9000)
-```
 
 ### Multiple Pipelines
 ```python
@@ -5363,7 +5489,7 @@ pipeline2 = Pipeline(broker).with_hooks(hook_manager)
 pipeline2.pipeline_id = "pipeline_2"
 ```
 
-Clients can subscribe to specific pipeline IDs.
+Clients can subscribe to specific pipeline IDs via `/ws/{pipeline_id}`.
 
 ### Event Filtering
 ```python
@@ -5385,10 +5511,11 @@ hook_manager.add_filter(filter)
 - Ensure `setup_websocket_bridge(hook_manager)` called **before** `pipeline.kiq()`
 - Ensure `pipeline.with_hooks(hook_manager)` called
 - Ensure `pipeline.pipeline_id` is set
+- Ensure the FastAPI WebSocket route is mounted at `/ws/{pipeline_id}`
 
 ### Connection Refused
-- Ensure `await server.start_server()` called before connecting
-- Check that the host/port match client connection string
+- Ensure the FastAPI app is running: `uvicorn examples.websocket_demo:app`
+- Check that the host/port match the client connection string
 
 ### Events Out of Order
 WebSocket delivers messages in order; if you see out-of-order, check for network issues or custom middleware emitting events incorrectly.
@@ -5405,7 +5532,7 @@ After this example:
 
 ---
 
-*This example shows real-time streaming basics. For production, add authentication, connection pooling, and horizontal scaling with Redis Pub/Sub transport.*
+*This example shows real-time streaming basics with the FastAPI-only WebSocket integration. For production, add authentication, connection pooling, and horizontal scaling with Redis Pub/Sub transport.*
 
 
 ## DOCUMENT: Api
@@ -6481,6 +6608,8 @@ Taskiq-Flow is built on two core models:
 
 For a deep dive into the dataflow model, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
+> **Note**: Zero extras required. Everything in this guide — `Pipeline`, `DataflowPipeline`, `@broker.task`, `PipelineMiddleware` — ships with the base `taskiq-flow` installation.
+
 Understanding these models helps you choose the right approach for your workflow.
 
 ---
@@ -6640,6 +6769,8 @@ Taskiq-Flow's **dataflow** system is the most powerful way to orchestrate comple
 - **Dynamic pipeline construction** — add tasks flexibly at runtime
 
 This guide covers the complete dataflow system: the DAG, the registry, decorators, the execution engine, and advanced patterns.
+
+> **Note**: All dataflow features described in this guide are **core-only** — no `[brokers]` or `[scheduler]` extras required. `DataflowPipeline`, `ExecutionEngine(resource_aware=True)`, `MapReduce.map()`, and the `@pipeline_task` decorator all work with a standard `pip install taskiq-flow` installation.
 
 ---
 
@@ -8937,6 +9068,46 @@ engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
 
+### 11.1. Resource-Aware Execution with `TaskResourceProfile`
+
+Taskiq-Flow provides a resource-aware execution pattern for pipelines that need
+to allocate tasks to workers based on their CPU/RAM requirements:
+
+```python
+from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.dataflow import DataflowPipeline
+
+# Define a resource profile for heavy tasks
+heavy_profile = TaskResourceProfile(
+    estimated_memory_mb=2048,
+    estimated_cpu_cores=4.0,
+)
+
+# Annotate tasks with resource needs via labels when creating the pipeline
+pipeline = DataflowPipeline(
+    broker=broker,
+    name="resource_aware_pipeline",
+    resource_aware=True,
+)
+
+@pipeline.task(resource_profile=heavy_profile)
+def heavy_computation(data: dict) -> dict:
+    """This task requires 4 CPU cores and 2 GB of RAM."""
+    return process_heavy_data(data)
+
+# Configure the executor to respect resource profiles
+executor = ResourceAwareExecutor(
+    broker=broker,
+    max_parallel=10,
+)
+executor.run_pipeline(pipeline, input_data)
+```
+
+`ResourceAwareExecutor` evaluates resource profiles of tasks and distributes them
+to available workers based on their capacity. `TaskResourceProfile` lets you
+annotate each task with its estimated resource needs, enabling the executor to
+prevent over-subscription of workers.
+
 ---
 
 ## 12. Summary
@@ -9510,97 +9681,192 @@ Before running a pipeline, verify:
 
 ## DOCUMENT: Renderer_Registry
 
-# Renderer Registry Guide
+# Visualisation Guide
 
-This guide explains how to use the Renderer Registry in TaskIQ-Flow to manage and extend rendering capabilities for task results and pipeline visualizations.
+This guide explains how to use the TaskIQ-Flow visualization module to generate DAG representations of pipelines in JSON, DOT (Graphviz), ASCII, and Mermaid formats.
 
 ## Overview
 
-The Renderer Registry is a central registry that maps data types to rendering functions. It allows you to customize how different types of data are displayed in the TaskIQ-Flow dashboard, API responses, and visualizations.
+The visualization module provides two main classes for representing pipeline DAGs:
 
-## Using the Renderer Registry
+| Class | Module | Output formats |
+|-------|--------|----------------|
+| `DAGVisualizer` | `taskiq_flow.visualization` | JSON, DOT, ASCII |
+| `MermaidGenerator` | `taskiq_flow.visualization` | Mermaid.js flowchart |
 
-### Registering a Custom Renderer
+These are **modular classes** — there is no unified renderer registry. Each format is generated by instantiating the appropriate class directly.
 
-To register a custom renderer for a specific data type, use the `register_renderer` function from the `taskiq_flow.registry` module:
+## DAGVisualizer
 
-```python
-from taskiq_flow.registry import register_renderer
-from typing import Any
-
-def render_my_data(data: Any) -> str:
-    """Custom renderer for MyData objects."""
-    return f"<div class='my-data'>My data: {data}</div>"
-
-register_renderer(MyData, render_my_data)
-```
-
-### Built-in Renderers
-
-TaskIQ-Flow comes with several built-in renderers for common data types:
-
-- `str`: Rendered as plain text
-- `int`, `float`: Rendered as numbers
-- `list`, `tuple`: Rendered as JSON arrays
-- `dict`: Rendered as JSON objects
-- `bytes`: Rendered as base64-encoded string
-- `None`: Rendered as empty string
-
-You can override any of these by registering your own renderer for the same type.
-
-### Accessing the Renderer Registry
-
-The renderer registry is accessible via the `taskiq_flow.renderer_registry` module:
+Convert a DAG to a structured dictionary (JSON-ready), DOT graph description, or ASCII art.
 
 ```python
-from taskiq_flow import renderer_registry
+from taskiq_flow.visualization import DAGVisualizer, visualize_pipeline
 
-# Get a renderer for a specific type
-renderer = renderer_registry.get(MyData)
-
-# Check if a renderer is registered for a type
-if renderer_registry.has(MyData):
-    print("Renderer found")
+# From a DataflowPipeline instance
+viz_json = pipeline.visualize()              # JSON-ready dict
+dot_code = pipeline.visualize_dot()           # DOT string for Graphviz
+pipeline.print_dag()                          # ASCII in console
 ```
 
-## Extending the Registry
-
-You can extend the registry by creating a custom registry instance and registering it with the application:
+### Method: `DAGVisualizer.to_json(dag)`
 
 ```python
-from taskiq_flow.registry import RendererRegistry
-from taskiq_flow import set_renderer_registry
+from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
+from taskiq_flow.dataflow.dag import DAG
 
-custom_registry = RendererRegistry()
-custom_registry.register(MyData, lambda data: f"Custom: {data}")
-
-set_renderer_registry(custom_registry)
+graph = dag_builder.build()  # returns a DAG
+visualizer = DAGVisualizer()
+data = visualizer.to_json(graph)
 ```
 
-This is useful when you want to isolate renderer registrations for different applications or testing environments.
+**Output** — a dictionary with `nodes` and `edges`:
 
-## Example: Rendering Pandas DataFrames
+```json
+{
+  "nodes": [
+    {"id": "extract_features", "label": "extract_features", "level": 0, "state": "pending"},
+    {"id": "compute_stats",   "label": "compute_stats",   "level": 1, "state": "pending"}
+  ],
+  "edges": [
+    {"source": "extract_features", "target": "compute_stats"}
+  ]
+}
+```
 
-Here's an example of registering a renderer for Pandas DataFrames to display them as HTML tables:
+### Method: `DAGVisualizer.to_dot(dag, format="png")`
 
 ```python
-import pandas as pd
-from taskiq_flow.registry import register_renderer
+from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 
-def render_dataframe(df: pd.DataFrame) -> str:
-    """Render a Pandas DataFrame as an HTML table."""
-    return df.to_html(index=False, table_id="dataframe-table")
+visualizer = DAGVisualizer()
+dot = visualizer.to_dot(dag, format="png")
 
-register_renderer(pd.DataFrame, render_dataframe)
+with open("pipeline.dot", "w") as f:
+    f.write(dot)
 ```
 
-Now, when a task returns a Pandas DataFrame, it will be displayed as an interactive HTML table in the dashboard.
+Render with Graphviz:
 
-## API Reference
+```bash
+dot -Tpng pipeline.dot -o pipeline.png
+```
 
-For more details, see the [Renderer Registry API](../api/renderer_registry.md).
+### Method: `DAGVisualizer.to_ascii(dag)`
+
+```python
+ascii_art = visualizer.to_ascii(dag)
+print(ascii_art)
+```
+
+Example output:
+
+```
+DAG: audio_pipeline
+  Level 0:     extract_features
+  Level 1:     compute_stats → generate_tags
+                          └── create_embedding
+```
+
+Or simply use `pipeline.print_dag()` on a `DataflowPipeline`:
+
+```python
+pipeline.print_dag()
+```
+
+## MermaidGenerator
+
+Generate Mermaid.js flowcharts from a DAG for web-based visualizations.
+
+### Method: `MermaidGenerator.to_mermaid(dag, orientation="TB")`
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+generator = MermaidGenerator(dag)
+mermaid_code = generator.to_mermaid(orientation="TB")
+print(mermaid_code)
+```
+
+**Output** — Mermaid.js flowchart:
+
+```mermaid
+flowchart TD
+    extract_features["extract_features"]
+    compute_stats["compute_stats"]
+    generate_tags["generate_tags"]
+    extract_features --> compute_stats
+    compute_stats --> generate_tags
+```
+
+Supported orientations: `"TB"` (top-to-bottom), `"BT"` (bottom-to-top), `"LR"` (left-to-right), `"RL"` (right-to-left).
+
+### Method: `MermaidGenerator.to_mermaid_with_styling(dag, orientation="LR")`
+
+Generates a styled diagram with colour-coded nodes based on execution state.
+
+```python
+styled = generator.to_mermaid_with_styling(orientation="LR")
+```
+
+## Integration with DataflowPipeline
+
+The `DataflowPipeline` class provides convenience wrappers:
+
+```python
+# JSON representation (for REST API or web UI)
+json_repr = pipeline.visualize()
+
+# DOT format (for Graphviz rendering)
+dot_repr = pipeline.visualize_dot()
+
+# ASCII representation (for terminal/debug)
+pipeline.print_dag()
+
+# Check if DAG is valid
+if pipeline.is_dag_valid():
+    print("DAG is valid — no cycles")
+```
+
+## Using Visualizations in FastAPI
+
+Serve DAG visualizations via a REST endpoint:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/dag/{pipeline_id}")
+async def get_dag(pipeline_id: str):
+    pipeline = get_pipeline(pipeline_id)
+    return pipeline.visualize()
+```
+
+Return ASCII in a text response:
+
+```python
+@app.get("/dag/{pipeline_id}/ascii")
+async def get_dag_ascii(pipeline_id: str):
+    pipeline = get_pipeline(pipeline_id)
+    pipeline.print_dag()
+    return {"ascii": "<captured output>"}
+```
+
+## Summary
+
+| Need | API |
+|------|-----|
+| JSON for web UI / API | `pipeline.visualize()` or `DAGVisualizer.to_json()` |
+| DOT for Graphviz | `pipeline.visualize_dot()` or `DAGVisualizer.to_dot()` |
+| ASCII for terminal | `pipeline.print_dag()` or `DAGVisualizer.to_ascii()` |
+| Mermaid.js flowchart | `MermaidGenerator(dag).to_mermaid()` |
+
+> **Note**: The `taskiq_flow.renderer_registry` module and `register_renderer()` function referenced in earlier documentation do **not exist** in the codebase. DAG rendering uses the `DAGVisualizer` and `MermaidGenerator` classes directly — there is no unified renderer registry.
 
 ---
+
+*For DAG structure details, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}). For the full API reference, see the [API Reference]({{ '/en/api/' | relative_url }}).*
 
 
 ## DOCUMENT: Retry
@@ -10116,13 +10382,17 @@ This guide covers:
 
 ## 1. Quick Start
 
+> **Prerequisite**: Install the `scheduler` extra:
+> `pip install "taskiq-flow[scheduler]"`
+> Without it, `PipelineScheduler` raises `ImportError` at construction time.
+
 ```python
 from taskiq_flow import Pipeline, PipelineScheduler
 
 # Create your pipeline
 pipeline = Pipeline(broker).call_next(my_task).call_next(another_task)
 
-# Create scheduler
+# Create scheduler  # requires taskiq-flow[scheduler]
 scheduler = PipelineScheduler(broker)
 
 # Schedule to run every minute
@@ -10578,7 +10848,7 @@ broker.add_middlewares(
 )
 
 # After max retries, task goes to DLQ (if broker supports it)
-# RedisStreamBroker: dead_letter_stream
+# RedisStreamBroker: dead_letter_stream  # requires taskiq-flow[brokers]
 # KafkaBroker: dead_letter_topic
 ```
 
@@ -11083,6 +11353,105 @@ When `require_https` is `True` (default), the :class:`~taskiq_flow.security.http
 
 The middleware respects the `X-Forwarded-Proto` header so deployments behind a TLS-terminating reverse proxy continue to work correctly.
 
+## Deployment
+
+### Docker Deployment
+
+Run TaskIQ-Flow behind a WSGI/ASGI server such as Uvicorn with Docker:
+
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "my_app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass your-redis-password
+    volumes:
+      - redis_data:/data
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TASKIQ_FLOW_SECURITY_ENABLED=true
+      - TASKIQ_FLOW_AUTH_PROVIDER=api_key
+      - TASKIQ_FLOW_API_KEYS={"admin-key":{"role":"admin","pipelines":["*"],"permissions":["read","execute","admin"]}}
+      - TASKIQ_FLOW_RATE_LIMIT_ENABLED=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+```
+
+### Reverse Proxy (nginx)
+
+Place nginx in front of the application to terminate TLS, enforce HTTPS, and add security headers:
+
+```nginx
+# /etc/nginx/sites-available/taskiq-flow
+server {
+    listen 80;
+    server_name taskiq-flow.example.com;
+    return 301 https://$host$request_uri;  # Redirect HTTP → HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/taskiq-flow.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/taskiq-flow.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+With this configuration:
+1. All HTTP traffic is redirected to HTTPS (`require_https` also enforced inside the app)
+2. Security headers are added to every response
+3. WebSocket connections are proxied with correct upgrade headers
+4. The app receives `X-Forwarded-Proto=https`, so the HTTPS enforcement middleware does not block legitimate requests
+
 ## Rate Limiting
 
 To prevent abuse, TaskIQ-Flow limits the number of requests per endpoint per client IP address. The default limits are:
@@ -11146,7 +11515,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret  # pragma: allowlist secret
+    jwt_secret="super-secret",  # pragma: allowlist secret
     require_https=True,
     pipeline_acls={
         "data-pipeline": {
@@ -12252,7 +12621,7 @@ This guide covers:
 ## 1. Architecture
 
 ```
-[Pipeline] → [HookManager] → [WebSocketBridge] → [WebSocket Server] → [Clients]
+[Pipeline] → [HookManager] → [WebSocketBridge] → [FastAPI WS Manager] → [Clients]
 ```
 
 **Components**:
@@ -12260,8 +12629,10 @@ This guide covers:
 1. **Pipeline** — Emits events via hooks at each lifecycle stage
 2. **HookManager** — Collects events from pipelines
 3. **WebSocketBridge** — Connects HookManager to WebSocket transport
-4. **WebSocketServer** — Manages client connections and broadcasts
+4. **FastAPI WebSocket Manager** — Manages client connections and broadcasts via FastAPI WebSocket routes
 5. **Client** — Web browser, monitoring app, dashboard
+
+> **Note**: Taskiq-Flow uses a **FastAPI-only** WebSocket integration. The legacy standalone picows server (`get_websocket_server`, `PipelineWebSocketServer`) was removed in v1.1. WebSocket events are now exposed through FastAPI `WebSocket` endpoints mounted in your FastAPI application.
 
 ---
 
@@ -12274,7 +12645,6 @@ import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 
 # 1. Create broker and hook manager
 broker = InMemoryBroker()
@@ -12290,18 +12660,11 @@ pipeline.with_hooks(hook_manager)
 
 # Add tasks to pipeline...
 
-# 4. Start WebSocket server
-async def main():
-    server = get_websocket_server(host="0.0.0.0", port=8765)
-    await server.start_server()
+# 4. For FastAPI: mount the WebSocket route in your app
+# (See Section 6 below for the full FastAPI integration example)
 
-    # 5. Execute the pipeline
-    result = await pipeline.kiq(data)
-
-    # 6. Keep server alive (or integrate into your app's event loop)
-    await asyncio.Event().wait()
-
-asyncio.run(main())
+# 5. Execute the pipeline
+result = await pipeline.kiq(data)
 ```
 
 ### 2.2. Client Connection (JavaScript)
@@ -12594,15 +12957,31 @@ monitor.subscribe('pipeline_2');
 
 ## 6. Server Configuration
 
-### 6.1. Custom Host and Port
+### 6.1. WebSocket via FastAPI Route
+
+WebSocket events are exposed through a FastAPI `WebSocket` route at `/ws/{pipeline_id}`. The client connects directly to your FastAPI application:
 
 ```python
-# Use specific interface and port
-server = get_websocket_server(host='127.0.0.1', port=8765)
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    fastapi_websocket_endpoint,
+    get_fastapi_ws_manager,
+)
 
-# Or bind to all interfaces (expose to network)
-server = get_websocket_server(host='0.0.0.0', port=8765)
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+> **Prerequisite**: Install FastAPI: `pip install fastapi uvicorn`.
+
+The WebSocket URL is tied to your FastAPI server address:
+
+```javascript
+// Client connects using your FastAPI app address
+const ws = new WebSocket('ws://localhost:8000/ws/demo_workflow');
 ```
 
 ### 6.2. CORS and Security Headers
@@ -12639,29 +13018,28 @@ Client connects with:
 const ws = new WebSocket('wss://yourdomain.com/ws');
 ```
 
-### 6.4. Multiple Workers
+### 6.4. Multi-Worker / Redis Transport
 
-For multiple Python worker processes, each needs its own WebSocket server on a different port (or use a message broker like Redis Pub/Sub to coordinate):
-
-```python
-# Worker 1
-server1 = get_websocket_server(port=8765)
-
-# Worker 2
-server2 = get_websocket_server(port=8766)
-
-# Load balancer distributes WebSocket connections
-```
-
-For true multi-worker event broadcasting, use the Redis-based transport:
+For multi-worker deployments where multiple processes need to share event state, use the `RedisPubSubTransport`:
 
 ```python
 from taskiq_flow.transport import RedisPubSubTransport
+import redis
 
+redis_client = redis.Redis(host="localhost", port=6379)
 transport = RedisPubSubTransport(redis_client)
-server = get_websocket_server(transport=transport)
-# Now all workers share event state via Redis
+
+# Pass the transport when initializing the bridge
+from taskiq_flow.hooks.bridge import setup_websocket_bridge
+setup_websocket_bridge(hook_manager, use_fastapi=True)
+
+# All workers connected to the same Redis channel share events
+# WebSocket is always served via the FastAPI route
 ```
+
+> **Prerequisite**: Install the `[brokers]` extra: `pip install "taskiq-flow[brokers]"` for Redis support.
+
+With this setup, workers share event state via Redis Pub/Sub while WebSocket connections are always managed through the FastAPI application.
 
 ---
 
@@ -12858,24 +13236,33 @@ class RateLimiter:
 
 ### 10.4. SSL/TLS Encryption (WSS)
 
-Enable encrypted WebSocket connections for production:
+Since the WebSocket integration is **FastAPI-only**, SSL termination is handled at the reverse proxy layer. Do **not** implement WSS directly at the application level — use a reverse proxy (nginx, Traefik, Caddy):
 
-```python
-from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
 
-# With SSL certificates
-server = PipelineWebSocketServer(
-    host="0.0.0.0",
-    port=8765,
-    ssl_cert="/path/to/cert.pem",
-    ssl_key="/path/to/key.pem",
-)
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
 
-# Connect with wss://
-# Client: new WebSocket("wss://your-domain.com/ws")
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
 ```
 
-**Using a reverse proxy (recommended):**
+Client connects with:
+
+```javascript
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
+
+> **Note**: The legacy `PipelineWebSocketServer` with inline SSL (`ssl_cert`/`ssl_key` parameters) was removed in v1.1. Use a reverse proxy for TLS termination.
 
 ```nginx
 server {
@@ -12909,9 +13296,10 @@ const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
 **Symptom**: Client can't connect, "Connection refused" error.
 
 **Fixes**:
-- Verify server is running: `netstat -lnp | grep 8765`
-- Check firewall rules allow port 8765
-- Ensure host binding matches (0.0.0.0 for external access)
+- Verify your FastAPI application is running: `uvicorn app:app`
+- Check firewall rules allow the FastAPI port (default: 8000)
+- Ensure the WebSocket route is mounted (`/ws/{pipeline_id}`)
+- Ensure `setup_websocket_bridge(hook_manager)` is called before the pipeline starts
 
 ### No Events Received After Connection
 
@@ -12951,17 +13339,21 @@ const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
 | `Pipeline` | Generates execution events |
 | `HookManager` | Collects events from pipelines |
 | `WebSocketBridge` | Routes events to WebSocket transport |
-| `WebSocketServer` | Manages client connections, broadcasts |
+| `FastAPIWebSocketManager` | Manages client connections, broadcasts |
 | `Client` | Subscribes, receives, displays events |
 
-**Basic setup (5 lines)**:
+**Basic setup (3 lines for hooks + FastAPI route):**
 
 ```python
+# 1. Connect event pipeline
 hooks = HookManager()
 setup_websocket_bridge(hooks)
 pipeline = Pipeline(broker).with_hooks(hooks)
-server = get_websocket_server()
-await server.start_server()
+
+# 2. Mount WebSocket route in your FastAPI app
+# @app.websocket("/ws/{pipeline_id}")
+# async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+#     await fastapi_websocket_endpoint(websocket, pipeline_id)
 ```
 
 ---
@@ -13343,23 +13735,39 @@ broker.add_middlewares(PipelineMiddleware())  # Must be called
 
 **Cause**: InMemoryBroker only works within the same process. For multi-worker distributed setups, use Redis or another persistent broker.
 
-**Fix**: Switch to `RedisStreamBroker` with a shared result backend:
+**Fix**: Install the `[brokers]` extra and switch to `RedisStreamBroker`:
+
+```bash
+pip install "taskiq-flow[brokers]"
+```
 
 ```python
 from taskiq_flow.broker import RedisStreamBroker
-broker = RedisStreamBroker(redis_url="redis://localhost:6379")
+broker = RedisStreamBroker(redis_url="redis://localhost:6379")  # requires taskiq-flow[brokers]
 ```
 
 ### WebSocket Connection Refused
 
 **Symptom**: Client cannot connect to WebSocket server.
 
-**Fix**: Ensure the WebSocket server is running and the port is accessible:
+**Fix**: WebSocket is served through your FastAPI application. Ensure the FastAPI app is running and the WebSocket route is mounted:
 
 ```python
-server = get_websocket_server(host="0.0.0.0", port=8765)
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# Run with: uvicorn app:app --host 0.0.0.0 --port 8000
 ```
+
+Then connect with `ws://localhost:8000/ws/{pipeline_id}`.
+
+> **Prerequisite**: Install the `[brokers]` extra: `pip install "taskiq-flow[brokers]"` for Redis-backed setups.
 
 ---
 
@@ -15060,9 +15468,9 @@ All storage methods must be async.
 
 # Référence API: Intégration WebSocket
 
-**HookManager, pont WebSocket, et transport d'événements temps réel**
+**HookManager, pont WebSocket, et transport d'événements temps réel via FastAPI**
 
-> **Version** : {VERSION} | **Module** : `taskiq_flow.hooks`, `taskiq_flow.transport.websocket`
+> **Version** : {VERSION} | **Module** : `taskiq_flow.hooks`, `taskiq_flow.integration.websocket`
 
 ---
 
@@ -15248,25 +15656,70 @@ erreur_pipeline = PipelineErrorEvent(
 
 ---
 
-## Transport WebSocket
+## Intégration WebSocket (FastAPI)
+
+Taskiq-Flow utilise une intégration WebSocket **FastAPI uniquement**. Les événements WebSocket sont servis via une route FastAPI `WebSocket` à `/ws/{pipeline_id}` dans votre application.
 
 ### setup_websocket_bridge
 
-Connecte `HookManager` à la couche de transport WebSocket:
+Connecte le système d'événements `HookManager` à la couche de transport WebSocket :
 
 ```python
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
 
 hook_manager = HookManager()
 setup_websocket_bridge(hook_manager)
-# Now all hooks are forwarded to the WebSocket server
+# Tous les événements du pipeline sont maintenant diffusés vers le transport WebSocket
 ```
 
-Cela installe un pont qui transfère les événements du `HookManager` aux serveurs WebSocket connectés.
+Une fois le pont actif, montez l'endpoint WebSocket FastAPI dans votre application :
 
-### get_websocket_server
+```python
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-Factory pour obtenir ou créer un serveur WebSocket:
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+Les clients se connectent à `ws://<host>:<port>/ws/<pipeline_id>` et reçoivent les événements du pipeline en temps réel.
+
+### get_fastapi_ws_manager
+
+Obtenir l'instance singleton `FastAPIWebSocketManager` :
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import get_fastapi_ws_manager
+
+manager = get_fastapi_ws_manager()
+print(f"Canaux actifs : {manager.get_channel_ids()}")
+print(f"Nombre de clients : {manager.get_client_count('pipeline_1')}")
+```
+
+### fastapi_websocket_endpoint
+
+Gestionnaire de route WebSocket FastAPI. Utilisez-le comme callback de route :
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+L'endpoint accepte la connexion, souscrit le client au canal `pipeline_id`, suit la métrique de connexion et se déconnecte proprement à la déconnexion du client.
+
+---
+
+### get_websocket_server ⚠️ Déprécié
+
+:::warning Déprécié depuis v1.1
+La fonction `get_websocket_server()` et la classe `PipelineWebSocketServer` ont été supprimées en v1.1. Le serveur picows autonome n'est plus supporté.
+:::
 
 ```python
 from taskiq_flow.integration.websocket import get_websocket_server
@@ -15279,47 +15732,52 @@ serveur = get_websocket_server(
 await serveur.start_server()
 ```
 
-**Paramètres**:
+:::danger Lève RuntimeError
+Appeler `get_websocket_server()` lève systématiquement `RuntimeError`. Utilisez l'intégration FastAPI à la place :
 
-| Paramètre | Type | Défaut | Description |
-|-----------|------|---------|-------------|
-| `host` | `str` | `"0.0.0.0"` | Adresse d'écoute |
-| `port` | `int` | `8765` | Port d'écoute |
-| `transport` | `WebSocketTransport | None` | Auto-créé si None |
+```python
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-Le serveur est un singleton par configuration; appels subséquents à `get_websocket_server()` avec même host/port retournent même instance.
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+:::
 
 ---
 
 ## Filtrage d'Événements
 
-Réduire trafic en filter les événements:
+Réduire le trafic en filtrant les événements :
 
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Seulement pipelines spécifiques
+# Pipelines spécifiques uniquement
 filtre = EventFilter(pipeline_ids=["pipeline_1", "pipeline_2"])
 
-# Seulement événements d'étape
+# Événements d'étape uniquement
 filtre = EventFilter(event_types=["StepStartEvent", "StepCompleteEvent"])
 
-# Both
-filter = EventFilter(
-    pipeline_ids=["*"],  # all pipelines (or specific ones)
+# Les deux
+filtre = EventFilter(
+    pipeline_ids=["*"],  # tous les pipelines (ou spécifiques)
     event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
 )
 
-hook_manager.add_filter(filter)
+hook_manager.add_filter(filtre)
 ```
 
 ### Logique EventFilter
 
 ```
-Événement → Vérifier correspondance pipeline_id? → Vérifier correspondance event_type? → Émettre?
+Événement → Vérifier correspondance pipeline_id ? → Vérifier correspondance event_type ? → Émettre ?
 ```
 
-Les deux filtres sont **OU** logique interne: un événement passe s'il correspond AUX DEUX filtres pipeline_ids ET event_types. Utiliser `"*"` pour tout matcher.
+Les deux filtres sont **ET** logique interne : un événement passe s'il correspond *aux deux* filtres pipeline_ids ET event_types. Utiliser `"*"` pour tout matcher.
 
 ---
 
@@ -15327,17 +15785,17 @@ Les deux filtres sont **OU** logique interne: un événement passe s'il correspo
 
 ### Connexion
 
-Client se connecte via WebSocket standard:
+Les clients se connectent via WebSocket standard vers la route FastAPI :
 
 ```
-ws://localhost:8765
+ws://localhost:8000/ws/mon_pipeline
 ```
 
-Pour connexions sécurisées (WSS), terminer SSL au reverse proxy (nginx, Traefik).
+Pour connexions sécurisées (WSS), terminer TLS au reverse proxy (nginx, Traefik).
 
 ### Abonnement
 
-Après connexion, client envoie message abonnement:
+Après connexion, le client est déjà abonné au pipeline identifié par le chemin de l'URL. Messages d'abonnement supplémentaires possibles :
 
 ```json
 {
@@ -15346,7 +15804,7 @@ Après connexion, client envoie message abonnement:
 }
 ```
 
-Abonnement wildcard (recevoir tous événements):
+Abonnement wildcard :
 
 ```json
 {
@@ -15355,7 +15813,7 @@ Abonnement wildcard (recevoir tous événements):
 }
 ```
 
-Désabonnement:
+Désabonnement :
 
 ```json
 {
@@ -15366,7 +15824,7 @@ Désabonnement:
 
 ### Format Message (Serveur → Client)
 
-Tous messages sont JSON avec champ `type`:
+Tous messages sont JSON avec champ `type` :
 
 ```json
 {
@@ -15378,56 +15836,75 @@ Tous messages sont JSON avec champ `type`:
 }
 ```
 
-Référence complète champs dans Guide WebSocket.
+Référence complète des champs dans le [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}).
 
 ---
 
-## Transport Personnalisé
+## Route FastAPI de Référence
 
-Pour cas avancés, implémenter son propre transport:
+### Montage de l'Endpoint WebSocket
 
 ```python
-from taskiq_flow.transport import WebSocketTransport
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
 
-class MonTransport(WebSocketTransport):
-    async def broadcast(self, event: BaseEvent):
-        # Logique routage personnalisée (ex: Redis Pub/Sub, Kafka)
-        await self.redis.publish("pipeline_events", event.json())
+app = FastAPI()
 
-transport = MonTransport()
-serveur = get_websocket_server(transport=transport)
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+
+### Interrogation des Clients Connectés
+
+```python
+from taskiq_flow.integration.websocket.fastapi_ws import get_fastapi_ws_manager
+
+manager = get_fastapi_ws_manager()
+nb_clients = manager.get_client_count("pipeline_1")
+```
+
+Les endpoints REST complets pour l'interrogation des clients et pipelines sont disponibles dans le module de routes API :
+
+```python
+from taskiq_flow.api.routes.websocket import router as ws_router
+app.include_router(ws_router, prefix="/api")
 ```
 
 ---
 
 ## Coordination Multi-Worker
 
-Pour multiples processus Python partageant état événements:
+Pour plusieurs workers partageant l'état des événements via Redis :
 
 ```python
 from taskiq_flow.transport import RedisPubSubTransport
+from taskiq_flow.hooks.bridge import setup_websocket_bridge
+import redis
 
-transport = RedisPubSubTransport(client_redis)
-serveur = get_websocket_server(transport=transport)
-# Tous workers sur même canal Redis partagent événements
+redis_client = redis.Redis(host="localhost", port=6379)
+transport = RedisPubSubTransport(redis_client)
+setup_websocket_bridge(hook_manager, use_fastapi=True)
 ```
 
-Tous workers souscivent au même canal Redis pub/sub; événements de n'importe quel worker sont broadcast aux clients WebSocket connectés à n'importe quel worker.
+Tous les workers souscrivent au même canal Redis pub/sub ; les événements de n'importe quel worker sont diffusés à tous les clients WebSocket connectés à n'importe quel worker. Les connexions WebSocket sont toujours servies via l'application FastAPI.
+
+> **Prérequis** : Installer l'extra `[brokers]` : `pip install "taskiq-flow[brokers]"` pour le support Redis.
 
 ---
 
-## Considérations Production
+## Considérations de Production
 
 ### Limites de Connexion
 
 ```python
 import asyncio
 
-# Limiter connexions WebSocket concurrentes
+# Limiter les connexions WebSocket concurrentes
 MAX_CONNECTIONS = 1000
 sémaphore = asyncio.Semaphore(MAX_CONNECTIONS)
 
-# Dans gestionnaire connexion:
+# Dans le gestionnaire de connexion :
 async def handle_connection(websocket):
     if not sémaphore.acquire(blocking=False):
         await websocket.close(code=1013, reason="Trop de connexions")
@@ -15442,23 +15919,40 @@ async def handle_connection(websocket):
 
 ```python
 async def shutdown():
-    await server.close()  # Arrêter accepter nouvelles connexions
-    await server.wait_closed()  # Attendre fermeture connexions existantes
+    manager = get_fastapi_ws_manager()
+    await manager.close_all()
 ```
 
 ### Monitoring
 
-Exposer métriques:
+Exposer les métriques via l'endpoint de métriques intégré :
 
 ```python
 @app.get("/ws/metrics")
 async def ws_metrics():
+    manager = get_fastapi_ws_manager()
     return {
-        "connexions": server.connection_count(),
-        "messages_envoyés": server.messages_sent,
-        "messages_par_seconde": server.rate()
+        "canaux": manager.get_channel_ids(),
     }
 ```
+
+### SSL/TLS
+
+Terminez TLS au niveau d'un reverse proxy (nginx, Traefik) — jamais directement dans l'application :
+
+```nginx
+server {
+    listen 443 ssl;
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+> **Note** : Le `PipelineWebSocketServer` historique avec SSL inline (`ssl_cert`/`ssl_key`) a été supprimé en v1.1. Utilisez un reverse proxy pour la terminaison TLS.
 
 ---
 
@@ -15467,7 +15961,7 @@ async def ws_metrics():
 | Problème | Diagnostic | Correction |
 |----------|------------|------------|
 | Clients ne reçoivent événements | `setup_websocket_bridge()` non appelé | Appeler avant démarrage pipeline |
-| Connexion refusée | Serveur non démarré | Appeler `await server.start_server()` |
+| Connexion refusée | App FastAPI non démarrée | Lancer avec `uvicorn app:app` |
 | Événements retardés | Filtre événements bloque | Vérifier configuration filtre |
 | CPU élevé | Trop de connexions | Appliquer limites connexions |
 
@@ -15478,25 +15972,34 @@ async def ws_metrics():
 | Composant | Rôle |
 |-----------|------|
 | `HookManager` | Collecte événements depuis pipelines |
-| Classes `BaseEvent` | Données événements structurées |
+| Sous-classes `BaseEvent` | Données événements structurées |
 | `EventFilter` | Diffusion sélective événements |
-| `WebSocketTransport` | Transport bas niveau (défaut ou custom) |
-| `WebSocketServer` | Gère connexions clients |
-| `get_websocket_server()` | Factory/singleton accès |
+| `setup_websocket_bridge()` | Connecte HookManager au transport WebSocket |
+| `FastAPIWebSocketManager` | Gestion des clients WebSocket (singleton) |
+| `fastapi_websocket_endpoint()` | Gestionnaire de route WebSocket FastAPI |
+| `Route FastAPI /ws/{pipeline_id}` | Endpoint WebSocket côté client |
 
-**Minimal configuration**:
+**Configuration minimale FastAPI** :
 
 ```python
-hooks = HookManager()
-setup_websocket_bridge(hooks)
-pipeline = Pipeline(broker).with_hooks(hooks)
-server = get_websocket_server()
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+from taskiq_flow.hooks import HookManager, setup_websocket_bridge
+
+hook_manager = HookManager()
+setup_websocket_bridge(hook_manager)
+pipeline = Pipeline(broker).with_hooks(hook_manager)
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
 ```
 
 ---
 
-*Pour détails implémentation client, voir [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}). Pour stratégies filtrage, section 7 de ce guide.*
+*Pour détails implémentation client, voir le [Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }}). Pour stratégies filtrage, section 7 de ce guide.*
 
 
 ## DOCUMENT: Api Example
@@ -18413,36 +18916,51 @@ Après cet exemple:
 
 ## Aperçu
 
-Cet exemple démontre comment configurer un serveur WebSocket qui diffuse en temps réel les événements d'exécution de pipeline. Il couvre:
+Cet exemple démontre comment mettre en place le streaming d'événements de pipeline en temps réel via WebSocket en utilisant l'intégration **FastAPI uniquement de Taskiq-Flow**.
 
-- Créer un `HookManager` et le connecter au transport WebSocket
-- Démarrer un serveur WebSocket sur un host/port spécifique
-- S'abonner aux événements de pipeline depuis un client
-- Observer les événements de complétion d'étape en direct
+Ce guide couvre :
 
-**Note** : Ceci est une démo minimale. Pour production, ajouter authentication, gestion d'erreurs, et gestion connexions robuste.
+- Créer un `HookManager` et le connecter au transport WebSocket via `setup_websocket_bridge()`
+- Exécuter un pipeline avec événements WebSocket actifs
+- Connecter un client WebSocket à la route FastAPI
+- Observer les événements d'étape terminée en direct
+
+**Note** : Les événements WebSocket sont servis par votre application FastAPI à `/ws/{pipeline_id}`. Le serveur autonome historique (`get_websocket_server`, `PipelineWebSocketServer`) a été supprimé en v1.1. Utilisez la route WebSocket FastAPI à la place.
+
+---
+
+## Prérequis
+
+```bash
+pip install "taskiq-flow[brokers]" "fastapi[standard]" uvicorn
+```
 
 ---
 
 ## Ce Que Cet Exemple Montre
 
-- Configuration `HookManager` avec `setup_websocket_bridge()`
-- Attacher hooks à un pipeline
-- Démarrer le serveur WebSocket
-- Comment les clients peuvent se connecter et s'abonner
-- Les messages d'événements broadcastés
+- Configuration de `HookManager` avec `setup_websocket_bridge()`
+- Attacher des hooks à un pipeline
+- Exécuter le pipeline et diffuser des événements vers les clients WebSocket connectés
+- Connecter un client WebSocket via FastAPI à `/ws/{pipeline_id}`
 
 ---
 
-## Explication du Code
+## Partie 1 : Script Pipeline (Python)
+
+Ce script configure le pipeline, les hooks, et l'application FastAPI. Démarrez-le en premier.
 
 ```python
 import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 from taskiq_flow.middleware import PipelineMiddleware
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    fastapi_websocket_endpoint,
+    get_fastapi_ws_manager,
+)
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
@@ -18456,48 +18974,99 @@ def add_one(x: int) -> int:
 def multiply_by_two(x: int) -> int:
     return x * 2
 
-async def main():
-    # 1. Configure hook manager and WebSocket bridge
-    hook_manager = HookManager()
-    setup_websocket_bridge(hook_manager)
+# -- WebSocket setup --------------------------------------------------------
 
-    # 2. Create pipeline and attach hooks
+# 1. Create hook manager
+hook_manager = HookManager()
+
+# 2. Set up the WebSocket bridge (connects HookManager → FastAPI WebSocket transport)
+setup_websocket_bridge(hook_manager)
+
+# 3. Mount the FastAPI WebSocket route
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    """
+    WebSocket endpoint for real-time pipeline events.
+    Clients connect to: ws://localhost:8000/ws/{pipeline_id}
+    """
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# -- Pipeline ---------------------------------------------------------------
+
+async def main():
+    # 4. Create pipeline and attach hooks
     pipeline = Pipeline(broker)
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(add_one, param_name="x")
     pipeline.call_next(multiply_by_two, param_name="x")
     pipeline.with_hooks(hook_manager)
 
-    # 3. Start WebSocket server in background
-    websocket_server = get_websocket_server()
-    _ = asyncio.create_task(
-        websocket_server.start_server("127.0.0.1", 8765),
-    )
-
-    print("WebSocket server started on ws://127.0.0.1:8765")
-    msg = '{"pipeline_id": "websocket_demo"}'
-    print(f"Connect a WebSocket client and subscribe with: {msg}")
-    print("Then run the pipeline to see real-time events...")
-
-    # Wait for server to start
-    await asyncio.sleep(1)
-
-    # 4. Execute the pipeline
+    # 5. Execute the pipeline (events are broadcast to connected WS clients)
     result = await pipeline.kiq(5)  # Start with 5 → 6 → 12
     print(f"Pipeline result: {result}")
 
-    # Keep server alive briefly
+    # Keep FastAPI app running briefly (in production, run uvicorn separately)
     await asyncio.sleep(5)
-    print("Demo complete. Server will shut down.")
+    print("Demo complete. Shutting down.")
 
 asyncio.run(main())
+```
+
+Démarrez le script avec :
+
+```bash
+uvicorn examples.websocket_demo:app --host 0.0.0.0 --port 8000
+```
+
+Ou en mode développement :
+
+```bash
+uvicorn examples.websocket_demo:app --reload
+```
+
+---
+
+## Partie 2 : Client WebSocket (JavaScript)
+
+Ouvrez une console navigateur ou un script Node.js :
+
+```javascript
+// Se connecter à la route WebSocket FastAPI
+const ws = new WebSocket('ws://localhost:8000/ws/websocket_demo');
+
+// S'abonner au pipeline de démo (déjà fait en se connectant à /ws/websocket_demo)
+ws.onopen = () => {
+    console.log('Connecté au serveur WebSocket');
+    ws.send(JSON.stringify({
+        type: 'subscribe',
+        pipeline_id: 'websocket_demo'
+    }));
+};
+
+// Gérer les événements entrants
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Événement:', data.type, data);
+
+    switch (data.type) {
+        case 'StepCompleteEvent':
+            console.log(`Étape ${data.step_name} finie:`, data.result);
+            break;
+        case 'PipelineCompleteEvent':
+            console.log('Pipeline terminé avec statut:', data.status);
+            console.log('Résultat final:', data.result);
+            break;
+    }
+};
 ```
 
 ---
 
 ## Séquence d'Événements
 
-Quand le pipeline s'exécute, événements suivants sont broadcastés:
+Lorsque le pipeline s'exécute, les événements suivants sont broadcastés :
 
 1. **PipelineStartEvent**
    ```json
@@ -18525,42 +19094,6 @@ Quand le pipeline s'exécute, événements suivants sont broadcastés:
 
 ---
 
-## Implémentation Client (JavaScript)
-
-Ouvrir console navigateur ou script Node.js:
-
-```javascript
-// Se connecter au serveur WebSocket
-const ws = new WebSocket('ws://127.0.0.1:8765');
-
-// S'abonner au pipeline de démo
-ws.onopen = () => {
-    console.log('Connecté au serveur WebSocket');
-    ws.send(JSON.stringify({
-        type: 'subscribe',
-        pipeline_id: 'websocket_demo'
-    }));
-};
-
-// Gérer événements entrants
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Événement:', data.type, data);
-
-    switch (data.type) {
-        case 'StepCompleteEvent':
-            console.log(`Étape ${data.step_name} finie:`, data.result);
-            break;
-        case 'PipelineCompleteEvent':
-            console.log('Pipeline terminé avec statut:', data.status);
-            console.log('Résultat final:', data.result);
-            break;
-    }
-};
-```
-
----
-
 ## Points Clés Configuration
 
 ### 1. Créer HookManager
@@ -18572,70 +19105,31 @@ hook_manager = HookManager()
 ```python
 setup_websocket_bridge(hook_manager)
 ```
-Cela connecte système événements HookManager au transport WebSocket.
+Cela connecte le système d'événements HookManager au transport WebSocket.
 
-### 3. Attacher Hooks au Pipeline
+### 3. Monter Route FastAPI WebSocket
+```python
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+La route WebSocket est servie par votre application FastAPI.
+
+### 4. Attacher Hooks au Pipeline
 ```python
 pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
-Sans ceci, le pipeline n'émettra pas événements vers WebSocket.
+Sans ceci, le pipeline n'émettra pas d'événements WebSocket.
 
-### 4. Define pipeline_id
+### 5. Définir pipeline_id
 ```python
-pipeline.pipeline_id = "my_pipeline"
+pipeline.pipeline_id = "websocket_demo"
 ```
-Necessary for clients to subscribe to specific pipelines.
-
-### 5. Start Server
-```python
-server = get_websocket_server(host="127.0.0.1", port=8765)
-await server.start_server()
-```
+Nécessaire pour que les clients s'abonnent à des pipelines spécifiques.
 
 ---
 
 ## Personnalisation
-
-### Change Port
-```python
-server = get_websocket_server(port=9000)
-```
-
-### Multiple Pipelines
-```python
-pipeline1 = Pipeline(broker).with_hooks(hook_manager)
-pipeline1.pipeline_id = "pipeline_1"
-
-pipeline2 = Pipeline(broker).with_hooks(hook_manager)
-pipeline2.pipeline_id = "pipeline_2"
-```
-
-Clients can subscribe to specific pipeline IDs.
-
-### Event Filtering
-```python
-from taskiq_flow.hooks import EventFilter
-
-# Only send step completion events
-filter = EventFilter(
-    pipeline_ids=["*"],
-    event_types=["StepCompleteEvent", "PipelineCompleteEvent"]
-)
-hook_manager.add_filter(filter)
-```
-
-### Multiple Pipelines
-```python
-pipeline1 = Pipeline(broker).with_hooks(hook_manager)
-pipeline1.pipeline_id = "pipeline_1"
-
-pipeline2 = Pipeline(broker).with_hooks(hook_manager)
-pipeline2.pipeline_id = "pipeline_2"
-```
-
-Clients can subscribe to specific pipeline IDs.
-
-### Event Filtering
 
 ### Multiples Pipelines
 ```python
@@ -18646,9 +19140,9 @@ pipeline2 = Pipeline(broker).with_hooks(hook_manager)
 pipeline2.pipeline_id = "pipeline_2"
 ```
 
-Les clients peuvent s'abonner à IDs pipeline spécifiques.
+Les clients peuvent s'abonner aux IDs de pipeline spécifiques via `/ws/{pipeline_id}`.
 
-### Filtrage Événements
+### Filtrage d'Événements
 ```python
 from taskiq_flow.hooks import EventFilter
 
@@ -18668,19 +19162,20 @@ hook_manager.add_filter(filter)
 - Vérifier `setup_websocket_bridge(hook_manager)` appelé **avant** `pipeline.kiq()`
 - Vérifier `pipeline.with_hooks(hook_manager)` appelé
 - Vérifier `pipeline.pipeline_id` défini
+- Vérifier que la route WebSocket FastAPI est montée à `/ws/{pipeline_id}`
 
 ### Connexion Refusée
-- Vérifier `await server.start_server()` appelé avant connexion
-- Vérifier host/port correspondent client connection string
+- Vérifier que l'application FastAPI est lancée : `uvicorn examples.websocket_demo:app`
+- Vérifier que le port correspond à la chaîne de connexion client
 
-### Événements Dans Désordre
-WebSocket livre messages en ordre; si désordre, vérifier problèmes réseau ou middleware custom émettant événements incorrectement.
+### Événements Dans le Désordre
+WebSocket livre les messages en ordre ; si désordre, vérifier problèmes réseau ou middleware personnalisé émettant des événements incorrectement.
 
 ---
 
 ## Chemin d'Apprentissage
 
-Après cet exemple:
+Après cet exemple :
 
 1. **[Guide WebSocket]({{ '/fr/guides/websocket/' | relative_url }})** — Configuration WebSocket complète, filtrage, déploiement production
 2. **[Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }})** — Stockage historique données alongside événements temps réel
@@ -18688,7 +19183,7 @@ Après cet exemple:
 
 ---
 
-*Cet exemple montre bases streaming temps réel. Pour production, ajouter authentication, pooling connexions, et scaling horizontal avec transport Redis Pub/Sub.*
+*Cet exemple montre les bases du streaming temps réel avec l'intégration WebSocket FastAPI uniquement de Taskiq-Flow. Pour production, ajouter authentication, pooling connexions, et scaling horizontal avec transport Redis Pub/Sub.*
 
 
 ## DOCUMENT: Api
@@ -19291,7 +19786,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — valeur de documentation, pas un secret réel
     require_https=True,
     pipeline_acls={
         "my_pipeline": {"read": ["admin"], "execute": ["admin"]},
@@ -19782,6 +20277,8 @@ Taskiq-Flow est basé sur deux modèles principaux :
 
 Pour une compréhension approfondie du modèle dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
+> **Note** : Aucun extra requis. Tout dans ce guide — `Pipeline`, `DataflowPipeline`, `@broker.task`, `PipelineMiddleware` — est inclus dans l'installation de base `taskiq-flow`.
+
 Comprendre ces modèles vous aide à choisir la bonne approche pour votre workflow.
 
 ---
@@ -19941,6 +20438,8 @@ Le système **dataflow** de Taskiq-Flow est la méthode la plus puissante pour o
 - **Construction dynamique de pipelines** — ajouter des tâches flexiblement à l'exécution
 
 Ce guide couvre l'ensemble du système dataflow : le DAG, le registre, les décorateurs, le moteur d'exécution et les patterns avancés.
+
+> **Note** : Toutes les fonctionnalités dataflow décrites dans ce guide sont **core-only** — aucun extra `[brokers]` ou `[scheduler]` requis. `DataflowPipeline`, `ExecutionEngine(resource_aware=True)`, `MapReduce.map()`, et le décorateur `@pipeline_task` fonctionnent tous avec une installation standard `pip install taskiq-flow`.
 
 ---
 
@@ -22429,97 +22928,192 @@ Avant d'exécuter un pipeline, vérifier :
 
 ## DOCUMENT: Renderer_Registry
 
-# Guide du registre de rendu
+# Guide de visualisation
 
-Ce guide explique comment utiliser le registre de rendu dans TaskIQ-Flow pour gérer et étendre les capacités de rendu des résultats des tâches et des visualisations de pipelines.
+Ce guide explique comment utiliser le module de visualisation de TaskIQ-Flow pour générer des représentations de DAG de pipelines aux formats JSON, DOT (Graphviz), ASCII et Mermaid.
 
-## Vue d'ensemble
+## Aperçu
 
-Le registre de rendu est un registre central qui associe des types de données à des fonctions de rendu. Il permet de personnaliser la façon dont différents types de données sont affichés dans le tableau de bord TaskIQ-Flow, les réponses API et les visualisations.
+Le module de visualisation fournit deux classes principales pour représenter les DAG de pipelines :
 
-## Utilisation du registre de rendu
+| Classe | Module | Formats de sortie |
+|--------|--------|-------------------|
+| `DAGVisualizer` | `taskiq_flow.visualization` | JSON, DOT, ASCII |
+| `MermaidGenerator` | `taskiq_flow.visualization` | Diagramme Mermaid.js |
 
-### Enregistrement d'un rendu personnalisé
+Ce sont des **classes modulaires** — il n'existe pas de registre de rendu unifié. Chaque format est généré en instanciant directement la classe appropriée.
 
-Pour enregistrer un rendu personnalisé pour un type de données spécifique, utilisez la fonction `register_renderer` du module `taskiq_flow.registry` :
+## DAGVisualizer
 
-```python
-from taskiq_flow.registry import register_renderer
-from typing import Any
-
-def render_my_data(data: Any) -> str:
-    """Rendu personnalisé pour les objets MyData."""
-    return f"<div class='my-data'>My data : {data}</div>"
-
-register_renderer(MyData, render_my_data)
-```
-
-### Rendus intégrés
-
-TaskIQ-Flow est livré avec plusieurs rendus intégrés pour les types de données courants :
-
-- `str` : Rendu sous forme de texte brut
-- `int`, `float` : Rendu sous forme de nombres
-- `list`, `tuple` : Rendu sous forme de tableaux JSON
-- `dict` : Rendu sous forme d'objets JSON
-- `bytes` : Rendu sous forme de chaîne codée en base64
-- `None` : Rendu sous forme de chaîne vide
-
-Vous pouvez remplacer l'un de ces rendus en enregistrant votre propre rendu pour le même type.
-
-### Accès au registre de rendu
-
-Le registre de rendu est accessible via le module `taskiq_flow.renderer_registry` :
+Convertit un DAG en dictionnaire structuré (prêt pour JSON), description DOT ou art ASCII.
 
 ```python
-from taskiq_flow import renderer_registry
+from taskiq_flow.visualization import DAGVisualizer, visualize_pipeline
 
-# Obtenir un rendu pour un type spécifique
-renderer = renderer_registry.get(MyData)
-
-# Vérifier si un rendu est enregistré pour un type
-if renderer_registry.has(MyData):
-    print("Rendu trouvé")
+# À partir d'une instance DataflowPipeline
+viz_json = pipeline.visualize()              # dict prêt pour JSON
+dot_code = pipeline.visualize_dot()           # chaîne DOT pour Graphviz
+pipeline.print_dag()                          # ASCII dans la console
 ```
 
-## Extension du registre
-
-Vous pouvez étendre le registre en créant une instance de registre personnalisée et en l'enregistrant avec l'application :
+### Méthode : `DAGVisualizer.to_json(dag)`
 
 ```python
-from taskiq_flow.registry import RendererRegistry
-from taskiq_flow import set_renderer_registry
+from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
+from taskiq_flow.dataflow.dag import DAG
 
-custom_registry = RendererRegistry()
-custom_registry.register(MyData, lambda data: f"Personnalisé : {data}")
-
-set_renderer_registry(custom_registry)
+graphe = dag_builder.build()  # retourne un DAG
+visualiseur = DAGVisualizer()
+donnees = visualiseur.to_json(graphe)
 ```
 
-Ceci est utile lorsque vous souhaitez isoler les enregistrements de rendu pour différentes applications ou environnements de test.
+**Sortie** — un dictionnaire avec `nodes` et `edges` :
 
-## Exemple : Rendu des DataFrames Pandas
+```json
+{
+  "nodes": [
+    {"id": "extract_features", "label": "extract_features", "level": 0, "state": "pending"},
+    {"id": "compute_stats",   "label": "compute_stats",   "level": 1, "state": "pending"}
+  ],
+  "edges": [
+    {"source": "extract_features", "target": "compute_stats"}
+  ]
+}
+```
 
-Voici un exemple d'enregistrement d'un rendu pour les DataFrames Pandas afin de les afficher sous forme de tableaux HTML :
+### Méthode : `DAGVisualizer.to_dot(dag, format="png")`
 
 ```python
-import pandas as pd
-from taskiq_flow.registry import register_renderer
+from taskiq_flow.visualization.dag_visualizer import DAGVisualizer
 
-def render_dataframe(df: pd.DataFrame) -> str:
-    """Rendu d'un DataFrame Pandas sous forme de tableau HTML."""
-    return df.to_html(index=False, table_id="dataframe-table")
+visualiseur = DAGVisualizer()
+dot = visualiseur.to_dot(graphe, format="png")
 
-register_renderer(pd.DataFrame, render_dataframe)
+with open("pipeline.dot", "w") as f:
+    f.write(dot)
 ```
 
-Désormais, lorsqu'une tâche renvoie un DataFrame Pandas, il sera affiché sous la forme d'un tableau HTML interactif dans le tableau de bord.
+Rendu avec Graphviz :
 
-## Référence API
+```bash
+dot -Tpng pipeline.dot -o pipeline.png
+```
 
-Pour plus de détails, consultez l'[API du registre de rendu](../api/renderer_registry.md).
+### Méthode : `DAGVisualizer.to_ascii(dag)`
+
+```python
+art_ascii = visualiseur.to_ascii(graphe)
+print(art_ascii)
+```
+
+Exemple de sortie :
+
+```
+DAG: audio_pipeline
+  Niveau 0 :  extract_features
+  Niveau 1 :  compute_stats → generate_tags
+                      └── create_embedding
+```
+
+Ou utilisez simplement `pipeline.print_dag()` sur une `DataflowPipeline` :
+
+```python
+pipeline.print_dag()
+```
+
+## MermaidGenerator
+
+Génère des organigrammes Mermaid.js à partir d'un DAG pour des visualisations web.
+
+### Méthode : `MermaidGenerator.to_mermaid(dag, orientation="TB")`
+
+```python
+from taskiq_flow.visualization.mermaid import MermaidGenerator
+
+generateur = MermaidGenerator(dag)
+code_mermaid = generateur.to_mermaid(orientation="TB")
+print(code_mermaid)
+```
+
+**Sortie** — organigramme Mermaid.js :
+
+```mermaid
+flowchart TD
+    extract_features["extract_features"]
+    compute_stats["compute_stats"]
+    generate_tags["generate_tags"]
+    extract_features --> compute_stats
+    compute_stats --> generate_tags
+```
+
+Orientations supportées : `"TB"` (haut-vers-bas), `"BT"` (bas-vers-haut), `"LR"` (gauche-à-droite), `"RL"` (droite-à-gauche).
+
+### Méthode : `MermaidGenerator.to_mermaid_with_styling(dag, orientation="LR")`
+
+Génère un diagramme stylisé avec nœuds colorés selon l'état d'exécution.
+
+```python
+style = generateur.to_mermaid_with_styling(orientation="LR")
+```
+
+## Intégration avec DataflowPipeline
+
+La classe `DataflowPipeline` fournit des raccourcis pratiques :
+
+```python
+# Représentation JSON (pour API REST ou interface web)
+json_repr = pipeline.visualize()
+
+# Format DOT (pour rendu Graphviz)
+dot_repr = pipeline.visualize_dot()
+
+# Représentation ASCII (pour terminal/débogage)
+pipeline.print_dag()
+
+# Vérifier si le DAG est valide
+if pipeline.is_dag_valid():
+    print("DAG valide — pas de cycles")
+```
+
+## Utilisation dans FastAPI
+
+Servir des visualisations de DAG via un endpoint REST :
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/dag/{pipeline_id}")
+async def get_dag(pipeline_id: str):
+    pipeline = get_pipeline(pipeline_id)
+    return pipeline.visualize()
+```
+
+Retourner l'ASCII dans une réponse texte :
+
+```python
+@app.get("/dag/{pipeline_id}/ascii")
+async def get_dag_ascii(pipeline_id: str):
+    pipeline = get_pipeline(pipeline_id)
+    pipeline.print_dag()
+    return {"ascii": "<output capturé>"}
+```
+
+## Résumé
+
+| Besoin | API |
+|--------|-----|
+| JSON pour UI web / API | `pipeline.visualize()` ou `DAGVisualizer.to_json()` |
+| DOT pour Graphviz | `pipeline.visualize_dot()` ou `DAGVisualizer.to_dot()` |
+| ASCII pour terminal | `pipeline.print_dag()` ou `DAGVisualizer.to_ascii()` |
+| Organigramme Mermaid.js | `MermaidGenerator(dag).to_mermaid()` |
+
+> **Note** : Le module `taskiq_flow.renderer_registry` et la fonction `register_renderer()` mentionnés dans la documentation précédente **n'existent pas** dans la base de code. Le rendu de DAG utilise les classes `DAGVisualizer` et `MermaidGenerator` directement — il n'y a pas de registre de rendu unifié.
 
 ---
+
+*Pour les détails sur la structure du DAG, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}). Pour la référence API complète, voir la [Référence API]({{ '/fr/api/' | relative_url }}).*
 
 
 ## DOCUMENT: Retry
@@ -23035,13 +23629,17 @@ Ce guide couvre :
 
 ## 1. Démarrage Rapide
 
+> **Prérequis** : Installer l'extra `scheduler` :
+> `pip install "taskiq-flow[scheduler]"`
+> Sans lui, `PipelineScheduler` lève `ImportError` à la construction.
+
 ```python
 from taskiq_flow import Pipeline, PipelineScheduler
 
 # Create your pipeline
 pipeline = Pipeline(broker).call_next(my_task).call_next(another_task)
 
-# Créer le planificateur
+# Créer le planificateur  # nécessite taskiq-flow[scheduler]
 scheduler = PipelineScheduler(broker)
 
 # Planifier pour exécution chaque minute
@@ -23496,7 +24094,7 @@ broker.add_middlewares(
 )
 
 # Après max retries, la tâche va dans DLQ (si broker supporte)
-# RedisStreamBroker: dead_letter_stream
+# RedisStreamBroker: dead_letter_stream  # nécessite taskiq-flow[brokers]
 # KafkaBroker: dead_letter_topic
 ```
 
@@ -24000,6 +24598,105 @@ les requêtes HTTP non chiffrées avec le code 403.
 Le middleware respecte l'en-tête ``X-Forwarded-Proto`` afin de fonctionner
 correctement derrière un reverse proxy ou un load-balancer qui termine TLS.
 
+## Déploiement
+
+### Déploiement Docker
+
+Exécutez TaskIQ-Flow derrière un serveur ASGI tel qu'Uvicorn avec Docker :
+
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "mon_app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass mot-de-passe-redis
+    volumes:
+      - redis_data:/data
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TASKIQ_FLOW_SECURITY_ENABLED=true
+      - TASKIQ_FLOW_AUTH_PROVIDER=api_key
+      - TASKIQ_FLOW_API_KEYS={"admin-key":{"role":"admin","pipelines":["*"],"permissions":["read","execute","admin"]}}
+      - TASKIQ_FLOW_RATE_LIMIT_ENABLED=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+```
+
+### Reverse Proxy (nginx)
+
+Placez nginx devant l'application pour terminer TLS, renforcer HTTPS et ajouter des en-têtes de sécurité :
+
+```nginx
+# /etc/nginx/sites-available/taskiq-flow
+server {
+    listen 80;
+    server_name taskiq-flow.example.com;
+    return 301 https://$host$request_uri;  # Redirection HTTP → HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/taskiq-flow.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/taskiq-flow.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # En-têtes de sécurité
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Avec cette configuration :
+1. Tout le trafic HTTP est redirigé vers HTTPS (`require_https` est également appliqué côté application)
+2. Des en-têtes de sécurité sont ajoutés à chaque réponse
+3. Les connexions WebSocket sont proxyfiées avec les en-têtes de mise à niveau corrects
+4. L'application reçoit `X-Forwarded-Proto=https`, donc le middleware d'application HTTPS ne bloque pas les requêtes légitimes
+
 ## Limitation de débit
 
 Pour prévenir les abus, TaskIQ-Flow limite le nombre de requêtes par
@@ -24072,7 +24769,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret  # pragma: allowlist secret
+    jwt_secret="super-secret",  # pragma: allowlist secret
     require_https=True,
     pipeline_acls={
         "data-pipeline": {
@@ -25163,7 +25860,7 @@ pipeline = Pipeline(broker).with_tracking(suivi)
 
 **Streaming d'événements en temps réel pour tableaux de bord et monitoring**
 
-> **Version**: 1.0.0 | **Lié**: [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide API]({{ '/fr/guides/api/' | relative_url }})
+> **Version** : {VERSION} | **Lié** : [Guide de Suivi]({{ '/fr/guides/tracking/' | relative_url }}), [Guide API]({{ '/fr/guides/api/' | relative_url }})
 
 ---
 
@@ -25173,27 +25870,30 @@ L'intégration WebSocket de Taskiq-Flow fournit un streaming en direct des évé
 
 Ce guide couvre :
 
-- Configuration d'un serveur WebSocket
+- Configuration d'une route WebSocket via FastAPI
 - Abonnement des clients aux événements de pipeline
 - Types d'événements et charges utiles
-- Configuration de la couche de transport
-- Considérations de déploiement en production
+- Filtrage d'événements
+- Déploiement en production
+- Considérations de sécurité
 
 ---
 
 ## 1. Architecture
 
 ```
-[Pipeline] → [HookManager] → [WebSocketBridge] → [Serveur WebSocket] → [Clients]
+[Pipeline] → [HookManager] → [WebSocketBridge] → [FastAPI WS Manager] → [Clients]
 ```
 
-**Composants**:
+**Composants** :
 
 1. **Pipeline** — Émet des événements via des hooks à chaque étape du cycle de vie
 2. **HookManager** — Collecte les événements des pipelines
 3. **WebSocketBridge** — Connecte HookManager au transport WebSocket
-4. **Serveur WebSocket** — Gère les connexions clients et diffuse
+4. **FastAPI WebSocket Manager** — Gère les connexions clients et diffuse via routes FastAPI WebSocket
 5. **Client** — Navigateur web, app de monitoring, tableau de bord
+
+> **Note** : Taskiq-Flow utilise une intégration WebSocket **FastAPI uniquement**. Le serveur picows autonome historique (`get_websocket_server`, `PipelineWebSocketServer`) a été supprimé en v1.1. Les événements WebSocket sont désormais exposés via des endpoints `WebSocket` FastAPI montés dans votre application FastAPI.
 
 ---
 
@@ -25206,7 +25906,6 @@ import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 
 # 1. Create broker and hook manager
 broker = InMemoryBroker()
@@ -25220,27 +25919,20 @@ pipeline = Pipeline(broker)
 pipeline.pipeline_id = "workflow_demo"
 pipeline.with_hooks(hook_manager)
 
-# Ajouter des tâches au pipeline...
+# Add tasks to pipeline...
 
-# 4. Démarrer le serveur WebSocket
-async def main():
-    serveur = get_websocket_server(host="0.0.0.0", port=8765)
-    await serveur.start_server()
+# 4. For FastAPI: mount the WebSocket route in your app
+# (See Section 6 below for the full FastAPI integration example)
 
-    # 5. Exécuter le pipeline
-    résultat = await pipeline.kiq(données)
-
-    # 6. Garder le serveur actif (ou intégrer à la boucle d'événements de votre app)
-    await asyncio.Event().wait()
-
-asyncio.run(main())
+# 5. Execute the pipeline
+result = await pipeline.kiq(données)
 ```
 
 ### 2.2. Connexion Client (JavaScript)
 
 ```javascript
 // Se connecter au serveur WebSocket
-const ws = new WebSocket('ws://localhost:8765');
+const ws = new WebSocket('ws://localhost:8000/ws/workflow_demo');
 
 // S'abonner à un pipeline spécifique
 ws.onopen = () => {
@@ -25439,7 +26131,7 @@ class MoniteurPipeline {
 }
 
 // Utilisation
-monitor = new MoniteurPipeline('ws://localhost:8765', 'pipeline_123');
+monitor = new MoniteurPipeline('ws://localhost:8000/ws/pipeline_123', 'pipeline_123');
 monitor.on('StepCompleteEvent', (event) => {
     console.log(`Étape ${event.step_name} complétée en ${event.duration_ms}ms`);
 });
@@ -25472,7 +26164,7 @@ async def monitor_pipeline(uri, pipeline_id):
             if event['type'] == 'PipelineCompleteEvent':
                 print(f"Pipeline terminé: {event['status']}")
 
-asyncio.run(monitor_pipeline('ws://localhost:8765', 'pipeline_123'))
+asyncio.run(monitor_pipeline('ws://localhost:8000/ws/pipeline_123', 'pipeline_123'))
 ```
 
 ---
@@ -25526,16 +26218,25 @@ monitor.subscribe('pipeline_2');
 
 ## 6. Configuration du Serveur
 
-### 6.1. Hôte et Port Personnalisés
+### 6.1. WebSocket via Route FastAPI
+
+Les événements WebSocket sont exposés via une route `WebSocket` FastAPI à `/ws/{pipeline_id}`. Le client se connecte directement à votre application FastAPI :
 
 ```python
-# Utiliser une interface et port spécifiques
-serveur = get_websocket_server(host='127.0.0.1', port=8765)
-await serveur.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    fastapi_websocket_endpoint,
+    get_fastapi_ws_manager,
+)
 
-# Ou lier à toutes les interfaces (exposer au réseau)
-serveur = get_websocket_server(host='0.0.0.0', port=8765)
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
 ```
+
+> **Prérequis** : Installer FastAPI avec : `pip install "fastapi[standard]"`.
 
 ### 6.2. CORS et En-têtes de Sécurité
 
@@ -25544,7 +26245,7 @@ Si derrière un reverse proxy (nginx, Traefik), configurer les en-têtes CORS:
 ```nginx
 # nginx.conf
 location /ws {
-    proxy_pass http://localhost:8765;
+    proxy_pass http://localhost:8000;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -25555,12 +26256,12 @@ location /ws {
 
 ### 6.3. Terminaison SSL/TLS
 
-Terminer SSL au reverse proxy:
+Le serveur ne gère pas directement le chiffrement TLS. Terminez TLS au reverse proxy :
 
 ```nginx
 # HTTPS → WSS forwarding
 location /ws {
-    proxy_pass http://localhost:8765;
+    proxy_pass http://localhost:8000;
     # WSS (WebSocket sécurisé) géré par la config SSL nginx
 }
 ```
@@ -25571,29 +26272,26 @@ Le client se connecte avec:
 const ws = new WebSocket('wss://votredomaine.com/ws');
 ```
 
-### 6.4. Multiples Workers
+### 6.4. Multi-Worker / Transport Redis
 
-Pour multiples processus Python, chacun a besoin de son propre serveur WebSocket sur un port différent (ou utiliser un broker de messages comme Redis Pub/Sub pour coordonner):
-
-```python
-# Worker 1
-serveur1 = get_websocket_server(port=8765)
-
-# Worker 2
-serveur2 = get_websocket_server(port=8766)
-
-# Load balancer distribue les connexions WebSocket
-```
-
-Pour un véritable partage d'événements multi-worker, utiliser le transport Redis:
+Pour multiples processus Python partageant l'état des événements :
 
 ```python
 from taskiq_flow.transport import RedisPubSubTransport
+import redis
 
-transport = RedisPubSubTransport(client_redis)
-serveur = get_websocket_server(transport=transport)
-# Maintenant tous les workers partagent l'état des événements via Redis
+redis_client = redis.Redis(host="localhost", port=6379)
+transport = RedisPubSubTransport(redis_client)
+
+# Pass the transport when initializing the bridge
+from taskiq_flow.hooks.bridge import setup_websocket_bridge
+setup_websocket_bridge(hook_manager, use_fastapi=True)
+
+# All workers connected to the same Redis channel share events
+# WebSocket is always served via the FastAPI route
 ```
+
+> **Prérequis** : Installer l'extra `[brokers]` : `pip install "taskiq-flow[brokers]"` pour le support Redis.
 
 ---
 
@@ -25604,11 +26302,11 @@ Réduire la bande passante en filtrant côté serveur:
 ```python
 from taskiq_flow.hooks import EventFilter
 
-# Send only events for specific pipelines
+# Only send events for specific pipelines
 filter = EventFilter(pipeline_ids=['pipeline_1', 'pipeline_2'])
 hook_manager.add_filter(filter)
 
-# Only step events (not pipeline-level)
+# Only send step events (not pipeline-level)
 filter = EventFilter(event_types=['StepStartEvent', 'StepCompleteEvent'])
 hook_manager.add_filter(filter)
 ```
@@ -25631,7 +26329,7 @@ monitor.on('StepCompleteEvent', (event) => {
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `type` | `"subscribe"` | Type de message|
+| `type` | `"subscribe"` | Type de message |
 | `pipeline_id` | `str` ou `"*"` | Pipeline auquel s'abonner |
 
 ### Requête de Désabonnement
@@ -25649,8 +26347,6 @@ monitor.on('StepCompleteEvent', (event) => {
 | `pipeline_id` | `str` | ID du pipeline d'origine |
 | `timestamp` | `ISO 8601 str` | Horodatage de l'événement |
 
-Champs additionnels selon le type d'événement (voir ci-dessus).
-
 ---
 
 ## 9. Déploiement en Production
@@ -25667,7 +26363,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "-m", "mon_app_websocket"]
+CMD ["python", "-m", "mon_app_fastapi"]
 ```
 
 ```yaml
@@ -25679,7 +26375,7 @@ services:
   app:
     build: .
     ports:
-      - "8765:8765"
+      - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379
     depends_on:
@@ -25691,14 +26387,14 @@ services:
 ```ini
 # /etc/systemd/system/taskiq-flow-ws.service
 [Unit]
-Description=Serveur WebSocket Taskiq-Flow
+Description=Taskiq-Flow WebSocket Server
 After=network.target
 
 [Service]
 Type=simple
 User=appuser
 WorkingDirectory=/opt/taskiq-flow
-ExecStart=/usr/bin/python3 -m mon_app_websocket
+ExecStart=/usr/bin/python3 -m mon_app_fastapi
 Restart=always
 RestartSec=10
 
@@ -25708,25 +26404,13 @@ WantedBy=multi-user.target
 
 ### 9.3. Monitoring
 
-Health check endpoint:
-
-```python
-from aiohttp import web
-
-async def health(request):
-    return web.json_response({"status": "healthy"})
-
-app = web.Application()
-app.router.add_get('/health', health)
-```
-
-Ou utiliser l'endpoint health intégré (/health) depuis le [Guide API]({{ '/fr/guides/api/' | relative_url }}).
+Utilisez l'endpoint `/health` intégré de l'API FastAPI (voir [Guide API]({{ '/fr/guides/api/' | relative_url })).
 
 ### 9.4. Scalabilité
 
-Pour déploiements haut débit:
+Pour déploiements haut débit :
 
-- **Scaling horizontal** : Déployer multiples instances de serveur WebSocket avec sessions sticky ou transport Redis Pub/Sub
+- **Scaling horizontal** : Déployer multiples instances de l'application FastAPI avec sessions sticky ou transport Redis Pub/Sub
 - **Load balancing** : Utiliser nginx ou HAProxy avec support WebSocket
 - **Limites de connexion** : Configurer max connexions par worker (limites OS)
 - **Compression de messages** : Activer permessage-deflate pour payloads larges
@@ -25747,8 +26431,8 @@ async def authenticate(websocket, token):
         return False
     return True
 
-# Le client envoie le token à la connexion
-ws = new WebSocket(`ws://localhost:8765?token=${authToken}`);
+# Le client envoie le token à la connexion via le header X-API-Key ou JWT
+ws = new WebSocket('ws://localhost:8000/ws/pipeline_id');
 ```
 
 ### 10.2. Autorisation
@@ -25756,7 +26440,7 @@ ws = new WebSocket(`ws://localhost:8765?token=${authToken}`);
 Filtrer les événements par permissions utilisateur:
 
 ```python
-class FiltreAuth(EventFilter):
+class AuthFilter(EventFilter):
     def __init__(self, user_id, pipelines_autorises):
         self.user_id = user_id
         self.allowed = pipelines_autorises
@@ -25788,6 +26472,35 @@ class LimiteurDebit:
         return False
 ```
 
+### 10.4. Chiffrement SSL/TLS (WSS)
+
+Puisque l'intégration WebSocket est FastAPI uniquement, la terminaison SSL est gérée au niveau du reverse proxy :
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name ws.taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+```
+
+```javascript
+// Le client se connecte via wss à travers le proxy
+const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
+```
+
+> **Note** : Le `PipelineWebSocketServer` historique avec SSL inline (`ssl_cert`/`ssl_key`) a été supprimé en v1.1. Utilisez un reverse proxy pour la terminaison TLS.
+
 ---
 
 ## 11. Dépannage
@@ -25796,16 +26509,17 @@ class LimiteurDebit:
 
 **Symptôme** : Le client ne peut pas se connecter, erreur "Connection refused".
 
-**Corrections**：
-- Vérifier que le serveur tourne: `netstat -lnp | grep 8765`
-- Vérifier les règles firewall permettent le port 8765
-- S'assurer que le host binding correspond (0.0.0.0 pour accès externe)
+**Corrections** :
+- Vérifier que l'application FastAPI tourne : `uvicorn app:app`
+- Vérifier les règles firewall permettent le port FastAPI (défaut : 8000)
+- S'assurer que la route WebSocket est montée (`/ws/{pipeline_id}`)
+- S'assurer que `setup_websocket_bridge(hook_manager)` est appelé avant le pipeline
 
 ### Aucun Événement Reçu Après Connexion
 
 **Symptôme** : Connexion réussie, mais aucun événement n'arrive.
 
-**Corrections** ：
+**Corrections** :
 - S'assurer que le pipeline a `pipeline_id` défini
 - Confirmer que `pipeline.with_hooks(hook_manager)` est appelé
 - Vérifier que `setup_websocket_bridge(hook_manager)` est appelé avant le démarrage du pipeline
@@ -25832,52 +26546,6 @@ class LimiteurDebit:
 
 ---
 
-### 10.4. Chiffrement SSL/TLS (WSS)
-
-Activez les connexions WebSocket chiffrées pour la production :
-
-```python
-from taskiq_flow.integration.websocket.server import PipelineWebSocketServer
-
-# Avec certificats SSL
-server = PipelineWebSocketServer(
-    host="0.0.0.0",
-    port=8765,
-    ssl_cert="/chemin/vers/cert.pem",
-    ssl_key="/chemin/vers/key.pem",
-)
-
-# Connexion avec wss://
-# Client : new WebSocket("wss://votre-domaine.com/ws")
-```
-
-**Via un reverse proxy (recommandé) :**
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name ws.taskiq-flow.example.com;
-
-    ssl_certificate /etc/letsencrypt/live/ws.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/ws.example.com/privkey.pem;
-
-    location /ws {
-        proxy_pass http://localhost:8765;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-    }
-}
-```
-
-```javascript
-// Le client se connecte via wss à travers le proxy
-const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
-```
-
----
-
 ## 12. Résumé
 
 ### 12.1. Résumé Composants
@@ -25887,17 +26555,21 @@ const ws = new WebSocket("wss://ws.taskiq-flow.example.com/ws");
 | `Pipeline` | Génère événements d'exécution |
 | `HookManager` | Collecte événements des pipelines |
 | `WebSocketBridge` | Achemine événements vers transport WebSocket |
-| `Serveur WebSocket` | Gère connexions clients, diffuse |
+| `FastAPIWebSocketManager` | Gère connexions clients, diffuse |
 | `Client` | S'abonne, reçoit, affiche événements |
 
-**Script de base (5 lignes)**:
+**Configuration de base (bridge + route FastAPI)** :
 
 ```python
+# 1. Connecter le pipeline d'événements
 hooks = HookManager()
 setup_websocket_bridge(hooks)
 pipeline = Pipeline(broker).with_hooks(hooks)
-server = get_websocket_server()
-await server.start_server()
+
+# 2. Monter la route WebSocket dans votre app FastAPI
+# @app.websocket("/ws/{pipeline_id}")
+# async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+#     await fastapi_websocket_endpoint(websocket, pipeline_id)
 ```
 
 ---
@@ -26292,12 +26964,24 @@ broker = RedisStreamBroker(redis_url="redis://localhost:6379")
 
 **Symptôme** : Le client ne peut pas se connecter au serveur WebSocket.
 
-**Solution** : Assurez-vous que le serveur WebSocket est en cours d'exécution et que le port est accessible：
+**Solution** : Assurez-vous que l'application FastAPI est en cours d'exécution et que la route WebSocket est montée :
 
 ```python
-server = get_websocket_server(host="0.0.0.0", port=8765)
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# Lancer avec : uvicorn app:app --host 0.0.0.0 --port 8000
 ```
+
+Puis se connecter avec `ws://localhost:8000/ws/{pipeline_id}`.
+
+> **Prérequis** : Installer l'extra `[brokers]` : `pip install "taskiq-flow[brokers]"` pour les setups avec Redis.
 
 ---
 
