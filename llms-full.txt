@@ -5849,7 +5849,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     require_https=True,
     pipeline_acls={
         "my_pipeline": {"read": ["admin"], "execute": ["admin"]},
@@ -10999,7 +10999,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read"],
         },
     },
-    jwt_secret="your-jwt-secret",      # required when auth_provider="jwt"
+    jwt_secret="your-jwt-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     # ---- HTTPS enforcement ----
     require_https=True,
     # ---- Authorization (ACLs) ----
@@ -11146,7 +11146,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",  # pragma: allowlist secret
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret  # pragma: allowlist secret
     require_https=True,
     pipeline_acls={
         "data-pipeline": {
@@ -19291,7 +19291,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     require_https=True,
     pipeline_acls={
         "my_pipeline": {"read": ["admin"], "execute": ["admin"]},
@@ -24072,7 +24072,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",  # pragma: allowlist secret
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret  # pragma: allowlist secret
     require_https=True,
     pipeline_acls={
         "data-pipeline": {

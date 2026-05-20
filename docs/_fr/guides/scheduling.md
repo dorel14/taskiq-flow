@@ -28,13 +28,17 @@ Ce guide couvre :
 
 ## 1. Démarrage Rapide
 
+> **Prérequis** : Installer l'extra `scheduler` :
+> `pip install "taskiq-flow[scheduler]"`
+> Sans lui, `PipelineScheduler` lève `ImportError` à la construction.
+
 ```python
 from taskiq_flow import Pipeline, PipelineScheduler
 
 # Create your pipeline
 pipeline = Pipeline(broker).call_next(my_task).call_next(another_task)
 
-# Créer le planificateur
+# Créer le planificateur  # nécessite taskiq-flow[scheduler]
 scheduler = PipelineScheduler(broker)
 
 # Planifier pour exécution chaque minute
@@ -489,7 +493,7 @@ broker.add_middlewares(
 )
 
 # Après max retries, la tâche va dans DLQ (si broker supporte)
-# RedisStreamBroker: dead_letter_stream
+# RedisStreamBroker: dead_letter_stream  # nécessite taskiq-flow[brokers]
 # KafkaBroker: dead_letter_topic
 ```
 

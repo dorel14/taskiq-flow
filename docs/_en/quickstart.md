@@ -340,23 +340,39 @@ broker.add_middlewares(PipelineMiddleware())  # Must be called
 
 **Cause**: InMemoryBroker only works within the same process. For multi-worker distributed setups, use Redis or another persistent broker.
 
-**Fix**: Switch to `RedisStreamBroker` with a shared result backend:
+**Fix**: Install the `[brokers]` extra and switch to `RedisStreamBroker`:
+
+```bash
+pip install "taskiq-flow[brokers]"
+```
 
 ```python
 from taskiq_flow.broker import RedisStreamBroker
-broker = RedisStreamBroker(redis_url="redis://localhost:6379")
+broker = RedisStreamBroker(redis_url="redis://localhost:6379")  # requires taskiq-flow[brokers]
 ```
 
 ### WebSocket Connection Refused
 
 **Symptom**: Client cannot connect to WebSocket server.
 
-**Fix**: Ensure the WebSocket server is running and the port is accessible:
+**Fix**: WebSocket is served through your FastAPI application. Ensure the FastAPI app is running and the WebSocket route is mounted:
 
 ```python
-server = get_websocket_server(host="0.0.0.0", port=8765)
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# Run with: uvicorn app:app --host 0.0.0.0 --port 8000
 ```
+
+Then connect with `ws://localhost:8000/ws/{pipeline_id}`.
+
+> **Prerequisite**: Install the `[brokers]` extra: `pip install "taskiq-flow[brokers]"` for Redis-backed setups.
 
 ---
 

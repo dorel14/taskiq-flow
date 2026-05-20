@@ -351,12 +351,24 @@ broker = RedisStreamBroker(redis_url="redis://localhost:6379")
 
 **Symptôme** : Le client ne peut pas se connecter au serveur WebSocket.
 
-**Solution** : Assurez-vous que le serveur WebSocket est en cours d'exécution et que le port est accessible：
+**Solution** : Assurez-vous que l'application FastAPI est en cours d'exécution et que la route WebSocket est montée :
 
 ```python
-server = get_websocket_server(host="0.0.0.0", port=8765)
-await server.start_server()
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import fastapi_websocket_endpoint
+
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# Lancer avec : uvicorn app:app --host 0.0.0.0 --port 8000
 ```
+
+Puis se connecter avec `ws://localhost:8000/ws/{pipeline_id}`.
+
+> **Prérequis** : Installer l'extra `[brokers]` : `pip install "taskiq-flow[brokers]"` pour les setups avec Redis.
 
 ---
 

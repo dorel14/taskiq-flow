@@ -441,7 +441,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read", "execute", "admin"],
         },
     },
-    jwt_secret="super-secret",
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     require_https=True,
     pipeline_acls={
         "my_pipeline": {"read": ["admin"], "execute": ["admin"]},

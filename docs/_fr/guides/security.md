@@ -133,6 +133,105 @@ les requêtes HTTP non chiffrées avec le code 403.
 Le middleware respecte l'en-tête ``X-Forwarded-Proto`` afin de fonctionner
 correctement derrière un reverse proxy ou un load-balancer qui termine TLS.
 
+## Déploiement
+
+### Déploiement Docker
+
+Exécutez TaskIQ-Flow derrière un serveur ASGI tel qu'Uvicorn avec Docker :
+
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "mon_app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass mot-de-passe-redis
+    volumes:
+      - redis_data:/data
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TASKIQ_FLOW_SECURITY_ENABLED=true
+      - TASKIQ_FLOW_AUTH_PROVIDER=api_key
+      - TASKIQ_FLOW_API_KEYS={"admin-key":{"role":"admin","pipelines":["*"],"permissions":["read","execute","admin"]}}
+      - TASKIQ_FLOW_RATE_LIMIT_ENABLED=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+```
+
+### Reverse Proxy (nginx)
+
+Placez nginx devant l'application pour terminer TLS, renforcer HTTPS et ajouter des en-têtes de sécurité :
+
+```nginx
+# /etc/nginx/sites-available/taskiq-flow
+server {
+    listen 80;
+    server_name taskiq-flow.example.com;
+    return 301 https://$host$request_uri;  # Redirection HTTP → HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/taskiq-flow.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/taskiq-flow.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # En-têtes de sécurité
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Avec cette configuration :
+1. Tout le trafic HTTP est redirigé vers HTTPS (`require_https` est également appliqué côté application)
+2. Des en-têtes de sécurité sont ajoutés à chaque réponse
+3. Les connexions WebSocket sont proxyfiées avec les en-têtes de mise à niveau corrects
+4. L'application reçoit `X-Forwarded-Proto=https`, donc le middleware d'application HTTPS ne bloque pas les requêtes légitimes
+
 ## Limitation de débit
 
 Pour prévenir les abus, TaskIQ-Flow limite le nombre de requêtes par

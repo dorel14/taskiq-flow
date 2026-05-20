@@ -14,14 +14,24 @@ color_scheme: dark
 
 ## Overview
 
-This example demonstrates how to set up a WebSocket server that streams real-time pipeline execution events. It covers:
+This example demonstrates how to set up WebSocket real-time pipeline event streaming using **FastAPI-only WebSocket integration**.
 
-- Creating a `HookManager` and connecting it to WebSocket transport
-- Starting a WebSocket server on a specific host/port
-- Subscribing to pipeline events from a client
+This example covers:
+
+- Creating a `HookManager` and connecting it to the WebSocket transport via `setup_websocket_bridge()`
+- Running a pipeline with WebSocket events active
+- Connecting a JavaScript client to the FastAPI WebSocket route
 - Observing live step completion events
 
-**Note**: This is a minimal demo. For production use, add authentication, error handling, and proper connection management.
+**Note**: WebSocket events are served through your FastAPI application at `/ws/{pipeline_id}`. The standalone `get_websocket_server()` and `PipelineWebSocketServer` were removed in v1.1. Use the FastAPI WebSocket route instead.
+
+---
+
+## Prerequisites
+
+```bash
+pip install "taskiq-flow[brokers]" fastapi uvicorn
+```
 
 ---
 
@@ -29,21 +39,26 @@ This example demonstrates how to set up a WebSocket server that streams real-tim
 
 - Setting up `HookManager` with `setup_websocket_bridge()`
 - Attaching hooks to a pipeline
-- Starting the WebSocket server
-- How clients can connect and subscribe
-- The event messages that are broadcast
+- Executing the pipeline and broadcasting events to connected WebSocket clients
+- Connecting a WebSocket client via FastAPI at `/ws/{pipeline_id}`
 
 ---
 
-## Code Walkthrough
+## Part 1: The Pipeline Script (Python)
+
+This script sets up the pipeline, hooks, and FastAPI application. Start this first.
 
 ```python
 import asyncio
 from taskiq import InMemoryBroker
 from taskiq_flow import Pipeline
 from taskiq_flow.hooks import HookManager, setup_websocket_bridge
-from taskiq_flow.integration.websocket import get_websocket_server
 from taskiq_flow.middleware import PipelineMiddleware
+from fastapi import FastAPI, WebSocket
+from taskiq_flow.integration.websocket.fastapi_ws import (
+    fastapi_websocket_endpoint,
+    get_fastapi_ws_manager,
+)
 
 # Create broker
 broker = InMemoryBroker(await_inplace=True).with_middlewares(PipelineMiddleware())
@@ -57,41 +72,92 @@ def add_one(x: int) -> int:
 def multiply_by_two(x: int) -> int:
     return x * 2
 
-async def main():
-    # 1. Set up hook manager and WebSocket bridge
-    hook_manager = HookManager()
-    setup_websocket_bridge(hook_manager)
+# -- WebSocket setup --------------------------------------------------------
 
-    # 2. Create pipeline and attach hooks
+# 1. Create hook manager
+hook_manager = HookManager()
+
+# 2. Set up the WebSocket bridge (connects HookManager → FastAPI WebSocket transport)
+setup_websocket_bridge(hook_manager)
+
+# 3. Mount the FastAPI WebSocket route
+app = FastAPI()
+
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    """
+    WebSocket endpoint for real-time pipeline events.
+    Clients connect to: ws://localhost:8000/ws/{pipeline_id}
+    """
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+
+# -- Pipeline ---------------------------------------------------------------
+
+async def main():
+    # 4. Create pipeline and attach hooks
     pipeline = Pipeline(broker)
     pipeline.pipeline_id = "websocket_demo"
     pipeline.call_next(add_one, param_name="x")
     pipeline.call_next(multiply_by_two, param_name="x")
     pipeline.with_hooks(hook_manager)
 
-    # 3. Start WebSocket server in background
-    websocket_server = get_websocket_server()
-    _ = asyncio.create_task(
-        websocket_server.start_server("127.0.0.1", 8765),
-    )
-
-    print("WebSocket server started on ws://127.0.0.1:8765")
-    msg = '{"pipeline_id": "websocket_demo"}'
-    print(f"Connect a WebSocket client and subscribe with: {msg}")
-    print("Then run the pipeline to see real-time events...")
-
-    # Wait for server to start
-    await asyncio.sleep(1)
-
-    # 4. Execute the pipeline
+    # 5. Execute the pipeline (events are broadcast to any connected WS clients)
     result = await pipeline.kiq(5)  # Start with 5 → 6 → 12
     print(f"Pipeline result: {result}")
 
-    # Keep server running briefly
+    # Keep FastAPI app running briefly (in production, use uvicorn separately)
     await asyncio.sleep(5)
-    print("Demo complete. Server will shut down.")
+    print("Demo complete. Shutting down.")
 
 asyncio.run(main())
+```
+
+Start the script with:
+
+```bash
+uvicorn examples.websocket_demo:app --host 0.0.0.0 --port 8000
+```
+
+Or during development:
+
+```bash
+uvicorn examples.websocket_demo:app --reload
+```
+
+---
+
+## Part 2: The WebSocket Client (JavaScript)
+
+Open a browser console or a Node.js script and connect to your FastAPI app:
+
+```javascript
+// Connect to the FastAPI WebSocket route
+const ws = new WebSocket('ws://localhost:8000/ws/websocket_demo');
+
+// Subscribe to the demo pipeline (already done by connecting to /ws/websocket_demo)
+ws.onopen = () => {
+    console.log('Connected to WebSocket server');
+    ws.send(JSON.stringify({
+        type: 'subscribe',
+        pipeline_id: 'websocket_demo'
+    }));
+};
+
+// Handle incoming events
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Event:', data.type, data);
+
+    switch (data.type) {
+        case 'StepCompleteEvent':
+            console.log(`Step ${data.step_name} finished:`, data.result);
+            break;
+        case 'PipelineCompleteEvent':
+            console.log('Pipeline finished with status:', data.status);
+            console.log('Final result:', data.result);
+            break;
+    }
+};
 ```
 
 ---
@@ -126,42 +192,6 @@ When the pipeline runs, the following events are broadcast:
 
 ---
 
-## Client Implementation (JavaScript)
-
-Open a browser console or Node.js script:
-
-```javascript
-// Connect to WebSocket server
-const ws = new WebSocket('ws://127.0.0.1:8765');
-
-// Subscribe to the demo pipeline
-ws.onopen = () => {
-    console.log('Connected to WebSocket server');
-    ws.send(JSON.stringify({
-        type: 'subscribe',
-        pipeline_id: 'websocket_demo'
-    }));
-};
-
-// Handle incoming events
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Event:', data.type, data);
-
-    switch (data.type) {
-        case 'StepCompleteEvent':
-            console.log(`Step ${data.step_name} finished:`, data.result);
-            break;
-        case 'PipelineCompleteEvent':
-            console.log('Pipeline finished with status:', data.status);
-            console.log('Final result:', data.result);
-            break;
-    }
-};
-```
-
----
-
 ## Key Setup Steps
 
 ### 1. Create HookManager
@@ -175,32 +205,29 @@ setup_websocket_bridge(hook_manager)
 ```
 This connects the HookManager's event system to the WebSocket transport layer.
 
-### 3. Attach Hooks to Pipeline
+### 3. Mount FastAPI WebSocket Route
+```python
+@app.websocket("/ws/{pipeline_id}")
+async def ws_endpoint(websocket: WebSocket, pipeline_id: str):
+    await fastapi_websocket_endpoint(websocket, pipeline_id)
+```
+The WebSocket endpoint is served by your FastAPI application.
+
+### 4. Attach Hooks to Pipeline
 ```python
 pipeline = Pipeline(broker).with_hooks(hook_manager)
 ```
 Without this, the pipeline won't emit events to the WebSocket.
 
-### 4. Set pipeline_id
+### 5. Set pipeline_id
 ```python
 pipeline.pipeline_id = "my_pipeline"
 ```
 Required for clients to subscribe to specific pipelines.
 
-### 5. Start Server
-```python
-server = get_websocket_server(host="127.0.0.1", port=8765)
-await server.start_server()
-```
-
 ---
 
 ## Customization
-
-### Change Port
-```python
-server = get_websocket_server(port=9000)
-```
 
 ### Multiple Pipelines
 ```python
@@ -211,7 +238,7 @@ pipeline2 = Pipeline(broker).with_hooks(hook_manager)
 pipeline2.pipeline_id = "pipeline_2"
 ```
 
-Clients can subscribe to specific pipeline IDs.
+Clients can subscribe to specific pipeline IDs via `/ws/{pipeline_id}`.
 
 ### Event Filtering
 ```python
@@ -233,10 +260,11 @@ hook_manager.add_filter(filter)
 - Ensure `setup_websocket_bridge(hook_manager)` called **before** `pipeline.kiq()`
 - Ensure `pipeline.with_hooks(hook_manager)` called
 - Ensure `pipeline.pipeline_id` is set
+- Ensure the FastAPI WebSocket route is mounted at `/ws/{pipeline_id}`
 
 ### Connection Refused
-- Ensure `await server.start_server()` called before connecting
-- Check that the host/port match client connection string
+- Ensure the FastAPI app is running: `uvicorn examples.websocket_demo:app`
+- Check that the host/port match the client connection string
 
 ### Events Out of Order
 WebSocket delivers messages in order; if you see out-of-order, check for network issues or custom middleware emitting events incorrectly.
@@ -253,4 +281,4 @@ After this example:
 
 ---
 
-*This example shows real-time streaming basics. For production, add authentication, connection pooling, and horizontal scaling with Redis Pub/Sub transport.*
+*This example shows real-time streaming basics with the FastAPI-only WebSocket integration. For production, add authentication, connection pooling, and horizontal scaling with Redis Pub/Sub transport.*

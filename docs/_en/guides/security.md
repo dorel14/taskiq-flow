@@ -41,7 +41,7 @@ config = TaskiqFlowConfig(
             "permissions": ["read"],
         },
     },
-    jwt_secret="your-jwt-secret",      # required when auth_provider="jwt"
+    jwt_secret="your-jwt-secret",  # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     # ---- HTTPS enforcement ----
     require_https=True,
     # ---- Authorization (ACLs) ----
@@ -124,6 +124,105 @@ Each API key entry may specify a `pipelines` list of pipeline IDs the key is all
 When `require_https` is `True` (default), the :class:`~taskiq_flow.security.https.HTTPSEnforcementMiddleware` rejects all plain HTTP requests with HTTP 403.
 
 The middleware respects the `X-Forwarded-Proto` header so deployments behind a TLS-terminating reverse proxy continue to work correctly.
+
+## Deployment
+
+### Docker Deployment
+
+Run TaskIQ-Flow behind a WSGI/ASGI server such as Uvicorn with Docker:
+
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "my_app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass your-redis-password
+    volumes:
+      - redis_data:/data
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TASKIQ_FLOW_SECURITY_ENABLED=true
+      - TASKIQ_FLOW_AUTH_PROVIDER=api_key
+      - TASKIQ_FLOW_API_KEYS={"admin-key":{"role":"admin","pipelines":["*"],"permissions":["read","execute","admin"]}}
+      - TASKIQ_FLOW_RATE_LIMIT_ENABLED=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+```
+
+### Reverse Proxy (nginx)
+
+Place nginx in front of the application to terminate TLS, enforce HTTPS, and add security headers:
+
+```nginx
+# /etc/nginx/sites-available/taskiq-flow
+server {
+    listen 80;
+    server_name taskiq-flow.example.com;
+    return 301 https://$host$request_uri;  # Redirect HTTP → HTTPS
+}
+
+server {
+    listen 443 ssl http2;
+    server_name taskiq-flow.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/taskiq-flow.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/taskiq-flow.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+With this configuration:
+1. All HTTP traffic is redirected to HTTPS (`require_https` also enforced inside the app)
+2. Security headers are added to every response
+3. WebSocket connections are proxied with correct upgrade headers
+4. The app receives `X-Forwarded-Proto=https`, so the HTTPS enforcement middleware does not block legitimate requests
 
 ## Rate Limiting
 
