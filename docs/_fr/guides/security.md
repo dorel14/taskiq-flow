@@ -158,7 +158,7 @@ CMD ["uvicorn", "mon_app:app", "--host", "0.0.0.0", "--port", "8000"]
 services:
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass mot-de-passe-redis
+    command: redis-server --requirepass mot-de-passe-redis # pragma: allowlist secret  # noqa: S105 — documented placeholder, not a real secret
     volumes:
       - redis_data:/data
 
