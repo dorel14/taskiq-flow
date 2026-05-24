@@ -550,7 +550,7 @@ WantedBy=multi-user.target
 
 ### 9.3. Monitoring
 
-Utilisez l'endpoint `/health` intégré de l'API FastAPI (voir [Guide API]({{ '/fr/guides/api/' | relative_url })).
+Utilisez l'endpoint `/health` intégré de l'API FastAPI (voir [Guide API]({{ '/fr/guides/api/' | relative_url }})).
 
 ### 9.4. Scalabilité
 

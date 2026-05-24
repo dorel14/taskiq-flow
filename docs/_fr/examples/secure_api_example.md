@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/secure-api-example/
-title: Exemple: secure_api_example.py
+title: 'Exemple: secure_api_example.py'
 nav_order: 46
 color_scheme: dark
 ---

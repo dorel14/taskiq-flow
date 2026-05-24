@@ -1,6 +1,6 @@
 ---
 permalink: /en/api/websocket/
-title: API Reference: WebSocket Integration
+title: 'API Reference: WebSocket Integration'
 nav_order: 34
 color_scheme: dark
 ---

@@ -1,6 +1,6 @@
 ---
 permalink: /en/examples/websocket-demo/
-title: Example: websocket_demo.py
+title: 'Example: websocket_demo.py'
 nav_order: 46
 color_scheme: dark
 ---

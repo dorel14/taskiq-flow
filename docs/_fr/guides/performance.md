@@ -48,6 +48,7 @@ L'optimisation des performances implique des compromis :
 
 Contrôle l'exécution concurrente des tâches au niveau de l'étape :
 
+{% raw %}
 ```python
 # Pipeline Séquentiel
 pipeline.map(process_item, items, max_parallel=10)  # Max 10 concurrentes
@@ -63,23 +64,25 @@ mapped = await MapReduce.map(
     max_parallel=15
 )
 ```
-
+{% endraw %}
 **Comportement par défaut** : Sans `max_parallel`, Taskiq-Flow tente d'exécuter toutes les tâches indépendantes concurremment (essentiellement illimité). C'est acceptable pour les petits nombres (<100) mais dangereux pour les grands jeux de données.
 
 ### 2.2. Déterminer le `max_parallel` Optimal
 
 #### Pour les Tâches Liées aux I/O (appels réseau, I/O disque)
 
+{% raw %}
 ```python
 # Attente I/O élevée, CPU faible : peut gérer beaucoup de tâches concurrentes
 pipeline.map(fetch_url, url_list, max_parallel=50)
 # Règle empirique : 2–5 × nombre de cœurs CPU
 ```
-
+{% endraw %}
 **Justification** : Pendant qu'une tâche attend le réseau, une autre utilise le CPU. Une haute concurrence sature les pipelines d'I/O.
 
 #### Pour les Tâches Intensives en CPU (calculs, transcodage)
 
+{% raw %}
 ```python
 # Intensif en CPU : limiter au nombre de cœurs (ou légèrement plus)
 import os
@@ -87,13 +90,14 @@ cpu_cores = os.cpu_count() or 4
 pipeline.map(transcode, files, max_parallel=cpu_cores + 2)
 # Règle empirique : cœurs CPU ± 2
 ```
-
+{% endraw %}
 **Justification** : Le GIL de Python limite le vrai parallélisme ; `asyncio` bénéficie toujours de plusieurs cœurs quand les tâches libèrent le GIL (NumPy, extensions C). Une sur-inscription entraîne des surcoûts de changement de contexte.
 
 #### Pour les Charges de Travail Mixtes
 
 Profilez et ajustez :
 
+{% raw %}
 ```python
 # Commencez prudent
 for parallel in [5, 10, 20, 50]:
@@ -102,19 +106,20 @@ for parallel in [5, 10, 20, 50]:
     duration = time.time() - start
     print(f"Parallélisme {parallel} : {duration:.2f}s")
 ```
-
+{% endraw %}
 Trouvez le **coude de la courbe** — point où augmenter le parallélisme donne des rendements décroissants.
 
 ### 2.3. Limite Globale de Parallélisme
 
 Définissez une limite globale sur tous les pipelines :
 
+{% raw %}
 ```python
 from taskiq_flow.optimization.parallel import set_max_parallel_tasks
 
 set_max_parallel_tasks(100)  # Ne jamais dépasser 100 tâches concurrentes globalement
 ```
-
+{% endraw %}
 Utile dans les systèmes multi-tenants pour empêcher un pipeline d'en asphyxier d'autres.
 
 ---
@@ -125,6 +130,7 @@ Taskiq-Flow peut ordonnancer les tâches selon les besoins CPU/RAM (nécessite u
 
 ### 3.1. Annoter les Tâches avec Besoins en Ressources
 
+{% raw %}
 ```python
 from taskiq_flow import CPUProfile, RAMProfile
 
@@ -135,9 +141,10 @@ def heavy_computation(data):
     # Ne s'exécutera que sur des workers avec ressources suffisantes
     pass
 ```
-
+{% endraw %}
 ### 3.2. Pool de Workers Conscient des Ressources
 
+{% raw %}
 ```python
 from taskiq_flow import ResourceAwareWorkerPool
 
@@ -150,7 +157,7 @@ pool = ResourceAwareWorkerPool(
 
 # Les tâches sont automatiquement routées vers les workers compatibles
 ```
-
+{% endraw %}
 **Note** : Cette fonctionnalité nécessite une implémentation worker personnalisée ; les brokers standards ignorent les profils de ressources.
 
 ---
@@ -161,6 +168,7 @@ pool = ResourceAwareWorkerPool(
 
 Passez des références au lieu des données complètes :
 
+{% raw %}
 ```python
 #  Mauvais : copie le jeu de données complet pour chaque appel de tâche
 pipeline.map(process, large_dataset)  # Chaque tâche reçoit une copie complète
@@ -173,11 +181,12 @@ def process(item_id: str):
 
 pipeline.map(process, item_ids)  # Seuls les IDs sont passés
 ```
-
+{% endraw %}
 ### 4.2. Streamer les Gros Jeux de Données
 
 Utilisez le découpage en chunks :
 
+{% raw %}
 ```python
 def chunked(iterable, chunk_size=100):
     for i in range(0, len(iterable), chunk_size):
@@ -187,22 +196,24 @@ for chunk in chunked(large_list, 100):
     results = await pipeline.kiq_dataflow(chunk)
     # Traitez les résultats avant le prochain chunk pour libérer la mémoire
 ```
-
+{% endraw %}
 ### 4.3. Nettoyer les Résultats Après Utilisation
 
 Les résultats de pipeline restent dans le stockage de suivi. Nettoyez après usage :
 
+{% raw %}
 ```python
 # Après traitement, supprimez l'enregistrement du pipeline
 await tracking.delete_pipeline(pipeline.pipeline_id)
 ```
-
+{% endraw %}
 Ou définissez un TTL sur le stockage :
 
+{% raw %}
 ```python
 RedisPipelineStorage(redis, ttl_seconds=86400)  # Suppression auto après 1 jour
 ```
-
+{% endraw %}
 ---
 
 ## 5. Profilage & Détection des Goulots d'Étranglement
@@ -211,18 +222,20 @@ RedisPipelineStorage(redis, ttl_seconds=86400)  # Suppression auto après 1 jour
 
 Chaque étape enregistre la durée automatiquement (avec le suivi activé) :
 
+{% raw %}
 ```python
 status = await tracking.get_status(pipeline_id)
 for step in status.steps:
     print(f"{step.name}: {step.duration_ms}ms")
 ```
-
+{% endraw %}
 Identifiez les étapes les plus lentes → cibles d'optimisation.
 
 ### 5.2. Profilage Mémoire
 
 Utilisez `tracemalloc` de Python :
 
+{% raw %}
 ```python
 import tracemalloc
 
@@ -237,9 +250,10 @@ print(f"Actuel : {current/1024/1024:.1f} Mo")
 print(f"Pic : {peak/1024/1024:.1f} Mo")
 tracemalloc.stop()
 ```
-
+{% endraw %}
 ### 5.3. Profilage CPU
 
+{% raw %}
 ```python
 import cProfile
 import pstats
@@ -254,16 +268,17 @@ stats = pstats.Stats(profiler)
 stats.sort_stats('cumulative')
 stats.print_stats(20)  # Top 20 fonctions
 ```
-
+{% endraw %}
 ### 5.4. Profilage Spécifique Asyncio
 
 `uvloop` pour une boucle d'événements plus rapide :
 
+{% raw %}
 ```python
 import uvloop
 uvloop.install()  # Remplace la boucle asyncio par défaut
 ```
-
+{% endraw %}
 Amélioration benchmark : `uvloop` peut fournir un gain 2×–3× pour les charges liées aux I/O.
 
 ---
@@ -274,6 +289,7 @@ Amélioration benchmark : `uvloop` peut fournir un gain 2×–3× pour les charg
 
 Pour les bases de données (PostgreSQL, Redis), réutilisez les connexions :
 
+{% raw %}
 ```python
 from asyncpg import create_pool
 
@@ -284,11 +300,12 @@ async def db_task(query: str):
     async with pool.acquire() as conn:
         return await conn.fetch(query)
 ```
-
+{% endraw %}
 ### 6.2. Opérations par Lots
 
 Au lieu de nombreux petits appels, faites des lots :
 
+{% raw %}
 ```python
 #  N appels séparés
 for item in items:
@@ -297,9 +314,10 @@ for item in items:
 #  Insertion par lot unique
 await db.bulk_insert(items)
 ```
-
+{% endraw %}
 ### 6.3. Mise en Cache des Résultats
 
+{% raw %}
 ```python
 from functools import lru_cache
 
@@ -308,9 +326,10 @@ from functools import lru_cache
 def expensive_computation(key: str):
     return compute(key)
 ```
-
+{% endraw %}
 Ou utilisez un cache Redis :
 
+{% raw %}
 ```python
 import redis
 cache = redis.Redis(...)
@@ -324,7 +343,7 @@ async def cached_task(key: str):
     await cache.setex(key, 3600, json.dumps(result))
     return result
 ```
-
+{% endraw %}
 ---
 
 ## 7. Mise à l'Échelle Distribuée
@@ -333,6 +352,7 @@ async def cached_task(key: str):
 
 Mise à l'échelle horizontale en lançant plusieurs processus worker :
 
+{% raw %}
 ```bash
 # Terminal 1
 taskiq worker --broker redis://localhost:6379
@@ -343,7 +363,7 @@ taskiq worker --broker redis://localhost:6379
 # Terminal 3
 taskiq worker --broker redis://localhost:6379
 ```
-
+{% endraw %}
 Tous les workers partagent le même broker (Redis) et traitent les tâches concurremment.
 
 **Débit ≈ (# workers) × (tâches/worker/seconde)**.
@@ -352,6 +372,7 @@ Tous les workers partagent le même broker (Redis) et traitent les tâches concu
 
 Utilisez un gestionnaire de processus (systemd, supervisord, Docker Compose) :
 
+{% raw %}
 ```yaml
 # docker-compose.yml
 services:
@@ -365,18 +386,19 @@ services:
     image: taskiq-flow-worker
     command: taskiq worker --broker ${REDIS_URL}
 ```
-
+{% endraw %}
 ### 7.3. Priorisation des Files
 
 Routez les pipelines critiques vers des files dédiées :
 
+{% raw %}
 ```python
 @broker.task(queue="high_priority")
 def critical_task(): ...
 
 # Les workers peuvent être configurés pour traiter certaines files en priorité
 ```
-
+{% endraw %}
 ### 7.4. Géodistribution
 
 Pour des déploiements mondiaux à faible latence, déployez des workers dans plusieurs régions avec un broker global (Kafka) ou des clusters Redis régionaux avec réplication.
@@ -387,6 +409,7 @@ Pour des déploiements mondiaux à faible latence, déployez des workers dans pl
 
 Mesurez avant et après optimisation :
 
+{% raw %}
 ```python
 import time
 
@@ -404,7 +427,7 @@ async def benchmark(pipeline, iterations=10):
     print(f"Moyenne: {avg:.3f}s, P95: {p95:.3f}s")
     return durations
 ```
-
+{% endraw %}
 **Métriques clés** :
 
 - **Débit** : tâches/seconde
@@ -438,12 +461,13 @@ async def benchmark(pipeline, iterations=10):
 **Étapes de diagnostic** :
 
 1. Vérifiez les durées d'étapes dans le suivi :
+{% raw %}
    ```python
    status = await tracking.get_status(pipeline_id)
    slowest = max(status.steps, key=lambda s: s.duration_ms)
    print(f"Étape la plus lente : {slowest.name} à {slowest.duration_ms}ms")
    ```
-
+{% endraw %}
 2. Profilez avec cProfile pour voir où le temps est passé
 3. Vérifiez que `max_parallel` n'est pas trop bas
 4. Cherchez des I/O bloquants (utilisez des librairies async)
@@ -475,6 +499,7 @@ async def benchmark(pipeline, iterations=10):
 
 Pour des charges spécialisées, implémentez des exécuteurs personnalisés :
 
+{% raw %}
 ```python
 from taskiq_flow import ExecutionEngine
 from taskiq_flow.dataflow import DAG
@@ -489,12 +514,13 @@ class GPUOptimizedEngine(ExecutionEngine):
 engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
-
+{% endraw %}
 ### 11.1. ResourceAwareExecutor et TaskResourceProfile
 
 TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
 pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
 
+{% raw %}
 ```python
 from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
 
@@ -516,7 +542,7 @@ executor = ResourceAwareExecutor(
     max_parallel=10,
 )
 ```
-
+{% endraw %}
 `ResourceAwareExecutor` évalue les profils de ressources des tâches et les
 distribue aux workers disponibles en fonction de leur capacité.
 `TaskResourceProfile` permet d'annoter chaque tâche avec ses besoins estimés

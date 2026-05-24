@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/scheduled-pipeline/
-title: Exemple: scheduled_pipeline.py
+title: 'Exemple: scheduled_pipeline.py'
 nav_order: 44
 color_scheme: dark
 ---

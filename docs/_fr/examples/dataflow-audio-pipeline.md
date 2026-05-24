@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/dataflow-audio-pipeline/
-title: Exemple: dataflow_audio_pipeline.py
+title: 'Exemple: dataflow_audio_pipeline.py'
 nav_order: 42
 color_scheme: dark
 ---
@@ -40,6 +40,7 @@ C'est l'exemple de référence pour comprendre l'architecture dataflow.
 
 ### Définition des Tâches
 
+{% raw %}
 ```python
 from taskiq import InMemoryBroker
 from taskiq_flow import DataflowPipeline, pipeline_task
@@ -73,9 +74,10 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
     # Reçoit les deux entrées automatiquement
     return [0.1, 0.5, 0.8]
 ```
-
+{% endraw %}
 Le pipeline construit automatiquement ce DAG:
 
+{% raw %}
 ```mermaid
 flowchart TD
     A[extract_audio_features] --> B[compute_mir_features]
@@ -83,8 +85,9 @@ flowchart TD
     B --> D[create_embedding]
     C --> D
 ```
-
+{% endraw %}
 **Note**: `create_embedding` dépend à la fois de `mir_features` (sortie de `compute_mir_features`) et `tags` (sortie de `generate_tags`), donc il s'exécute après que les deux tâches parallèles sont terminées.
+{% raw %}
 ```
 
 ---
@@ -92,7 +95,7 @@ flowchart TD
 ## Exemple 1: Pipeline Séquentiel avec Dépendances Automatiques
 
 ```python
-async def example_sequential_pipeline():
+{% endraw %}
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [
@@ -118,6 +121,7 @@ async def example_sequential_pipeline():
     #   "tags": [...],
     #   "vector": [...]
     # }
+{% raw %}
 ```
 
 **Résolution dépendances**:
@@ -133,7 +137,7 @@ async def example_sequential_pipeline():
 Avec ajout de `extract_spectral_features` qui dépend aussi seulement de `audio_features`:
 
 ```python
-@broker.task
+{% endraw %}
 @pipeline_task(output="spectral_features")
 async def extract_spectral_features(audio_features: dict) -> dict:
     await asyncio.sleep(0.2)
@@ -158,6 +162,7 @@ pipeline = DataflowPipeline.from_tasks(
         combine_features,            # Niveau 2 (dépend de mir_features + spectral_features + tags)
     ],
 )
+{% raw %}
 ```
 
 **Niveaux d'exécution**:
@@ -172,7 +177,7 @@ pipeline = DataflowPipeline.from_tasks(
 Traiter multiples pistes en parallèle, puis agréger:
 
 ```python
-# Map: traiter chaque piste indépendamment
+{% endraw %}
 @broker.task
 @pipeline_task(output="track_features")
 async def process_single_track(track: str) -> dict:
@@ -202,6 +207,7 @@ pipeline.reduce(
 
 résultats = await pipeline.kiq_map_reduce()
 # résultats = {"track_features": [...], "playlist_stats": {...}}
+{% raw %}
 ```
 
 ---
@@ -211,7 +217,7 @@ résultats = await pipeline.kiq_map_reduce()
 Le pipeline fournit multiples formats de visualisation:
 
 ```python
-# ASCII art (console)
+{% endraw %}
 pipeline.print_dag()
 
 # JSON (for web UIs)
@@ -229,6 +235,7 @@ dot = pipeline.visualize_dot()
 # with open("pipeline.dot", "w") as f:
 #     f.write(dot)
 # Run: dot -Tpng pipeline.dot -o pipeline.png
+{% raw %}
 ```
 
 ---
@@ -236,7 +243,8 @@ dot = pipeline.visualize_dot()
 ## Exécuter l'Exemple
 
 ```bash
-python examples/dataflow_audio_pipeline.py
+{% endraw %}
+{% raw %}
 ```
 
 Sortie attendue inclut:
@@ -267,3 +275,5 @@ Après cet exemple:
 ---
 
 *C'est l'exemple flagship. Étudiez-le thoroughly pour comprendre modèle dataflow Taskiq-Flow.*
+
+{% endraw %}

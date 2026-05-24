@@ -1,5 +1,5 @@
 ---
-title: Référence API : Stockage
+title: 'Référence API : Stockage'
 nav_order: 31
 color_scheme: dark
 ---

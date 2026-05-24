@@ -1,6 +1,6 @@
 ---
 permalink: /fr/api/decorators/
-title: Référence API: Décorateurs
+title: 'Référence API: Décorateurs'
 nav_order: 31
 color_scheme: dark
 ---
@@ -22,6 +22,7 @@ Le décorateur `@pipeline_task` annote les tâches taskiq avec des déclarations
 
 Marque une tâche avec ce qu'elle produit pour les consommateurs en aval.
 
+{% raw %}
 ```python
 from taskiq_flow import pipeline_task
 
@@ -30,7 +31,7 @@ from taskiq_flow import pipeline_task
 def extract(données: list[str]) -> dict:
     return compute_features(données)
 ```
-
+{% endraw %}
 **Paramètres**:
 
 | Paramètre | Type | Description |
@@ -42,15 +43,17 @@ def extract(données: list[str]) -> dict:
 
 ### Sortie unique (plus courant)
 
+{% raw %}
 ```python
 @broker.task
 @pipeline_task(output="données_traitées")
 def process(données_brutes: str) -> dict:
     return {"result": données_brutes.upper()}
 ```
-
+{% endraw %}
 ### Sorties multiples
 
+{% raw %}
 ```python
 @broker.task
 @pipeline_task(outputs=["features", "metadata"])
@@ -59,9 +62,10 @@ def split_output(audio: np.ndarray) -> tuple[dict, dict]:
     metadata = extract_meta(audio)
     return features, metadata  # déballé vers les deux sorties
 ```
-
+{% endraw %}
 Les tâches en aval peuvent consommer soit sortie:
 
+{% raw %}
 ```python
 @broker.task
 @pipeline_task(output="tags")
@@ -71,13 +75,14 @@ def tag(features: dict): ...  # consomme sortie 'features'
 @pipeline_task(output="info")
 def describe(metadata: dict): ...  # consomme sortie 'metadata'
 ```
-
+{% endraw %}
 ---
 
 ## @pipeline_task_multi_output
 
 Alias pour `@pipeline_task(outputs=[...])`. Apporte clarté pour tâches multi-sorties:
 
+{% raw %}
 ```python
 from taskiq_flow import pipeline_task_multi_output
 
@@ -86,7 +91,7 @@ from taskiq_flow import pipeline_task_multi_output
 def split(valeur: int) -> tuple[int, int]:
     return valeur // 2, valeur % 2
 ```
-
+{% endraw %}
 ---
 
 ## Fonctions Utilitaires
@@ -95,52 +100,57 @@ def split(valeur: int) -> tuple[int, int]:
 
 Obtenir clés sortie déclarées pour une tâche:
 
+{% raw %}
 ```python
 from taskiq_flow import get_task_outputs
 
 outputs = get_task_outputs(extract_task)
 print(outputs)  # ['features']
 ```
-
+{% endraw %}
 ### get_task_inputs(task: Callable) -> list[str]
 
 Get declared input dependencies:
 
+{% raw %}
 ```python
 from taskiq_flow import get_task_inputs
 
 inputs = get_task_inputs(tag_task)
 print(inputs)  # ['features']
 ```
-
+{% endraw %}
 ### is_pipeline_task(task: Callable) -> bool
 
 Check if function is decorated with `@pipeline_task`:
 
+{% raw %}
 ```python
 from taskiq_flow import is_pipeline_task
 
 if is_pipeline_task(my_function):
     print("This is a pipeline task with output declarations")
 ```
-
+{% endraw %}
 ### resolve_task_dependencies(tasks: list[Callable]) -> dict
 
 Build dependency map:
 
+{% raw %}
 ```python
 from taskiq_flow import resolve_task_dependencies
 
 deps = resolve_task_dependencies([task_a, task_b, task_c])
 # Returns: {task_a: [], task_b: ['features'], task_c: ['tags']}
 ```
-
+{% endraw %}
 ---
 
 ## Decorator Order
 
 The order of decorators matters: `@broker.task` must be the outermost (applied last), `@pipeline_task` inner (applied first):
 
+{% raw %}
 ```python
 # CORRECT
 @broker.task
@@ -152,8 +162,9 @@ def my_task(): ...
 @broker.task
 def my_task(): ...
 ```
-
+{% endraw %}
 Why: `@broker.task` wraps the function; `@pipeline_task` attaches metadata to the original function. Python applies decorators bottom-to-top.
+{% raw %}
 ```
 
 Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métadonnées à la fonction originale. Python applique décorateurs bas-vers-haut.
@@ -165,7 +176,7 @@ Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métado
 Les type hints aident IDEs et linters à comprendre le dataflow:
 
 ```python
-from typing import TypedDict
+{% endraw %}
 
 class AudioFeatures(TypedDict):
     duration: float
@@ -180,6 +191,7 @@ def extract(chemin: str) -> AudioFeatures:
 @pipeline_task(output="tags")
 def tag(features: AudioFeatures) -> list[str]:  # type-safe
     return ["rapide", "électronique"]
+{% raw %}
 ```
 
 Utiliser `TypedDict` ou modèles Pydantic pour meilleure autocomplétion IDE et vérification mypy.
@@ -191,7 +203,7 @@ Utiliser `TypedDict` ou modèles Pydantic pour meilleure autocomplétion IDE et 
 Attacher version et autres métadonnées:
 
 ```python
-@broker.task(
+{% endraw %}
     nom="extract_features_v2",
     labels={"version": "2.0.0", "expérimental": False}
 )
@@ -201,6 +213,7 @@ Attacher version et autres métadonnées:
 )
 def extract(chemin: str) -> dict:
     ...
+{% raw %}
 ```
 
 ---
@@ -219,7 +232,7 @@ def extract(chemin: str) -> dict:
 ## Exemple: Pipeline Dataflow Complet
 
 ```python
-from taskiq import InMemoryBroker
+{% endraw %}
 from taskiq_flow import DataflowPipeline, pipeline_task
 
 broker = InMemoryBroker()
@@ -245,8 +258,11 @@ pipeline = DataflowPipeline.from_tasks(broker, [charger, nettoyer, analyser])
 # Exécuter
 résultats = await pipeline.kiq_dataflow(source="data.csv")
 # résultats = {"brut": {...}, "propre": {...}, "stats": {...}}
+{% raw %}
 ```
 
 ---
 
 *Pour API tâches complète, voir [Guide des Tâches]({{ '/fr/guides/tasks/' | relative_url }}). Pour écrire décorateurs personnalisés, étendre `BaseTaskDecorator` depuis `taskiq_flow.decorators`.*
+
+{% endraw %}

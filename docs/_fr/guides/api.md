@@ -28,6 +28,7 @@ Ce guide couvre :
 
 ## 1. Configuration Rapide
 
+{% raw %}
 ```python
 from fastapi import FastAPI
 from taskiq import InMemoryBroker
@@ -53,7 +54,7 @@ viz_api.add_pipeline("my_pipeline", pipeline)
 # 4. Run with uvicorn
 # uvicorn main:app --reload --port 8000
 ```
-
+{% endraw %}
 Tous les endpoints sont automatiquement montés sous `/pipelines`.
 
 ---
@@ -64,27 +65,31 @@ L'API de visualisation fournit ces routes :
 
 ### 2.1. Health Check
 
+{% raw %}
 ```
 GET /health
 ```
-
+{% endraw %}
 Retourne statut simple:
 
+{% raw %}
 ```json
 {
   "statut": "healthy",
   "timestamp": "2026-05-05T12:00:00Z"
 }
 ```
-
+{% endraw %}
 ### 2.2. Lister Tous les Pipelines
 
+{% raw %}
 ```
 GET /pipelines
 ```
-
+{% endraw %}
 Liste tous les pipelines enregistrés avec métadonnées:
 
+{% raw %}
 ```json
 [
   {
@@ -95,36 +100,41 @@ Liste tous les pipelines enregistrés avec métadonnées:
   }
 ]
 ```
-
+{% endraw %}
 ### 2.3. Enregistrer un Nouveau Pipeline
 
+{% raw %}
 ```
 POST /pipelines/{pipeline_id}
 ```
-
+{% endraw %}
 Corps de requête:
 
+{% raw %}
 ```json
 {
   "pipeline_type": "dataflow",
   "tasks": ["task1", "task2"]
 }
 ```
-
+{% endraw %}
 Ou utiliser l'API Python directement (recommandé):
 
+{% raw %}
 ```python
 viz_api.add_pipeline("nouveau_pipeline", objet_pipeline)
 ```
-
+{% endraw %}
 ### 2.4. Obtenir le Statut d'un Pipeline
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/status
 ```
-
+{% endraw %}
 Retourne statut d'exécution courant si un run est actif:
 
+{% raw %}
 ```json
 {
   "pipeline_id": "my_pipeline_123",
@@ -134,15 +144,17 @@ Retourne statut d'exécution courant si un run est actif:
   "started_at": "2026-05-05T12:00:00Z"
 }
 ```
-
+{% endraw %}
 ### 2.5. Obtenir le DAG en JSON
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/dag
 ```
-
+{% endraw %}
 Retourne la structure de graphe orienté acyclique:
 
+{% raw %}
 ```json
 {
   "nodes": [
@@ -156,15 +168,17 @@ Retourne la structure de graphe orienté acyclique:
   ]
 }
 ```
-
+{% endraw %}
 ### 2.6. Obtenir le DAG au Format DOT
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/dag/dot
 ```
-
+{% endraw %}
 Retourne chaîne DOT compatible Graphviz:
 
+{% raw %}
 ```
 digraph "my_pipeline" {
   node [shape=box];
@@ -172,15 +186,17 @@ digraph "my_pipeline" {
   extract -> embed;
 }
 ```
-
+{% endraw %}
 ### 2.7. Visualisation Complète de Pipeline
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/visualize
 ```
-
+{% endraw %}
 Retourne métadonnées complètes du pipeline:
 
+{% raw %}
 ```json
 {
   "pipeline_id": "my_pipeline",
@@ -205,13 +221,14 @@ Retourne métadonnées complètes du pipeline:
   ]
 }
 ```
-
+{% endraw %}
 ---
 
 ## 3. Exécution de Pipelines via API
 
 L'API de base se concentre sur gestion et visualisation. Pour exécuter des pipelines à distance, ajouter un endpoint personnalisé:
 
+{% raw %}
 ```python
 from fastapi import FastAPI, HTTPException
 from taskiq_flow.api import PipelineVisualizationAPI
@@ -267,9 +284,10 @@ async def get_result(task_id: str):
         raise HTTPException(status_code=404, detail="Résultat non trouvé ou expiré")
     return {"task_id": task_id, "resultat": result.return_value}
 ```
-
+{% endraw %}
 ### 3.1. Exécution Async (Fire-and-Forget)
 
+{% raw %}
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -281,9 +299,10 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   "status": "STARTED"
 }
 ```
-
+{% endraw %}
 ### 3.2. Synchronous Execution (Wait for Result)
 
+{% raw %}
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -296,13 +315,14 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   "result": {"processed": "VALUE"}
 }
 ```
-
+{% endraw %}
 ---
 
 ## 4. Intégration avec Tableaux de Bord Frontend
 
 ### 4.1. Exemple Dashboard React
 
+{% raw %}
 ```typescript
 const PipelineStatus = ({ pipelineId }) => {
   const [status, setStatus] = useState(null);
@@ -331,11 +351,12 @@ const PipelineStatus = ({ pipelineId }) => {
   );
 };
 ```
-
+{% endraw %}
 ### 4.2. Visualisation DAG
 
 Utiliser endpoint DOT avec Graphviz:
 
+{% raw %}
 ```javascript
 const renderDAG = async (pipelineId) => {
   const response = await fetch(`/pipelines/${pipelineId}/dag/dot`);
@@ -347,13 +368,14 @@ const renderDAG = async (pipelineId) => {
     .renderDot(dot);
 };
 ```
-
+{% endraw %}
 ---
 
 ## 5. Authentification & Sécurité
 
 ### 5.1. Authentification par Clé API
 
+{% raw %}
 ```python
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
@@ -369,9 +391,10 @@ async def verify_api_key(api_key: str = Security(api_key_header)):
 async def list_pipelines(api_key: str = Security(verify_api_key)):
     return viz_api.list_pipelines()
 ```
-
+{% endraw %}
 ### 5.2. Authentification JWT
 
+{% raw %}
 ```python
 from jose import jwt
 from fastapi import Depends
@@ -393,13 +416,14 @@ async def execute(
     logger.info(f"User {user} executed {pipeline_id}")
     return await run_pipeline(pipeline_id, parameters)
 ```
-
+{% endraw %}
 ---
 
 ## 6. Limitation de Débit (Rate Limiting)
 
 Protéger l'API contre abus:
 
+{% raw %}
 ```python
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -414,13 +438,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def execute_pipeline(pipeline_id: str, parameters: dict):
     # ...
 ```
-
+{% endraw %}
 ---
 
 ## 7. Configuration CORS
 
 Permettre requêtes cross-origin pour frontend web:
 
+{% raw %}
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -432,22 +457,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 ```
-
+{% endraw %}
 ---
 
 ## 8. Déploiement en Production
 
 ### 8.1. Gunicorn + Workers Uvicorn
 
+{% raw %}
 ```bash
 # Lancer avec multiples workers pour concurrence
 gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
 
 # 4 processus workers gèrent requêtes concurrentes
 ```
-
+{% endraw %}
 ### 8.2. Docker
 
+{% raw %}
 ```dockerfile
 FROM python:3.12-slim
 
@@ -459,7 +486,8 @@ COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
-
+{% endraw %}
+{% raw %}
 ```yaml
 # docker-compose.yml
 services:
@@ -474,9 +502,10 @@ services:
   redis:
     image: redis:7-alpine
 ```
-
+{% endraw %}
 ### 8.3. Derrière Reverse Proxy (nginx)
 
+{% raw %}
 ```nginx
 server {
     listen 80;
@@ -491,29 +520,32 @@ server {
     }
 }
 ```
-
+{% endraw %}
 ### 8.4. HTTPS avec Let's Encrypt
 
+{% raw %}
 ```bash
 # Utiliser certbot avec nginx
 sudo certbot --nginx -d api.taskiq-flow.example.com
 ```
-
+{% endraw %}
 Configurer HTTPS → redirect vers HTTP upstream:
 
+{% raw %}
 ```nginx
 location / {
     proxy_pass http://localhost:8000;
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
-
+{% endraw %}
 ---
 
 ## 9. Sécurité de l'API
 
 ### 9.1. Authentification par Clé API
 
+{% raw %}
 ```python
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
@@ -529,9 +561,10 @@ async def verify_api_key(api_key: str = Security(api_key_header)):
 async def list_pipelines(api_key: str = Security(verify_api_key)):
     return viz_api.list_pipelines()
 ```
-
+{% endraw %}
 ### 9.2. Authentification JWT
 
+{% raw %}
 ```python
 from jose import jwt
 from fastapi import Depends
@@ -552,12 +585,13 @@ async def execute(
     logger.info(f"Utilisateur {user} a exécuté {pipeline_id}")
     return await run_pipeline(pipeline_id, parameters)
 ```
-
+{% endraw %}
 ### 9.3. Autorisation au Niveau Pipeline
 
 Définissez les ACLs par pipeline via `pipeline_acls` dans `TaskiqFlowConfig`,
 puis utilisez `verify_pipeline_access` comme dépendance de route :
 
+{% raw %}
 ```python
 from fastapi import Depends
 from taskiq_flow.config import TaskiqFlowConfig
@@ -578,11 +612,12 @@ viz_api = create_visualization_api(broker)  # lit config automatiquement
 # verify_pipeline_access dépend de get_current_user + authorization
 # → utilisez-la directement sur vos endpoints protégés
 ```
-
+{% endraw %}
 ### 9.4. Combinaison Middleware + Dépendances de Route
 
 Pour la production, combinez le middleware global (authentification) avec les dépendances de route (autorisation) :
 
+{% raw %}
 ```python
 from taskiq_flow.security.middleware import SecurityMiddleware
 from taskiq_flow.security.auth import APIKeyAuthProvider, JWTAuthProvider
@@ -620,10 +655,11 @@ app.add_middleware(
     authorization=authorization,
 )
 ```
-
+{% endraw %}
 Ou, pour un câblage automatique complet, utilisez `create_visualization_api` qui
 construit tous les composants depuis `TaskiqFlowConfig` :
 
+{% raw %}
 ```python
 from taskiq_flow import create_visualization_api
 
@@ -634,11 +670,12 @@ config = TaskiqFlowConfig(
 )
 app = create_visualization_api(broker)  # sécurité auto-configurée depuis config
 ```
-
+{% endraw %}
 ### Pourquoi cette approche hybride ?
 - `SecurityMiddleware` place `request.state.user` pour toutes les routes après le routage
 - Les paramètres de chemin FastAPI (ex. `pipeline_id`) ne sont disponibles qu'**après** le routage
 - Les dépendances de route (ex. `Depends(verify_pipeline_access)`) s'exécutent après le routage → elles peuvent lire `pipeline_id` et vérifier les ACLs
+{% raw %}
 ```
 
 **Pourquoi cette approche hybride ?**
@@ -654,7 +691,7 @@ app = create_visualization_api(broker)  # sécurité auto-configurée depuis con
 Protégez l'API contre les abus:
 
 ```python
-from slowapi import Limiter, _rate_limit_exceeded_handler
+{% endraw %}
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -666,6 +703,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @limiter.limit("10/minute")  # Max 10 exécutions par minute par IP
 async def execute_pipeline(pipeline_id: str, parameters: dict):
     # ...
+{% raw %}
 ```
 
 ---
@@ -675,7 +713,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
 ### 11.1. Endpoint Health Check
 
 ```python
-from datetime import datetime, timezone
+{% endraw %}
 from fastapi import FastAPI
 import psutil
 
@@ -689,14 +727,16 @@ async def health():
         "broker_connecté": broker.is_connected(),
         "memoire_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }
+{% raw %}
 ```
 
 ### 11.2. Métriques avec Prometheus
 
 ```python
-from prometheus_fastapi_instrumentator import Instrumentator
+{% endraw %}
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+{% raw %}
 ```
 
 Expose `/metrics` avec métriques Prometheus standard (compte requêtes, latence, etc.).
@@ -704,7 +744,7 @@ Expose `/metrics` avec métriques Prometheus standard (compte requêtes, latence
 ### 11.3. Versionnement API
 
 ```python
-app = FastAPI(
+{% endraw %}
     title="API Taskiq-Flow",
     version="1.0.0",
     docs_url="/docs",
@@ -716,6 +756,7 @@ from fastapi import APIRouter
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(viz_api.router)
 app.include_router(api_router)
+{% raw %}
 ```
 
 ---
@@ -725,7 +766,7 @@ app.include_router(api_router)
 Gestion centralisée erreurs:
 
 ```python
-from fastapi import Request
+{% endraw %}
 from fastapi.responses import JSONResponse
 from taskiq.exceptions import TaskiqError
 
@@ -739,18 +780,20 @@ async def taskiq_exception_handler(request: Request, exc: TaskiqError):
             "pipeline_id": getattr(exc, "pipeline_id", None)
         }
     )
+{% raw %}
 ```
 
 Réponses d'erreur standardisées:
 
 ```json
-{
+{% endraw %}
   "error": "PipelineExecutionError",
   "message": "Task 'process' échoué après 3 retries",
   "pipeline_id": "analyse_audio_123",
   "step": "extract_audio",
   "timestamp": "2026-05-05T12:00:00Z"
 }
+{% raw %}
 ```
 
 ---
@@ -760,7 +803,7 @@ Réponses d'erreur standardisées:
 Client Python pour interagir avec l'API:
 
 ```python
-import httpx
+{% endraw %}
 
 class ClientTaskiqFlow:
     def __init__(self, base_url: str, api_key: str = None):
@@ -793,6 +836,7 @@ class ClientTaskiqFlow:
 client = ClientTaskiqFlow("http://localhost:8000")
 pipelines = await client.list_pipelines()
 result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
+{% raw %}
 ```
 
 ---
@@ -824,3 +868,5 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 ---
 
 *Gérez des pipelines de n'importe où. Construisez tableaux de bord, automatisation, intégrations.*
+
+{% endraw %}

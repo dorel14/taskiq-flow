@@ -1,5 +1,5 @@
 ---
-title: API Reference: Cache
+title: 'API Reference: Cache'
 nav_order: 32
 color_scheme: dark
 ---
