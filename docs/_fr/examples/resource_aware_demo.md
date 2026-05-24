@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/resource-aware-demo/
-title: Exemple: resource_aware_demo.py
+title: 'Exemple: resource_aware_demo.py'
 nav_order: 49
 color_scheme: dark
 ---
@@ -37,6 +37,7 @@ Cet exemple démontre les fonctionnalités `ResourceAwareExecutor` et `TaskResou
 
 ### 1. Configuration Resource-Aware Executor
 
+{% raw %}
 ```python
 from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
 
@@ -60,13 +61,14 @@ optimal_heavy = executor.get_optimal_parallelism(
 )
 print(f"Optimal pour tâches lourdes: {optimal_heavy}")
 ```
-
+{% endraw %}
 L'exécuteur interroge l'usage système courant (via `psutil`) et calcule combien de tâches du profil donné peuvent s'exécuter en parallèle sans dépasser les limites configurées.
 
 ---
 
 ### 2. Annoter Tâches avec Profils Ressources
 
+{% raw %}
 ```python
 @broker.task
 @pipeline_task(
@@ -96,7 +98,7 @@ async def heavy_task(item: int) -> dict:
         total += item * 2
     return {"item": item, "result": total}
 ```
-
+{% endraw %}
 **Champs ResourceProfile :**
 
 - `estimated_memory_mb`: Usage mémoire estimé par instance de tâche
@@ -109,6 +111,7 @@ async def heavy_task(item: int) -> dict:
 
 Le paramètre `max_parallel` de `DataflowPipeline` agit comme borne supérieure. `ResourceAwareExecutor` peut calculer un `max_parallel` dynamique avant lancement :
 
+{% raw %}
 ```python
 # Calculer parallélisme optimal pour état système courant
 current_parallel = executor.get_optimal_parallelism(
@@ -120,13 +123,14 @@ pipeline = DataflowPipeline(broker, max_parallel=current_parallel)
 pipeline.map(light_task, items=list(range(20)), output="light_results")
 results = await pipeline.kiq_dataflow()
 ```
-
+{% endraw %}
 Pour charges de travail mixtes, sommez l'usage ressource à travers tâches parallèles.
 
 ---
 
 ### 4. Directives de Réglage Manuel Parallélisme
 
+{% raw %}
 ```python
 import psutil
 
@@ -142,13 +146,14 @@ cpu_parallel = min(cpu_count + 2, 20)
 print(f"max_parallel recommandé pour tâches I/O-bound: {io_parallel}")
 print(f"max_parallel recommandé pour tâches CPU-bound: {cpu_parallel}")
 ```
-
+{% endraw %}
 Commencez conservateur, benchmarkez, et ajustez.
 
 ---
 
 ## Sortie Attendue
 
+{% raw %}
 ```
 === Resource-Aware Parallelism Demo ===
 
@@ -197,7 +202,7 @@ Key takeaways:
 3. Adjust max_parallel based on task type (I/O vs CPU)
 4. Monitor system resources and tune accordingly
 ```
-
+{% endraw %}
 ---
 
 ## Points Clés
@@ -223,11 +228,12 @@ Sans conscience ressource, `max_parallel` trop haut peut :
 
 Combinez avec métriques Prometheus :
 
+{% raw %}
 ```python
 from taskiq_flow.metrics import MetricsMiddleware
 broker.add_middlewares(MetricsMiddleware())
 ```
-
+{% endraw %}
 Suivez :
 - `taskiq_flow_worker_cpu_usage_percent`
 - `taskiq_flow_worker_memory_usage_bytes`

@@ -26,6 +26,7 @@ Les fonctionnalités de sécurité sont configurées dans
 l'objet :class:`~taskiq_flow.config.TaskiqFlowConfig` ou via des variables
 d'environnement. Les principaux paramètres sont :
 
+{% raw %}
 ```python
 from taskiq_flow import TaskiqFlowConfig
 
@@ -64,7 +65,7 @@ config = TaskiqFlowConfig(
     websocket_max_connections=1000,
 )
 ```
-
+{% endraw %}
 La journalisation d'audit est gérée par
 :class:`~taskiq_flow.security.audit.AuditLogger`, instanciée automatiquement
 par l'API (aucun champ de configuration requis).
@@ -92,19 +93,21 @@ TaskIQ-Flow prend en charge deux méthodes d'authentification :
 Les clients doivent inclure leur clé API dans l'en-tête ``X-API-Key`` pour les requêtes HTTP ou dans le champ ``auth`` des messages de connexion WebSocket.
 
 Exemple de requête HTTP :
+{% raw %}
 ```http
 GET /api/pipelines
 X-API-Key: admin-key #pragma: allowlist secret
 ```
-
+{% endraw %}
 ### Authentification JWT
 
 Si une clé secrète JWT est configurée (``jwt_secret``), les clients peuvent s'authentifier à l'aide d'un jeton Web Token (JWT) dans l'en-tête ``Authorization`` :
 
+{% raw %}
 ```
 Authorization: Bearer <jwt-token>
 ```
-
+{% endraw %}
 Le JWT doit contenir un champ ``sub`` (sujet) identifiant l'utilisateur et une liste ``roles``.
 
 ## Autorisation
@@ -139,6 +142,7 @@ correctement derrière un reverse proxy ou un load-balancer qui termine TLS.
 
 Exécutez TaskIQ-Flow derrière un serveur ASGI tel qu'Uvicorn avec Docker :
 
+{% raw %}
 ```dockerfile
 # Dockerfile
 FROM python:3.12-slim
@@ -152,7 +156,8 @@ COPY . .
 EXPOSE 8000
 CMD ["uvicorn", "mon_app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
-
+{% endraw %}
+{% raw %}
 ```yaml
 # docker-compose.yml
 services:
@@ -178,11 +183,12 @@ services:
 volumes:
   redis_data:
 ```
-
+{% endraw %}
 ### Reverse Proxy (nginx)
 
 Placez nginx devant l'application pour terminer TLS, renforcer HTTPS et ajouter des en-têtes de sécurité :
 
+{% raw %}
 ```nginx
 # /etc/nginx/sites-available/taskiq-flow
 server {
@@ -225,7 +231,7 @@ server {
     }
 }
 ```
-
+{% endraw %}
 Avec cette configuration :
 1. Tout le trafic HTTP est redirigé vers HTTPS (`require_https` est également appliqué côté application)
 2. Des en-têtes de sécurité sont ajoutés à chaque réponse
@@ -283,6 +289,7 @@ Les connexions WebSocket suivent le même modèle de sécurité que HTTP :
 
 Voici un exemple complet utilisant l'**API actuelle** (``create_visualization_api``, champs plats sur ``TaskiqFlowConfig``) :
 
+{% raw %}
 ```python
 from taskiq import Taskiq, InMemoryBroker
 from taskiq_flow import TaskiqFlowConfig, create_visualization_api
@@ -325,11 +332,12 @@ app = create_visualization_api(broker)
 # ── 3. Journaliseur d'audit personnalisé (optionnel) ──────────────
 audit_logger = AuditLogger()
 ```
-
+{% endraw %}
 Lancez l'application avec ``uvicorn app:app --host 0.0.0.0 --port 8000``. Tous les endpoints nécessiteront désormais une authentification.
 
 ## Tests de sécurité
 
+{% raw %}
 ```bash
 # Sans identifiants → 401 Unauthorized
 curl -i http://localhost:8000/pipelines
@@ -340,7 +348,7 @@ curl -i -H "X-API-Key: invalid-key" http://localhost:8000/pipelines
 # Clé viewer valide → 200 OK
 curl -i -H "X-API-Key: viewer-key" http://localhost:8000/pipelines
 ```
-
+{% endraw %}
 Pour tester WebSocket, utilisez une bibliothèque client WebSocket et incluez l'en-tête ``X-API-Key`` lors de la requête de mise à niveau.
 
 ## Conclusion

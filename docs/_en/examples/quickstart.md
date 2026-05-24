@@ -1,6 +1,6 @@
 ---
 permalink: /en/examples/quickstart/
-title: Example: quickstart.py
+title: 'Example: quickstart.py'
 nav_order: 41
 color_scheme: dark
 ---

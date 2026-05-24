@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/retry-demo/
-title: Exemple: retry_demo.py
+title: 'Exemple: retry_demo.py'
 nav_order: 48
 color_scheme: dark
 ---

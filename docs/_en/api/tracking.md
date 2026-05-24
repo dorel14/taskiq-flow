@@ -1,6 +1,6 @@
 ---
 permalink: /en/api/tracking/
-title: API Reference: Tracking & Monitoring
+title: 'API Reference: Tracking & Monitoring'
 nav_order: 33
 color_scheme: dark
 ---

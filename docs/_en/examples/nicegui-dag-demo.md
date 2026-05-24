@@ -1,5 +1,5 @@
 ---
-title: Example: nicegui_dag_demo.py
+title: 'Example: nicegui_dag_demo.py'
 nav_order: 48
 color_scheme: dark
 ---

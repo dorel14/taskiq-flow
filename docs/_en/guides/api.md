@@ -27,6 +27,7 @@ This guide covers:
 
 ## 1. Quick Setup
 
+{% raw %}
 ```python
 from fastapi import FastAPI
 from taskiq import InMemoryBroker
@@ -52,7 +53,7 @@ viz_api.add_pipeline("my_pipeline", pipeline)
 # 4. Run with uvicorn
 # uvicorn main:app --reload --port 8000
 ```
-
+{% endraw %}
 All endpoints are automatically mounted under `/pipelines`.
 
 ---
@@ -63,27 +64,31 @@ The visualization API provides these routes:
 
 ### 2.1. Health Check
 
+{% raw %}
 ```
 GET /health
 ```
-
+{% endraw %}
 Returns simple health status:
 
+{% raw %}
 ```json
 {
   "status": "healthy",
   "timestamp": "2026-05-05T12:00:00Z"
 }
 ```
-
+{% endraw %}
 ### 2.2. List All Pipelines
 
+{% raw %}
 ```
 GET /pipelines
 ```
-
+{% endraw %}
 Lists all registered pipelines with metadata:
 
+{% raw %}
 ```json
 [
   {
@@ -94,36 +99,41 @@ Lists all registered pipelines with metadata:
   }
 ]
 ```
-
+{% endraw %}
 ### 2.3. Register a New Pipeline
 
+{% raw %}
 ```
 POST /pipelines/{pipeline_id}
 ```
-
+{% endraw %}
 Request body:
 
+{% raw %}
 ```json
 {
   "pipeline_type": "dataflow",
   "tasks": ["task1", "task2"]
 }
 ```
-
+{% endraw %}
 Or use the Python API directly (recommended):
 
+{% raw %}
 ```python
 viz_api.add_pipeline("new_pipeline", pipeline_object)
 ```
-
+{% endraw %}
 ### 2.4. Get Pipeline Status
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/status
 ```
-
+{% endraw %}
 Returns current execution status if a run is active:
 
+{% raw %}
 ```json
 {
   "pipeline_id": "my_pipeline_123",
@@ -133,15 +143,17 @@ Returns current execution status if a run is active:
   "started_at": "2026-05-05T12:00:00Z"
 }
 ```
-
+{% endraw %}
 ### 2.5. Get DAG as JSON
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/dag
 ```
-
+{% endraw %}
 Returns the directed acyclic graph structure:
 
+{% raw %}
 ```json
 {
   "nodes": [
@@ -155,15 +167,17 @@ Returns the directed acyclic graph structure:
   ]
 }
 ```
-
+{% endraw %}
 ### 2.6. Get DAG in DOT Format
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/dag/dot
 ```
-
+{% endraw %}
 Returns Graphviz-compatible DOT string for visualization:
 
+{% raw %}
 ```
 digraph "my_pipeline" {
   node [shape=box];
@@ -171,15 +185,17 @@ digraph "my_pipeline" {
   extract -> embed;
 }
 ```
-
+{% endraw %}
 ### 2.7. Full Pipeline Visualization
 
+{% raw %}
 ```
 GET /pipelines/{pipeline_id}/visualize
 ```
-
+{% endraw %}
 Returns comprehensive pipeline metadata:
 
+{% raw %}
 ```json
 {
   "pipeline_id": "my_pipeline",
@@ -204,13 +220,14 @@ Returns comprehensive pipeline metadata:
   ]
 }
 ```
-
+{% endraw %}
 ---
 
 ## 3. Executing Pipelines via API
 
 The core API focuses on management and visualization. To execute pipelines remotely, add a custom endpoint:
 
+{% raw %}
 ```python
 from fastapi import FastAPI, HTTPException
 from taskiq_flow.api import PipelineVisualizationAPI
@@ -266,9 +283,10 @@ async def get_result(task_id: str):
         raise HTTPException(status_code=404, detail="Result not found or expired")
     return {"task_id": task_id, "result": result.return_value}
 ```
-
+{% endraw %}
 ### 3.1. Execute Async (Fire-and-Forget)
 
+{% raw %}
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -280,9 +298,10 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   "status": "STARTED"
 }
 ```
-
+{% endraw %}
 ### 3.2. Execute Synchronous (Wait for Result)
 
+{% raw %}
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -295,13 +314,14 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   "result": {"processed": "INPUT_VALUE"}
 }
 ```
-
+{% endraw %}
 ---
 
 ## 4. Integration with Frontend Dashboards
 
 ### 4.1. React Dashboard Example
 
+{% raw %}
 ```typescript
 // React component displaying pipeline status
 const PipelineStatus = ({ pipelineId }) => {
@@ -331,11 +351,12 @@ const PipelineStatus = ({ pipelineId }) => {
   );
 };
 ```
-
+{% endraw %}
 ### 4.2. DAG Visualization
 
 Use the DOT endpoint with Graphviz:
 
+{% raw %}
 ```javascript
 const renderDAG = async (pipelineId) => {
   const response = await fetch(`/pipelines/${pipelineId}/dag/dot`);
@@ -347,13 +368,14 @@ const renderDAG = async (pipelineId) => {
     .renderDot(dot);
 };
 ```
-
+{% endraw %}
 ---
 
 ## 5. Authentication & Security
 
 ### 5.1. API Key Authentication
 
+{% raw %}
 ```python
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
@@ -369,9 +391,10 @@ async def verify_api_key(api_key: str = Security(api_key_header)):
 async def list_pipelines(api_key: str = Security(verify_api_key)):
     return viz_api.list_pipelines()
 ```
-
+{% endraw %}
 ### 5.2. JWT Authentication
 
+{% raw %}
 ```python
 from jose import jwt
 from fastapi import Depends
@@ -393,12 +416,13 @@ async def execute(
     logger.info(f"User {user} executed {pipeline_id}")
     return await run_pipeline(pipeline_id, parameters)
 ```
-
+{% endraw %}
 ### 5.3. Pipeline-Level Authorization
 
 Define per-pipeline ACLs via `pipeline_acls` in `TaskiqFlowConfig`, then use
 `verify_pipeline_access` as a route dependency :
 
+{% raw %}
 ```python
 from fastapi import Depends
 from taskiq_flow.config import TaskiqFlowConfig
@@ -419,11 +443,12 @@ viz_api = create_visualization_api(broker)  # reads config automatically
 # verify_pipeline_access depends on get_current_user + authorization
 # → use it directly on your protected endpoints
 ```
-
+{% endraw %}
 ### 5.4. Combined Security Middleware + Route Dependencies
 
 For production, combine the global `SecurityMiddleware` (authentication) with per-route dependencies (authorization):
 
+{% raw %}
 ```python
 from taskiq_flow.security.middleware import SecurityMiddleware
 from taskiq_flow.security.auth import APIKeyAuthProvider, JWTAuthProvider
@@ -461,10 +486,11 @@ app.add_middleware(
     authorization=authorization,
 )
 ```
-
+{% endraw %}
 Or, for full automatic wiring, use `create_visualization_api` which builds all
 these components from `TaskiqFlowConfig` internally:
 
+{% raw %}
 ```python
 from taskiq_flow import create_visualization_api
 
@@ -475,11 +501,12 @@ config = TaskiqFlowConfig(
 )
 app = create_visualization_api(broker)  # security auto-configured from config
 ```
-
+{% endraw %}
 ### Why this hybrid approach?
 - `SecurityMiddleware` sets `request.state.user` for all routes after routing
 - FastAPI path params (e.g. `pipeline_id`) are only available *after* routing
 - Route dependencies (e.g. `Depends(verify_pipeline_access)`) run after routing → they can read `pipeline_id` and check ACLs
+{% raw %}
 ```
 
 ---
@@ -489,7 +516,7 @@ app = create_visualization_api(broker)  # security auto-configured from config
 Protect the API from abuse:
 
 ```python
-from slowapi import Limiter, _rate_limit_exceeded_handler
+{% endraw %}
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -501,24 +528,26 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @limiter.limit("10/minute")  # Max 10 executions per minute per IP
 async def execute_pipeline(pipeline_id: str, parameters: dict):
     # ...
+{% raw %}
 ```
 
----
+viz_api = create_visualization_api(broker, app)  # reads config automatically
 
 ## 7. CORS Configuration
 
 Enable cross-origin requests for web frontend:
 
 ```python
-from fastapi.middleware.cors import CORSMiddleware
+{% endraw %}
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-dashboard.com"],
+`verify_pipeline_access` as a route dependency:
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+{% raw %}
 ```
 
 ---
@@ -528,16 +557,17 @@ app.add_middleware(
 ### 8.1. Gunicorn + Uvicorn Workers
 
 ```bash
-# Run with multiple workers for concurrency
+{% endraw %}
 gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
 
 # 4 worker processes handle concurrent requests
+{% raw %}
 ```
 
 ### 8.2. Docker
 
 ```dockerfile
-FROM python:3.12-slim
+{% endraw %}
 
 WORKDIR /app
 COPY requirements.txt .
@@ -546,10 +576,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+{% raw %}
 ```
 
 ```yaml
-# docker-compose.yml
+{% endraw %}
 services:
   api:
     build: .
@@ -561,12 +592,13 @@ services:
       - redis
   redis:
     image: redis:7-alpine
+{% raw %}
 ```
 
-### 8.3. Behind Reverse Proxy (nginx)
+create_visualization_api(broker, app)  # security auto-configured from config
 
 ```nginx
-server {
+{% endraw %}
     listen 80;
     server_name api.taskiq-flow.example.com;
 
@@ -578,22 +610,25 @@ server {
         proxy_set_header Connection "";
     }
 }
+{% raw %}
 ```
 
 ### 8.4. HTTPS with Let's Encrypt
 
 ```bash
-# Using certbot with nginx
+{% endraw %}
 sudo certbot --nginx -d api.taskiq-flow.example.com
+{% raw %}
 ```
 
 Configure HTTPS → redirect to HTTP upstream:
 
 ```nginx
-location / {
+{% endraw %}
     proxy_pass http://localhost:8000;
     proxy_set_header X-Forwarded-Proto $scheme;
 }
+{% raw %}
 ```
 
 ---
@@ -603,7 +638,7 @@ location / {
 ### 9.1. Health Check Endpoint
 
 ```python
-from datetime import datetime, timezone
+{% endraw %}
 from fastapi import FastAPI
 import psutil
 
@@ -617,14 +652,16 @@ async def health():
         "broker_connected": broker.is_connected(),
         "memory_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }
+{% raw %}
 ```
 
 ### 9.2. Metrics with Prometheus
 
 ```python
-from prometheus_fastapi_instrumentator import Instrumentator
+{% endraw %}
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+{% raw %}
 ```
 
 Exposes `/metrics` with standard Prometheus metrics (request count, latency, etc.).
@@ -632,7 +669,7 @@ Exposes `/metrics` with standard Prometheus metrics (request count, latency, etc
 ### 9.3. API Versioning
 
 ```python
-app = FastAPI(
+{% endraw %}
     title="Taskiq-Flow API",
     version="1.0.0",
     docs_url="/docs",
@@ -644,6 +681,7 @@ from fastapi import APIRouter
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(viz_api.router)
 app.include_router(api_router)
+{% raw %}
 ```
 
 ---
@@ -653,8 +691,9 @@ app.include_router(api_router)
 Centralized error handling:
 
 ```python
-from fastapi import Request
+{% endraw %}
 from fastapi.responses import JSONResponse
+from taskiq.exceptions import TaskiqError
 
 @app.exception_handler(TaskiqError)
 async def taskiq_exception_handler(request: Request, exc: TaskiqError):
@@ -666,18 +705,20 @@ async def taskiq_exception_handler(request: Request, exc: TaskiqError):
             "pipeline_id": getattr(exc, "pipeline_id", None)
         }
     )
+{% raw %}
 ```
 
 Standardized error responses:
 
 ```json
-{
+{% endraw %}
   "error": "PipelineExecutionError",
   "message": "Task 'process' failed after 3 retries",
   "pipeline_id": "audio_analysis_123",
   "step": "extract_audio",
   "timestamp": "2026-05-05T12:00:00Z"
 }
+{% raw %}
 ```
 
 ---
@@ -687,7 +728,7 @@ Standardized error responses:
 Python client for interacting with the API:
 
 ```python
-import httpx
+{% endraw %}
 
 class TaskiqFlowClient:
     def __init__(self, base_url: str, api_key: str = None):
@@ -720,6 +761,7 @@ class TaskiqFlowClient:
 client = TaskiqFlowClient("http://localhost:8000")
 pipelines = await client.list_pipelines()
 result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
+{% raw %}
 ```
 
 ---
@@ -751,3 +793,5 @@ result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
 ---
 
 *Manage pipelines from anywhere. Build dashboards, automation, and integrations.*
+
+{% endraw %}

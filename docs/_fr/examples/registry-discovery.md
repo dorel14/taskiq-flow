@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/registry-discovery/
-title: Exemple: registry_discovery_example.py
+title: 'Exemple: registry_discovery_example.py'
 nav_order: 43
 color_scheme: dark
 ---

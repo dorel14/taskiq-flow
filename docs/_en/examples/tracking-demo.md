@@ -1,6 +1,6 @@
 ---
 permalink: /en/examples/tracking-demo/
-title: Example: tracking_demo.py
+title: 'Example: tracking_demo.py'
 nav_order: 45
 color_scheme: dark
 ---

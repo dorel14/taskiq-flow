@@ -1,11 +1,11 @@
 ---
-title: API Reference: Cache
+title: 'API Reference: Cache'
 nav_order: 32
 color_scheme: dark
 ---
 # API Reference: Cache
 
-**Dogpile-based caching with cache stampede sémantics**
+**Dogpile-based caching with cache stampede semantics**
 
 > **Version**: {VERSION} | **New in v1.2.0** | **Module**: `taskiq_flow.cache`, `taskiq_flow.middlewares.cache`
 

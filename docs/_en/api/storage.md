@@ -1,5 +1,5 @@
 ---
-title: API Reference: Storage
+title: 'API Reference: Storage'
 nav_order: 31
 color_scheme: dark
 ---

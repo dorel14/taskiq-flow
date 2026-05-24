@@ -1,6 +1,6 @@
 ---
 permalink: /en/api/core/
-title: API Reference: Core Components
+title: 'API Reference: Core Components'
 nav_order: 30
 color_scheme: dark
 ---
@@ -25,6 +25,7 @@ pipeline = Pipeline(broker)
 ```
 
 **Constructor**:
+
 ```python
 Pipeline(
     broker: BaseBroker,
@@ -51,6 +52,7 @@ Pipeline(
 | `with_context` | `with_context(enable=True) -> Pipeline` | Enable passing PipelineContext to tasks |
 
 **Example**:
+
 ```python
 pipeline = (
     Pipeline(broker)
@@ -79,6 +81,7 @@ pipeline = DataflowPipeline.from_tasks(
 ```
 
 **Constructor**:
+
 ```python
 DataflowPipeline(
     broker: BaseBroker,
@@ -105,6 +108,7 @@ DataflowPipeline(
 | `kiq_dataflow(**kwargs)` | Execute pipeline with named inputs |
 
 **Example**:
+
 ```python
 @broker.task
 @pipeline_task(output="features")
@@ -193,6 +197,7 @@ from taskiq_flow import TaskiqFlowError
 | `TrackingError` | Tracking operation failed | Storage unavailable |
 
 **Example handling**:
+
 ```python
 try:
     result = await pipeline.kiq(data)
@@ -258,6 +263,7 @@ See scheduling guide.
 This documentation covers **Taskiq-Flow v0.3.0+**.
 
 API stability:
+
 - `Pipeline` and `DataflowPipeline`: Stable (v0.3+)
 - `pipeline_task` decorator: Stable (v0.3+)
 - `PipelineMiddleware`: Stable (v0.3+)

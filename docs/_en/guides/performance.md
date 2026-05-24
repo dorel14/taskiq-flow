@@ -48,6 +48,7 @@ Performance optimization involves tradeoffs between:
 
 Control concurrent task execution at the step level:
 
+{% raw %}
 ```python
 # Sequential Pipeline
 pipeline.map(process_item, items, max_parallel=10)  # Max 10 concurrent
@@ -63,23 +64,25 @@ mapped = await MapReduce.map(
     max_parallel=15
 )
 ```
-
+{% endraw %}
 **Default behavior**: Without `max_parallel`, Taskiq-Flow attempts to run all independent tasks concurrently (essentially unlimited). This is fine for small numbers (<100) but dangerous for large datasets.
 
 ### 2.2. Determining Optimal `max_parallel`
 
 #### For I/O-Bound Tasks (network calls, disk I/O)
 
+{% raw %}
 ```python
 # High I/O wait, low CPU: can handle many concurrent tasks
 pipeline.map(fetch_url, url_list, max_parallel=50)
 # Rule of thumb: 2–5× number of CPU cores
 ```
-
+{% endraw %}
 **Rationale**: While one task waits for network, another uses CPU. High concurrency saturates I/O pipelines.
 
 #### For CPU-Bound Tasks (computations, transcoding)
 
+{% raw %}
 ```python
 # CPU-intensive: limit to core count (or slightly higher)
 import os
@@ -87,13 +90,14 @@ cpu_cores = os.cpu_count() or 4
 pipeline.map(transcode, files, max_parallel=cpu_cores + 2)
 # Rule of thumb: CPU cores ± 2
 ```
-
+{% endraw %}
 **Rationale**: Python's GIL limits true parallelism; `asyncio` still benefits from multiple cores when tasks release GIL (NumPy, C extensions). Over-subscription leads to context switching overhead.
 
 #### For Mixed Workloads
 
 Profile and adjust:
 
+{% raw %}
 ```python
 # Start conservative
 for parallel in [5, 10, 20, 50]:
@@ -102,19 +106,20 @@ for parallel in [5, 10, 20, 50]:
     duration = time.time() - start
     print(f"Parallelism {parallel}: {duration:.2f}s")
 ```
-
+{% endraw %}
 Find the **knee of the curve** — point where increasing parallelism yields diminishing returns.
 
 ### 2.3. Global Parallelism Limit
 
 Set a global cap across all pipelines:
 
+{% raw %}
 ```python
 from taskiq_flow.optimization.parallel import set_max_parallel_tasks
 
 set_max_parallel_tasks(100)  # Never exceed 100 concurrent tasks globally
 ```
-
+{% endraw %}
 Useful in multi-tenant systems to prevent one pipeline from starving others.
 
 ---
@@ -125,6 +130,7 @@ Taskiq-Flow can schedule tasks based on CPU/RAM requirements (requires resource-
 
 ### 3.1. Annotating Tasks with Resource Needs
 
+{% raw %}
 ```python
 from taskiq_flow import CPUProfile, RAMProfile
 
@@ -135,9 +141,10 @@ def heavy_computation(data):
     # Will only run on workers with sufficient resources
     pass
 ```
-
+{% endraw %}
 ### 3.2. Resource-Aware Worker Pool
 
+{% raw %}
 ```python
 from taskiq_flow import ResourceAwareWorkerPool
 
@@ -150,7 +157,7 @@ pool = ResourceAwareWorkerPool(
 
 # Tasks are automatically routed to compatible workers
 ```
-
+{% endraw %}
 **Note**: This feature requires custom worker implementation; standard brokers ignore resource profiles.
 
 ---
@@ -161,6 +168,7 @@ pool = ResourceAwareWorkerPool(
 
 Pass references instead of full data:
 
+{% raw %}
 ```python
 #  Bad: copies entire dataset per task call
 pipeline.map(process, large_dataset)  # Each task gets full dataset copy
@@ -173,11 +181,12 @@ def process(item_id: str):
 
 pipeline.map(process, item_ids)  # Only IDs passed
 ```
-
+{% endraw %}
 ### 4.2. Stream Large Datasets
 
 Use chunking:
 
+{% raw %}
 ```python
 def chunked(iterable, chunk_size=100):
     for i in range(0, len(iterable), chunk_size):
@@ -187,22 +196,24 @@ for chunk in chunked(large_list, 100):
     results = await pipeline.kiq_dataflow(chunk)
     # Process results before next chunk to free memory
 ```
-
+{% endraw %}
 ### 4.3. Clear Results After Use
 
 Pipeline results stay in tracking storage. Clean up after you're done:
 
+{% raw %}
 ```python
 # After processing, delete pipeline record
 await tracking.delete_pipeline(pipeline.pipeline_id)
 ```
-
+{% endraw %}
 Or set TTL on storage:
 
+{% raw %}
 ```python
 RedisPipelineStorage(redis, ttl_seconds=86400)  # Auto-delete after 1 day
 ```
-
+{% endraw %}
 ---
 
 ## 5. Profiling & Bottleneck Detection
@@ -211,18 +222,20 @@ RedisPipelineStorage(redis, ttl_seconds=86400)  # Auto-delete after 1 day
 
 Each step records duration automatically (with tracking enabled):
 
+{% raw %}
 ```python
 status = await tracking.get_status(pipeline_id)
 for step in status.steps:
     print(f"{step.name}: {step.duration_ms}ms")
 ```
-
+{% endraw %}
 Identify slowest steps → optimization targets.
 
 ### 5.2. Memory Profiling
 
 Use Python's `tracemalloc`:
 
+{% raw %}
 ```python
 import tracemalloc
 
@@ -237,9 +250,10 @@ print(f"Current: {current/1024/1024:.1f} MB")
 print(f"Peak: {peak/1024/1024:.1f} MB")
 tracemalloc.stop()
 ```
-
+{% endraw %}
 ### 5.3. CPU Profiling
 
+{% raw %}
 ```python
 import cProfile
 import pstats
@@ -254,16 +268,17 @@ stats = pstats.Stats(profiler)
 stats.sort_stats('cumulative')
 stats.print_stats(20)  # Top 20 functions
 ```
-
+{% endraw %}
 ### 5.4. Async-Specific Profiling
 
 `uvloop` for faster event loop:
 
+{% raw %}
 ```python
 import uvloop
 uvloop.install()  # Replaces default asyncio event loop
 ```
-
+{% endraw %}
 Benchmark improvement: `uvloop` can provide 2×–3× speedup for I/O-bound workloads.
 
 ---
@@ -274,6 +289,7 @@ Benchmark improvement: `uvloop` can provide 2×–3× speedup for I/O-bound work
 
 For databases (PostgreSQL, Redis), reuse connections:
 
+{% raw %}
 ```python
 from asyncpg import create_pool
 
@@ -284,11 +300,12 @@ async def db_task(query: str):
     async with pool.acquire() as conn:
         return await conn.fetch(query)
 ```
-
+{% endraw %}
 ### 6.2. Batch Operations
 
 Instead of many small calls, batch:
 
+{% raw %}
 ```python
 #  N separate calls
 for item in items:
@@ -297,9 +314,10 @@ for item in items:
 #  Single batch insert
 await db.bulk_insert(items)
 ```
-
+{% endraw %}
 ### 6.3. Cache Results
 
+{% raw %}
 ```python
 from functools import lru_cache
 
@@ -308,9 +326,10 @@ from functools import lru_cache
 def expensive_computation(key: str):
     return compute(key)
 ```
-
+{% endraw %}
 Or use Redis cache:
 
+{% raw %}
 ```python
 import redis
 cache = redis.Redis(...)
@@ -324,7 +343,7 @@ async def cached_task(key: str):
     await cache.setex(key, 3600, json.dumps(result))
     return result
 ```
-
+{% endraw %}
 ---
 
 ## 7. Distributed Scaling
@@ -333,6 +352,7 @@ async def cached_task(key: str):
 
 Scale horizontally by running multiple worker processes:
 
+{% raw %}
 ```bash
 # Terminal 1
 taskiq worker --broker redis://localhost:6379
@@ -343,7 +363,7 @@ taskiq worker --broker redis://localhost:6379
 # Terminal 3
 taskiq worker --broker redis://localhost:6379
 ```
-
+{% endraw %}
 All workers share the same broker (Redis) and process tasks concurrently.
 
 **Throughput ≈ (# workers) × (tasks/worker/second)**.
@@ -352,6 +372,7 @@ All workers share the same broker (Redis) and process tasks concurrently.
 
 Use a process manager (systemd, supervisord, Docker Compose):
 
+{% raw %}
 ```yaml
 # docker-compose.yml
 services:
@@ -365,18 +386,19 @@ services:
     image: taskiq-flow-worker
     command: taskiq worker --broker ${REDIS_URL}
 ```
-
+{% endraw %}
 ### 7.3. Queue Prioritization
 
 Route critical pipelines to dedicated queues:
 
+{% raw %}
 ```python
 @broker.task(queue="high_priority")
 def critical_task(): ...
 
 # Workers can be configured to process specific queues first
 ```
-
+{% endraw %}
 ### 7.4. Geo-Distribution
 
 For low-latency global deployments, deploy workers in multiple regions with a global broker (Kafka) or regional Redis clusters with replication.
@@ -387,6 +409,7 @@ For low-latency global deployments, deploy workers in multiple regions with a gl
 
 Measure before and after optimization:
 
+{% raw %}
 ```python
 import time
 
@@ -404,7 +427,7 @@ async def benchmark(pipeline, iterations=10):
     print(f"Average: {avg:.3f}s, P95: {p95:.3f}s")
     return durations
 ```
-
+{% endraw %}
 **Key metrics**:
 
 - **Throughput**: tasks/second
@@ -438,12 +461,13 @@ async def benchmark(pipeline, iterations=10):
 **Diagnostic steps**:
 
 1. Check step durations in tracking:
+{% raw %}
    ```python
    status = await tracking.get_status(pipeline_id)
    slowest = max(status.steps, key=lambda s: s.duration_ms)
    print(f"Slowest step: {slowest.name} at {slowest.duration_ms}ms")
    ```
-
+{% endraw %}
 2. Profile with cProfile to see where time is spent
 3. Verify `max_parallel` not too low
 4. Check for blocking I/O (use async libraries)
@@ -475,6 +499,7 @@ async def benchmark(pipeline, iterations=10):
 
 For specialized workloads, implement custom executors:
 
+{% raw %}
 ```python
 from taskiq_flow import ExecutionEngine
 from taskiq_flow.dataflow import DAG
@@ -489,15 +514,18 @@ class GPUOptimizedEngine(ExecutionEngine):
 engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
+{% endraw %}
 
 ### 11.1. Resource-Aware Execution with `TaskResourceProfile`
 
 Taskiq-Flow provides a resource-aware execution pattern for pipelines that need
 to allocate tasks to workers based on their CPU/RAM requirements:
 
+{% raw %}
 ```python
-from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
-from taskiq_flow.dataflow import DataflowPipeline
+from taskiq_flow import pipeline_task
+from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.pipeline import DataflowPipeline
 
 # Define a resource profile for heavy tasks
 heavy_profile = TaskResourceProfile(
@@ -505,30 +533,38 @@ heavy_profile = TaskResourceProfile(
     estimated_cpu_cores=4.0,
 )
 
-# Annotate tasks with resource needs via labels when creating the pipeline
-pipeline = DataflowPipeline(
-    broker=broker,
-    name="resource_aware_pipeline",
-    resource_aware=True,
-)
-
-@pipeline.task(resource_profile=heavy_profile)
+@broker.task
+@pipeline_task(output="heavy_result", resources=heavy_profile.model_dump())
 def heavy_computation(data: dict) -> dict:
     """This task requires 4 CPU cores and 2 GB of RAM."""
     return process_heavy_data(data)
 
-# Configure the executor to respect resource profiles
+# Configure the executor to compute optimal parallelism
 executor = ResourceAwareExecutor(
-    broker=broker,
-    max_parallel=10,
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=20,
 )
-executor.run_pipeline(pipeline, input_data)
-```
 
-`ResourceAwareExecutor` evaluates resource profiles of tasks and distributes them
-to available workers based on their capacity. `TaskResourceProfile` lets you
-annotate each task with its estimated resource needs, enabling the executor to
-prevent over-subscription of workers.
+# Get optimal parallelism for the task
+optimal_parallel = executor.get_optimal_parallelism(
+    task_memory_estimate=2048,
+    task_cpu_estimate=4.0,
+)
+
+# Build pipeline with optimal parallelism
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [heavy_computation],
+    max_parallel=optimal_parallel,
+)
+results = await pipeline.kiq_dataflow(data=input_data)
+```
+{% endraw %}
+`ResourceAwareExecutor` evaluates resource profiles of tasks and computes optimal
+parallelism via `get_optimal_parallelism()`. Use this value to configure the pipeline's
+`max_parallel` setting before calling `kiq_dataflow()` for execution.
 
 ---
 

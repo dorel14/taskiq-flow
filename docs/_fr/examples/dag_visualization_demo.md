@@ -1,6 +1,6 @@
 ---
 permalink: /fr/examples/dag-visualization-demo/
-title: Exemple: dag_visualization_demo.py
+title: 'Exemple: dag_visualization_demo.py'
 nav_order: 47
 color_scheme: dark
 ---
