@@ -595,7 +595,7 @@ services:
 {% raw %}
 ```
 
-### 8.3. Behind Reverse Proxy (nginx)
+create_visualization_api(broker, app)  # security auto-configured from config
 
 ```nginx
 {% endraw %}
