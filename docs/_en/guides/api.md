@@ -531,7 +531,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
 {% raw %}
 ```
 
----
+viz_api = create_visualization_api(broker, app)  # reads config automatically
 
 ## 7. CORS Configuration
 
