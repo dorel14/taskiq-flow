@@ -531,7 +531,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
 {% raw %}
 ```
 
----
+viz_api = create_visualization_api(broker, app)  # reads config automatically
 
 ## 7. CORS Configuration
 
@@ -542,7 +542,7 @@ Enable cross-origin requests for web frontend:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-dashboard.com"],
+`verify_pipeline_access` as a route dependency:
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -595,7 +595,7 @@ services:
 {% raw %}
 ```
 
-### 8.3. Behind Reverse Proxy (nginx)
+create_visualization_api(broker, app)  # security auto-configured from config
 
 ```nginx
 {% endraw %}

@@ -99,7 +99,7 @@ This project is licensed under the MIT License — see the [LICENSE](https://git
 
 # API Reference: Cache
 
-**Dogpile-based caching with cache stampede sémantics**
+**Dogpile-based caching with cache stampede semantics**
 
 > **Version**: {VERSION} | **New in v1.2.0** | **Module**: `taskiq_flow.cache`, `taskiq_flow.middlewares.cache`
 
@@ -271,6 +271,7 @@ pipeline = Pipeline(broker)
 ```
 
 **Constructor**:
+
 ```python
 Pipeline(
     broker: BaseBroker,
@@ -297,6 +298,7 @@ Pipeline(
 | `with_context` | `with_context(enable=True) -> Pipeline` | Enable passing PipelineContext to tasks |
 
 **Example**:
+
 ```python
 pipeline = (
     Pipeline(broker)
@@ -325,6 +327,7 @@ pipeline = DataflowPipeline.from_tasks(
 ```
 
 **Constructor**:
+
 ```python
 DataflowPipeline(
     broker: BaseBroker,
@@ -351,6 +354,7 @@ DataflowPipeline(
 | `kiq_dataflow(**kwargs)` | Execute pipeline with named inputs |
 
 **Example**:
+
 ```python
 @broker.task
 @pipeline_task(output="features")
@@ -439,6 +443,7 @@ from taskiq_flow import TaskiqFlowError
 | `TrackingError` | Tracking operation failed | Storage unavailable |
 
 **Example handling**:
+
 ```python
 try:
     result = await pipeline.kiq(data)
@@ -504,6 +509,7 @@ See scheduling guide.
 This documentation covers **Taskiq-Flow v0.3.0+**.
 
 API stability:
+
 - `Pipeline` and `DataflowPipeline`: Stable (v0.3+)
 - `pipeline_task` decorator: Stable (v0.3+)
 - `PipelineMiddleware`: Stable (v0.3+)
@@ -537,6 +543,7 @@ The `@pipeline_task` decorator annotates taskiq tasks with output declarations, 
 
 Marks a task with what it produces for downstream consumers.
 
+
 ```python
 from taskiq_flow import pipeline_task
 
@@ -559,6 +566,7 @@ def extract(data: list[str]) -> dict:
 
 ### Single output (most common)
 
+
 ```python
 @broker.task
 @pipeline_task(output="processed_data")
@@ -567,6 +575,7 @@ def process(raw_data: str) -> dict:
 ```
 
 ### Multiple outputs
+
 
 ```python
 @broker.task
@@ -578,6 +587,7 @@ def split_output(audio: np.ndarray) -> tuple[dict, dict]:
 ```
 
 Downstream tasks can consume either output:
+
 
 ```python
 @broker.task
@@ -594,6 +604,7 @@ def describe(metadata: dict): ...  # consumes 'metadata' output
 ## @pipeline_task_multi_output
 
 Alias for `@pipeline_task(outputs=[...])`. Provides clarity for multi-output tasks:
+
 
 ```python
 from taskiq_flow import pipeline_task_multi_output
@@ -612,6 +623,7 @@ def split(value: int) -> tuple[int, int]:
 
 Get declared output keys for a task:
 
+
 ```python
 from taskiq_flow import get_task_outputs
 
@@ -622,6 +634,7 @@ print(outputs)  # ['features']
 ### get_task_inputs(task: Callable) -> list[str]
 
 Get declared input dependencies:
+
 
 ```python
 from taskiq_flow import get_task_inputs
@@ -634,6 +647,7 @@ print(inputs)  # ['features']
 
 Check if a function has been decorated with `@pipeline_task`:
 
+
 ```python
 from taskiq_flow import is_pipeline_task
 
@@ -644,6 +658,7 @@ if is_pipeline_task(my_func):
 ### resolve_task_dependencies(tasks: list[Callable]) -> dict
 
 Build a dependency map:
+
 
 ```python
 from taskiq_flow import resolve_task_dependencies
@@ -657,6 +672,7 @@ deps = resolve_task_dependencies([task_a, task_b, task_c])
 ## Decorator Order
 
 The decorator order matters: `@broker.task` must be outermost (applied last), `@pipeline_task` inner (applied first):
+
 
 ```python
 # CORRECT
@@ -677,6 +693,7 @@ Why: `@broker.task` wraps the function; `@pipeline_task` attaches metadata to th
 ## Type Hints & Static Analysis
 
 Type hints help IDEs and static checkers understand dataflow:
+
 
 ```python
 from typing import TypedDict
@@ -704,6 +721,7 @@ Using `TypedDict` or Pydantic models provides better IDE autocomplete and mypy c
 
 Attach version and other metadata:
 
+
 ```python
 @broker.task(
     name="extract_features_v2",
@@ -712,7 +730,7 @@ Attach version and other metadata:
 @pipeline_task(
     output="features",
     description="Extract audio features (v2 with improvedtempo estimation)"
-)
+    description="Extract audio features (v2 with improved tempo estimation)"
 def extract(path: str) -> dict:
     ...
 ```
@@ -731,6 +749,7 @@ def extract(path: str) -> dict:
 ---
 
 ## Example: Complete Dataflow Pipeline
+
 
 ```python
 from taskiq import InMemoryBroker
@@ -3051,6 +3070,7 @@ This is the reference example for understanding dataflow architecture.
 
 ### Task Definitions
 
+
 ```python
 from taskiq import InMemoryBroker
 from taskiq_flow import DataflowPipeline, pipeline_task
@@ -3087,6 +3107,7 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 
 The pipeline automatically builds this DAG:
 
+
 ```mermaid
 flowchart TD
     A[extract_audio_features] --> B[compute_mir_features]
@@ -3100,6 +3121,7 @@ flowchart TD
 ---
 
 ## Example 1: Sequential Pipeline with Automatic Dependencies
+
 
 ```python
 async def example_sequential_pipeline():
@@ -3131,6 +3153,7 @@ async def example_sequential_pipeline():
 ```
 
 **Dependency resolution**:
+
 1. `extract_audio_features` has no dependencies → runs first
 2. `compute_mir_features` needs `audio_features` → runs after step 1
 3. `generate_tags` needs `mir_features` → runs after step 2
@@ -3141,6 +3164,7 @@ async def example_sequential_pipeline():
 ## Example 2: Parallel Execution
 
 With the addition of `extract_spectral_features` which also depends only on `audio_features`:
+
 
 ```python
 @broker.task
@@ -3171,6 +3195,7 @@ pipeline = DataflowPipeline.from_tasks(
 ```
 
 **Execution levels**:
+
 - Level 0: `extract_audio_features`
 - Level 1: `compute_mir_features`, `extract_spectral_features` (parallel)
 - Level 2: `generate_tags`, `combine_features` (parallel after their dependencies met)
@@ -3180,6 +3205,7 @@ pipeline = DataflowPipeline.from_tasks(
 ## Example 3: Map-Reduce Pattern
 
 Process multiple tracks in parallel, then aggregate:
+
 
 ```python
 # Map: process each track independently
@@ -3220,6 +3246,7 @@ results = await pipeline.kiq_map_reduce()
 
 The pipeline provides multiple visualization formats:
 
+
 ```python
 # ASCII art (console)
 pipeline.print_dag()
@@ -3245,11 +3272,13 @@ dot = pipeline.visualize_dot()
 
 ## Running the Example
 
+
 ```bash
 python examples/dataflow_audio_pipeline.py
 ```
 
 Expected output includes:
+
 - DAG ASCII prints showing execution order
 - DAG DOT representation snippet
 - DAG JSON structure snippet
@@ -4127,6 +4156,7 @@ This example demonstrates the `ResourceAwareExecutor` and `TaskResourceProfile` 
 
 ### 1. Resource-Aware Executor Setup
 
+
 ```python
 from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
 
@@ -4156,6 +4186,7 @@ The executor queries current system load (via `psutil`) and computes how many ta
 ---
 
 ### 2. Annotating Tasks with Resource Profiles
+
 
 ```python
 @broker.task
@@ -4199,6 +4230,7 @@ async def heavy_task(item: int) -> dict:
 
 The `DataflowPipeline`'s `max_parallel` parameter acts as an upper bound. The `ResourceAwareExecutor` can be used to compute a dynamic `max_parallel` before launching:
 
+
 ```python
 # Compute optimal parallelism for current system state
 current_parallel = executor.get_optimal_parallelism(
@@ -4216,6 +4248,7 @@ For mixed workloads, sum resource usage across parallel tasks.
 ---
 
 ### 4. Manual Parallelism Tuning Guidelines
+
 
 ```python
 import psutil
@@ -4238,6 +4271,7 @@ Start conservative, benchmark, and adjust.
 ---
 
 ## Expected Output
+
 
 ```
 === Resource-Aware Parallelism Demo ===
@@ -4312,6 +4346,7 @@ Without resource awareness, setting `max_parallel` too high can:
 ### Integration with Monitoring
 
 Combine with Prometheus metrics:
+
 
 ```python
 from taskiq_flow.metrics import MetricsMiddleware
@@ -5562,6 +5597,7 @@ This guide covers:
 
 ## 1. Quick Setup
 
+
 ```python
 from fastapi import FastAPI
 from taskiq import InMemoryBroker
@@ -5598,11 +5634,13 @@ The visualization API provides these routes:
 
 ### 2.1. Health Check
 
+
 ```
 GET /health
 ```
 
 Returns simple health status:
+
 
 ```json
 {
@@ -5613,11 +5651,13 @@ Returns simple health status:
 
 ### 2.2. List All Pipelines
 
+
 ```
 GET /pipelines
 ```
 
 Lists all registered pipelines with metadata:
+
 
 ```json
 [
@@ -5632,11 +5672,13 @@ Lists all registered pipelines with metadata:
 
 ### 2.3. Register a New Pipeline
 
+
 ```
 POST /pipelines/{pipeline_id}
 ```
 
 Request body:
+
 
 ```json
 {
@@ -5647,17 +5689,20 @@ Request body:
 
 Or use the Python API directly (recommended):
 
+
 ```python
 viz_api.add_pipeline("new_pipeline", pipeline_object)
 ```
 
 ### 2.4. Get Pipeline Status
 
+
 ```
 GET /pipelines/{pipeline_id}/status
 ```
 
 Returns current execution status if a run is active:
+
 
 ```json
 {
@@ -5671,11 +5716,13 @@ Returns current execution status if a run is active:
 
 ### 2.5. Get DAG as JSON
 
+
 ```
 GET /pipelines/{pipeline_id}/dag
 ```
 
 Returns the directed acyclic graph structure:
+
 
 ```json
 {
@@ -5693,11 +5740,13 @@ Returns the directed acyclic graph structure:
 
 ### 2.6. Get DAG in DOT Format
 
+
 ```
 GET /pipelines/{pipeline_id}/dag/dot
 ```
 
 Returns Graphviz-compatible DOT string for visualization:
+
 
 ```
 digraph "my_pipeline" {
@@ -5709,11 +5758,13 @@ digraph "my_pipeline" {
 
 ### 2.7. Full Pipeline Visualization
 
+
 ```
 GET /pipelines/{pipeline_id}/visualize
 ```
 
 Returns comprehensive pipeline metadata:
+
 
 ```json
 {
@@ -5745,6 +5796,7 @@ Returns comprehensive pipeline metadata:
 ## 3. Executing Pipelines via API
 
 The core API focuses on management and visualization. To execute pipelines remotely, add a custom endpoint:
+
 
 ```python
 from fastapi import FastAPI, HTTPException
@@ -5804,6 +5856,7 @@ async def get_result(task_id: str):
 
 ### 3.1. Execute Async (Fire-and-Forget)
 
+
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -5817,6 +5870,7 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
 ```
 
 ### 3.2. Execute Synchronous (Wait for Result)
+
 
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
@@ -5836,6 +5890,7 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
 ## 4. Integration with Frontend Dashboards
 
 ### 4.1. React Dashboard Example
+
 
 ```typescript
 // React component displaying pipeline status
@@ -5871,6 +5926,7 @@ const PipelineStatus = ({ pipelineId }) => {
 
 Use the DOT endpoint with Graphviz:
 
+
 ```javascript
 const renderDAG = async (pipelineId) => {
   const response = await fetch(`/pipelines/${pipelineId}/dag/dot`);
@@ -5889,6 +5945,7 @@ const renderDAG = async (pipelineId) => {
 
 ### 5.1. API Key Authentication
 
+
 ```python
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
@@ -5906,6 +5963,7 @@ async def list_pipelines(api_key: str = Security(verify_api_key)):
 ```
 
 ### 5.2. JWT Authentication
+
 
 ```python
 from jose import jwt
@@ -5934,6 +5992,7 @@ async def execute(
 Define per-pipeline ACLs via `pipeline_acls` in `TaskiqFlowConfig`, then use
 `verify_pipeline_access` as a route dependency :
 
+
 ```python
 from fastapi import Depends
 from taskiq_flow.config import TaskiqFlowConfig
@@ -5958,6 +6017,7 @@ viz_api = create_visualization_api(broker)  # reads config automatically
 ### 5.4. Combined Security Middleware + Route Dependencies
 
 For production, combine the global `SecurityMiddleware` (authentication) with per-route dependencies (authorization):
+
 
 ```python
 from taskiq_flow.security.middleware import SecurityMiddleware
@@ -6000,6 +6060,7 @@ app.add_middleware(
 Or, for full automatic wiring, use `create_visualization_api` which builds all
 these components from `TaskiqFlowConfig` internally:
 
+
 ```python
 from taskiq_flow import create_visualization_api
 
@@ -6015,6 +6076,7 @@ app = create_visualization_api(broker)  # security auto-configured from config
 - `SecurityMiddleware` sets `request.state.user` for all routes after routing
 - FastAPI path params (e.g. `pipeline_id`) are only available *after* routing
 - Route dependencies (e.g. `Depends(verify_pipeline_access)`) run after routing → they can read `pipeline_id` and check ACLs
+
 ```
 
 ---
@@ -6024,7 +6086,7 @@ app = create_visualization_api(broker)  # security auto-configured from config
 Protect the API from abuse:
 
 ```python
-from slowapi import Limiter, _rate_limit_exceeded_handler
+
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -6036,24 +6098,26 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @limiter.limit("10/minute")  # Max 10 executions per minute per IP
 async def execute_pipeline(pipeline_id: str, parameters: dict):
     # ...
+
 ```
 
----
+viz_api = create_visualization_api(broker, app)  # reads config automatically
 
 ## 7. CORS Configuration
 
 Enable cross-origin requests for web frontend:
 
 ```python
-from fastapi.middleware.cors import CORSMiddleware
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-dashboard.com"],
+`verify_pipeline_access` as a route dependency:
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
 ```
 
 ---
@@ -6063,16 +6127,17 @@ app.add_middleware(
 ### 8.1. Gunicorn + Uvicorn Workers
 
 ```bash
-# Run with multiple workers for concurrency
+
 gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
 
 # 4 worker processes handle concurrent requests
+
 ```
 
 ### 8.2. Docker
 
 ```dockerfile
-FROM python:3.12-slim
+
 
 WORKDIR /app
 COPY requirements.txt .
@@ -6081,10 +6146,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
 ```
 
 ```yaml
-# docker-compose.yml
+
 services:
   api:
     build: .
@@ -6096,12 +6162,13 @@ services:
       - redis
   redis:
     image: redis:7-alpine
+
 ```
 
-### 8.3. Behind Reverse Proxy (nginx)
+create_visualization_api(broker, app)  # security auto-configured from config
 
 ```nginx
-server {
+
     listen 80;
     server_name api.taskiq-flow.example.com;
 
@@ -6113,22 +6180,25 @@ server {
         proxy_set_header Connection "";
     }
 }
+
 ```
 
 ### 8.4. HTTPS with Let's Encrypt
 
 ```bash
-# Using certbot with nginx
+
 sudo certbot --nginx -d api.taskiq-flow.example.com
+
 ```
 
 Configure HTTPS → redirect to HTTP upstream:
 
 ```nginx
-location / {
+
     proxy_pass http://localhost:8000;
     proxy_set_header X-Forwarded-Proto $scheme;
 }
+
 ```
 
 ---
@@ -6138,7 +6208,7 @@ location / {
 ### 9.1. Health Check Endpoint
 
 ```python
-from datetime import datetime, timezone
+
 from fastapi import FastAPI
 import psutil
 
@@ -6152,14 +6222,16 @@ async def health():
         "broker_connected": broker.is_connected(),
         "memory_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }
+
 ```
 
 ### 9.2. Metrics with Prometheus
 
 ```python
-from prometheus_fastapi_instrumentator import Instrumentator
+
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
 ```
 
 Exposes `/metrics` with standard Prometheus metrics (request count, latency, etc.).
@@ -6167,7 +6239,7 @@ Exposes `/metrics` with standard Prometheus metrics (request count, latency, etc
 ### 9.3. API Versioning
 
 ```python
-app = FastAPI(
+
     title="Taskiq-Flow API",
     version="1.0.0",
     docs_url="/docs",
@@ -6179,6 +6251,7 @@ from fastapi import APIRouter
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(viz_api.router)
 app.include_router(api_router)
+
 ```
 
 ---
@@ -6188,7 +6261,7 @@ app.include_router(api_router)
 Centralized error handling:
 
 ```python
-from fastapi import Request
+
 from fastapi.responses import JSONResponse
 
 @app.exception_handler(TaskiqError)
@@ -6201,18 +6274,20 @@ async def taskiq_exception_handler(request: Request, exc: TaskiqError):
             "pipeline_id": getattr(exc, "pipeline_id", None)
         }
     )
+
 ```
 
 Standardized error responses:
 
 ```json
-{
+
   "error": "PipelineExecutionError",
   "message": "Task 'process' failed after 3 retries",
   "pipeline_id": "audio_analysis_123",
   "step": "extract_audio",
   "timestamp": "2026-05-05T12:00:00Z"
 }
+
 ```
 
 ---
@@ -6222,7 +6297,7 @@ Standardized error responses:
 Python client for interacting with the API:
 
 ```python
-import httpx
+
 
 class TaskiqFlowClient:
     def __init__(self, base_url: str, api_key: str = None):
@@ -6255,6 +6330,7 @@ class TaskiqFlowClient:
 client = TaskiqFlowClient("http://localhost:8000")
 pipelines = await client.list_pipelines()
 result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
+
 ```
 
 ---
@@ -8626,6 +8702,7 @@ Performance optimization involves tradeoffs between:
 
 Control concurrent task execution at the step level:
 
+
 ```python
 # Sequential Pipeline
 pipeline.map(process_item, items, max_parallel=10)  # Max 10 concurrent
@@ -8648,6 +8725,7 @@ mapped = await MapReduce.map(
 
 #### For I/O-Bound Tasks (network calls, disk I/O)
 
+
 ```python
 # High I/O wait, low CPU: can handle many concurrent tasks
 pipeline.map(fetch_url, url_list, max_parallel=50)
@@ -8657,6 +8735,7 @@ pipeline.map(fetch_url, url_list, max_parallel=50)
 **Rationale**: While one task waits for network, another uses CPU. High concurrency saturates I/O pipelines.
 
 #### For CPU-Bound Tasks (computations, transcoding)
+
 
 ```python
 # CPU-intensive: limit to core count (or slightly higher)
@@ -8672,6 +8751,7 @@ pipeline.map(transcode, files, max_parallel=cpu_cores + 2)
 
 Profile and adjust:
 
+
 ```python
 # Start conservative
 for parallel in [5, 10, 20, 50]:
@@ -8686,6 +8766,7 @@ Find the **knee of the curve** — point where increasing parallelism yields dim
 ### 2.3. Global Parallelism Limit
 
 Set a global cap across all pipelines:
+
 
 ```python
 from taskiq_flow.optimization.parallel import set_max_parallel_tasks
@@ -8703,6 +8784,7 @@ Taskiq-Flow can schedule tasks based on CPU/RAM requirements (requires resource-
 
 ### 3.1. Annotating Tasks with Resource Needs
 
+
 ```python
 from taskiq_flow import CPUProfile, RAMProfile
 
@@ -8715,6 +8797,7 @@ def heavy_computation(data):
 ```
 
 ### 3.2. Resource-Aware Worker Pool
+
 
 ```python
 from taskiq_flow import ResourceAwareWorkerPool
@@ -8739,6 +8822,7 @@ pool = ResourceAwareWorkerPool(
 
 Pass references instead of full data:
 
+
 ```python
 #  Bad: copies entire dataset per task call
 pipeline.map(process, large_dataset)  # Each task gets full dataset copy
@@ -8756,6 +8840,7 @@ pipeline.map(process, item_ids)  # Only IDs passed
 
 Use chunking:
 
+
 ```python
 def chunked(iterable, chunk_size=100):
     for i in range(0, len(iterable), chunk_size):
@@ -8770,12 +8855,14 @@ for chunk in chunked(large_list, 100):
 
 Pipeline results stay in tracking storage. Clean up after you're done:
 
+
 ```python
 # After processing, delete pipeline record
 await tracking.delete_pipeline(pipeline.pipeline_id)
 ```
 
 Or set TTL on storage:
+
 
 ```python
 RedisPipelineStorage(redis, ttl_seconds=86400)  # Auto-delete after 1 day
@@ -8789,6 +8876,7 @@ RedisPipelineStorage(redis, ttl_seconds=86400)  # Auto-delete after 1 day
 
 Each step records duration automatically (with tracking enabled):
 
+
 ```python
 status = await tracking.get_status(pipeline_id)
 for step in status.steps:
@@ -8800,6 +8888,7 @@ Identify slowest steps → optimization targets.
 ### 5.2. Memory Profiling
 
 Use Python's `tracemalloc`:
+
 
 ```python
 import tracemalloc
@@ -8817,6 +8906,7 @@ tracemalloc.stop()
 ```
 
 ### 5.3. CPU Profiling
+
 
 ```python
 import cProfile
@@ -8837,6 +8927,7 @@ stats.print_stats(20)  # Top 20 functions
 
 `uvloop` for faster event loop:
 
+
 ```python
 import uvloop
 uvloop.install()  # Replaces default asyncio event loop
@@ -8851,6 +8942,7 @@ Benchmark improvement: `uvloop` can provide 2×–3× speedup for I/O-bound work
 ### 6.1. Connection Pooling
 
 For databases (PostgreSQL, Redis), reuse connections:
+
 
 ```python
 from asyncpg import create_pool
@@ -8867,6 +8959,7 @@ async def db_task(query: str):
 
 Instead of many small calls, batch:
 
+
 ```python
 #  N separate calls
 for item in items:
@@ -8878,6 +8971,7 @@ await db.bulk_insert(items)
 
 ### 6.3. Cache Results
 
+
 ```python
 from functools import lru_cache
 
@@ -8888,6 +8982,7 @@ def expensive_computation(key: str):
 ```
 
 Or use Redis cache:
+
 
 ```python
 import redis
@@ -8911,6 +9006,7 @@ async def cached_task(key: str):
 
 Scale horizontally by running multiple worker processes:
 
+
 ```bash
 # Terminal 1
 taskiq worker --broker redis://localhost:6379
@@ -8930,6 +9026,7 @@ All workers share the same broker (Redis) and process tasks concurrently.
 
 Use a process manager (systemd, supervisord, Docker Compose):
 
+
 ```yaml
 # docker-compose.yml
 services:
@@ -8948,6 +9045,7 @@ services:
 
 Route critical pipelines to dedicated queues:
 
+
 ```python
 @broker.task(queue="high_priority")
 def critical_task(): ...
@@ -8964,6 +9062,7 @@ For low-latency global deployments, deploy workers in multiple regions with a gl
 ## 8. Benchmarking
 
 Measure before and after optimization:
+
 
 ```python
 import time
@@ -9016,6 +9115,7 @@ async def benchmark(pipeline, iterations=10):
 **Diagnostic steps**:
 
 1. Check step durations in tracking:
+
    ```python
    status = await tracking.get_status(pipeline_id)
    slowest = max(status.steps, key=lambda s: s.duration_ms)
@@ -9053,6 +9153,7 @@ async def benchmark(pipeline, iterations=10):
 
 For specialized workloads, implement custom executors:
 
+
 ```python
 from taskiq_flow import ExecutionEngine
 from taskiq_flow.dataflow import DAG
@@ -9072,6 +9173,7 @@ results = await engine.execute(inputs)
 
 Taskiq-Flow provides a resource-aware execution pattern for pipelines that need
 to allocate tasks to workers based on their CPU/RAM requirements:
+
 
 ```python
 from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
@@ -11249,6 +11351,7 @@ TaskIQ-Flow provides a flexible security system that can be enabled via configur
 
 Security features are configured in the `TaskiqFlowConfig` object or via environment variables. The main security settings are:
 
+
 ```python
 from taskiq_flow import TaskiqFlowConfig
 
@@ -11315,6 +11418,7 @@ Clients must include their API key in the `X-API-Key` header for HTTP requests o
 
 Example HTTP request:
 
+
 ```http
 GET /api/pipelines
 X-API-Key: admin-key #pragma: allowlist secret
@@ -11323,6 +11427,7 @@ X-API-Key: admin-key #pragma: allowlist secret
 ### JWT Authentication
 
 If a JWT secret is configured (via `jwt_secret`), clients can authenticate using a JSON Web Token (JWT) in the `Authorization` header:
+
 
 ```
 Authorization: Bearer <jwt-token>
@@ -11359,6 +11464,7 @@ The middleware respects the `X-Forwarded-Proto` header so deployments behind a T
 
 Run TaskIQ-Flow behind a WSGI/ASGI server such as Uvicorn with Docker:
 
+
 ```dockerfile
 # Dockerfile
 FROM python:3.12-slim
@@ -11372,6 +11478,7 @@ COPY . .
 EXPOSE 8000
 CMD ["uvicorn", "my_app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
 
 ```yaml
 # docker-compose.yml
@@ -11402,6 +11509,7 @@ volumes:
 ### Reverse Proxy (nginx)
 
 Place nginx in front of the application to terminate TLS, enforce HTTPS, and add security headers:
+
 
 ```nginx
 # /etc/nginx/sites-available/taskiq-flow
@@ -11494,6 +11602,7 @@ WebSocket connections follow the same security model as HTTP:
 
 Here is a complete example of securing a TaskIQ-Flow API with the **current** API (`create_visualization_api`, flat `TaskiqFlowConfig` fields):
 
+
 ```python
 from taskiq import Taskiq, InMemoryBroker
 from taskiq_flow import TaskiqFlowConfig, create_visualization_api
@@ -11542,6 +11651,7 @@ audit_logger = AuditLogger()
 ```
 
 ## Testing Security
+
 
 ```bash
 # No credentials → 401 Unauthorized
@@ -14221,6 +14331,7 @@ Le décorateur `@pipeline_task` annote les tâches taskiq avec des déclarations
 
 Marque une tâche avec ce qu'elle produit pour les consommateurs en aval.
 
+
 ```python
 from taskiq_flow import pipeline_task
 
@@ -14241,6 +14352,7 @@ def extract(données: list[str]) -> dict:
 
 ### Sortie unique (plus courant)
 
+
 ```python
 @broker.task
 @pipeline_task(output="données_traitées")
@@ -14249,6 +14361,7 @@ def process(données_brutes: str) -> dict:
 ```
 
 ### Sorties multiples
+
 
 ```python
 @broker.task
@@ -14260,6 +14373,7 @@ def split_output(audio: np.ndarray) -> tuple[dict, dict]:
 ```
 
 Les tâches en aval peuvent consommer soit sortie:
+
 
 ```python
 @broker.task
@@ -14276,6 +14390,7 @@ def describe(metadata: dict): ...  # consomme sortie 'metadata'
 ## @pipeline_task_multi_output
 
 Alias pour `@pipeline_task(outputs=[...])`. Apporte clarté pour tâches multi-sorties:
+
 
 ```python
 from taskiq_flow import pipeline_task_multi_output
@@ -14294,6 +14409,7 @@ def split(valeur: int) -> tuple[int, int]:
 
 Obtenir clés sortie déclarées pour une tâche:
 
+
 ```python
 from taskiq_flow import get_task_outputs
 
@@ -14304,6 +14420,7 @@ print(outputs)  # ['features']
 ### get_task_inputs(task: Callable) -> list[str]
 
 Get declared input dependencies:
+
 
 ```python
 from taskiq_flow import get_task_inputs
@@ -14316,6 +14433,7 @@ print(inputs)  # ['features']
 
 Check if function is decorated with `@pipeline_task`:
 
+
 ```python
 from taskiq_flow import is_pipeline_task
 
@@ -14326,6 +14444,7 @@ if is_pipeline_task(my_function):
 ### resolve_task_dependencies(tasks: list[Callable]) -> dict
 
 Build dependency map:
+
 
 ```python
 from taskiq_flow import resolve_task_dependencies
@@ -14340,6 +14459,7 @@ deps = resolve_task_dependencies([task_a, task_b, task_c])
 
 The order of decorators matters: `@broker.task` must be the outermost (applied last), `@pipeline_task` inner (applied first):
 
+
 ```python
 # CORRECT
 @broker.task
@@ -14353,6 +14473,7 @@ def my_task(): ...
 ```
 
 Why: `@broker.task` wraps the function; `@pipeline_task` attaches metadata to the original function. Python applies decorators bottom-to-top.
+
 ```
 
 Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métadonnées à la fonction originale. Python applique décorateurs bas-vers-haut.
@@ -14364,7 +14485,7 @@ Pourquoi: `@broker.task` enveloppe la fonction; `@pipeline_task` attache métado
 Les type hints aident IDEs et linters à comprendre le dataflow:
 
 ```python
-from typing import TypedDict
+
 
 class AudioFeatures(TypedDict):
     duration: float
@@ -14379,6 +14500,7 @@ def extract(chemin: str) -> AudioFeatures:
 @pipeline_task(output="tags")
 def tag(features: AudioFeatures) -> list[str]:  # type-safe
     return ["rapide", "électronique"]
+
 ```
 
 Utiliser `TypedDict` ou modèles Pydantic pour meilleure autocomplétion IDE et vérification mypy.
@@ -14390,7 +14512,7 @@ Utiliser `TypedDict` ou modèles Pydantic pour meilleure autocomplétion IDE et 
 Attacher version et autres métadonnées:
 
 ```python
-@broker.task(
+
     nom="extract_features_v2",
     labels={"version": "2.0.0", "expérimental": False}
 )
@@ -14400,6 +14522,7 @@ Attacher version et autres métadonnées:
 )
 def extract(chemin: str) -> dict:
     ...
+
 ```
 
 ---
@@ -14418,7 +14541,7 @@ def extract(chemin: str) -> dict:
 ## Exemple: Pipeline Dataflow Complet
 
 ```python
-from taskiq import InMemoryBroker
+
 from taskiq_flow import DataflowPipeline, pipeline_task
 
 broker = InMemoryBroker()
@@ -14444,6 +14567,7 @@ pipeline = DataflowPipeline.from_tasks(broker, [charger, nettoyer, analyser])
 # Exécuter
 résultats = await pipeline.kiq_dataflow(source="data.csv")
 # résultats = {"brut": {...}, "propre": {...}, "stats": {...}}
+
 ```
 
 ---
@@ -16706,6 +16830,7 @@ C'est l'exemple de référence pour comprendre l'architecture dataflow.
 
 ### Définition des Tâches
 
+
 ```python
 from taskiq import InMemoryBroker
 from taskiq_flow import DataflowPipeline, pipeline_task
@@ -16742,6 +16867,7 @@ async def create_embedding(mir_features: dict, tags: list[str]) -> list[float]:
 
 Le pipeline construit automatiquement ce DAG:
 
+
 ```mermaid
 flowchart TD
     A[extract_audio_features] --> B[compute_mir_features]
@@ -16751,6 +16877,7 @@ flowchart TD
 ```
 
 **Note**: `create_embedding` dépend à la fois de `mir_features` (sortie de `compute_mir_features`) et `tags` (sortie de `generate_tags`), donc il s'exécute après que les deux tâches parallèles sont terminées.
+
 ```
 
 ---
@@ -16758,7 +16885,7 @@ flowchart TD
 ## Exemple 1: Pipeline Séquentiel avec Dépendances Automatiques
 
 ```python
-async def example_sequential_pipeline():
+
     pipeline = DataflowPipeline.from_tasks(
         broker,
         [
@@ -16784,6 +16911,7 @@ async def example_sequential_pipeline():
     #   "tags": [...],
     #   "vector": [...]
     # }
+
 ```
 
 **Résolution dépendances**:
@@ -16799,7 +16927,7 @@ async def example_sequential_pipeline():
 Avec ajout de `extract_spectral_features` qui dépend aussi seulement de `audio_features`:
 
 ```python
-@broker.task
+
 @pipeline_task(output="spectral_features")
 async def extract_spectral_features(audio_features: dict) -> dict:
     await asyncio.sleep(0.2)
@@ -16824,6 +16952,7 @@ pipeline = DataflowPipeline.from_tasks(
         combine_features,            # Niveau 2 (dépend de mir_features + spectral_features + tags)
     ],
 )
+
 ```
 
 **Niveaux d'exécution**:
@@ -16838,7 +16967,7 @@ pipeline = DataflowPipeline.from_tasks(
 Traiter multiples pistes en parallèle, puis agréger:
 
 ```python
-# Map: traiter chaque piste indépendamment
+
 @broker.task
 @pipeline_task(output="track_features")
 async def process_single_track(track: str) -> dict:
@@ -16868,6 +16997,7 @@ pipeline.reduce(
 
 résultats = await pipeline.kiq_map_reduce()
 # résultats = {"track_features": [...], "playlist_stats": {...}}
+
 ```
 
 ---
@@ -16877,7 +17007,7 @@ résultats = await pipeline.kiq_map_reduce()
 Le pipeline fournit multiples formats de visualisation:
 
 ```python
-# ASCII art (console)
+
 pipeline.print_dag()
 
 # JSON (for web UIs)
@@ -16895,6 +17025,7 @@ dot = pipeline.visualize_dot()
 # with open("pipeline.dot", "w") as f:
 #     f.write(dot)
 # Run: dot -Tpng pipeline.dot -o pipeline.png
+
 ```
 
 ---
@@ -16902,7 +17033,8 @@ dot = pipeline.visualize_dot()
 ## Exécuter l'Exemple
 
 ```bash
-python examples/dataflow_audio_pipeline.py
+
+
 ```
 
 Sortie attendue inclut:
@@ -17786,6 +17918,7 @@ Cet exemple démontre les fonctionnalités `ResourceAwareExecutor` et `TaskResou
 
 ### 1. Configuration Resource-Aware Executor
 
+
 ```python
 from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
 
@@ -17815,6 +17948,7 @@ L'exécuteur interroge l'usage système courant (via `psutil`) et calcule combie
 ---
 
 ### 2. Annoter Tâches avec Profils Ressources
+
 
 ```python
 @broker.task
@@ -17858,6 +17992,7 @@ async def heavy_task(item: int) -> dict:
 
 Le paramètre `max_parallel` de `DataflowPipeline` agit comme borne supérieure. `ResourceAwareExecutor` peut calculer un `max_parallel` dynamique avant lancement :
 
+
 ```python
 # Calculer parallélisme optimal pour état système courant
 current_parallel = executor.get_optimal_parallelism(
@@ -17875,6 +18010,7 @@ Pour charges de travail mixtes, sommez l'usage ressource à travers tâches para
 ---
 
 ### 4. Directives de Réglage Manuel Parallélisme
+
 
 ```python
 import psutil
@@ -17897,6 +18033,7 @@ Commencez conservateur, benchmarkez, et ajustez.
 ---
 
 ## Sortie Attendue
+
 
 ```
 === Resource-Aware Parallelism Demo ===
@@ -17971,6 +18108,7 @@ Sans conscience ressource, `max_parallel` trop haut peut :
 ### Intégration avec Monitoring
 
 Combinez avec métriques Prometheus :
+
 
 ```python
 from taskiq_flow.metrics import MetricsMiddleware
@@ -19214,6 +19352,7 @@ Ce guide couvre :
 
 ## 1. Configuration Rapide
 
+
 ```python
 from fastapi import FastAPI
 from taskiq import InMemoryBroker
@@ -19250,11 +19389,13 @@ L'API de visualisation fournit ces routes :
 
 ### 2.1. Health Check
 
+
 ```
 GET /health
 ```
 
 Retourne statut simple:
+
 
 ```json
 {
@@ -19265,11 +19406,13 @@ Retourne statut simple:
 
 ### 2.2. Lister Tous les Pipelines
 
+
 ```
 GET /pipelines
 ```
 
 Liste tous les pipelines enregistrés avec métadonnées:
+
 
 ```json
 [
@@ -19284,11 +19427,13 @@ Liste tous les pipelines enregistrés avec métadonnées:
 
 ### 2.3. Enregistrer un Nouveau Pipeline
 
+
 ```
 POST /pipelines/{pipeline_id}
 ```
 
 Corps de requête:
+
 
 ```json
 {
@@ -19299,17 +19444,20 @@ Corps de requête:
 
 Ou utiliser l'API Python directement (recommandé):
 
+
 ```python
 viz_api.add_pipeline("nouveau_pipeline", objet_pipeline)
 ```
 
 ### 2.4. Obtenir le Statut d'un Pipeline
 
+
 ```
 GET /pipelines/{pipeline_id}/status
 ```
 
 Retourne statut d'exécution courant si un run est actif:
+
 
 ```json
 {
@@ -19323,11 +19471,13 @@ Retourne statut d'exécution courant si un run est actif:
 
 ### 2.5. Obtenir le DAG en JSON
 
+
 ```
 GET /pipelines/{pipeline_id}/dag
 ```
 
 Retourne la structure de graphe orienté acyclique:
+
 
 ```json
 {
@@ -19345,11 +19495,13 @@ Retourne la structure de graphe orienté acyclique:
 
 ### 2.6. Obtenir le DAG au Format DOT
 
+
 ```
 GET /pipelines/{pipeline_id}/dag/dot
 ```
 
 Retourne chaîne DOT compatible Graphviz:
+
 
 ```
 digraph "my_pipeline" {
@@ -19361,11 +19513,13 @@ digraph "my_pipeline" {
 
 ### 2.7. Visualisation Complète de Pipeline
 
+
 ```
 GET /pipelines/{pipeline_id}/visualize
 ```
 
 Retourne métadonnées complètes du pipeline:
+
 
 ```json
 {
@@ -19397,6 +19551,7 @@ Retourne métadonnées complètes du pipeline:
 ## 3. Exécution de Pipelines via API
 
 L'API de base se concentre sur gestion et visualisation. Pour exécuter des pipelines à distance, ajouter un endpoint personnalisé:
+
 
 ```python
 from fastapi import FastAPI, HTTPException
@@ -19456,6 +19611,7 @@ async def get_result(task_id: str):
 
 ### 3.1. Exécution Async (Fire-and-Forget)
 
+
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
   -H "Content-Type: application/json" \
@@ -19469,6 +19625,7 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
 ```
 
 ### 3.2. Synchronous Execution (Wait for Result)
+
 
 ```bash
 curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
@@ -19488,6 +19645,7 @@ curl -X POST "http://localhost:8000/pipelines/my_pipeline/execute" \
 ## 4. Intégration avec Tableaux de Bord Frontend
 
 ### 4.1. Exemple Dashboard React
+
 
 ```typescript
 const PipelineStatus = ({ pipelineId }) => {
@@ -19522,6 +19680,7 @@ const PipelineStatus = ({ pipelineId }) => {
 
 Utiliser endpoint DOT avec Graphviz:
 
+
 ```javascript
 const renderDAG = async (pipelineId) => {
   const response = await fetch(`/pipelines/${pipelineId}/dag/dot`);
@@ -19540,6 +19699,7 @@ const renderDAG = async (pipelineId) => {
 
 ### 5.1. Authentification par Clé API
 
+
 ```python
 from fastapi import Security, HTTPException
 from fastapi.security import APIKeyHeader
@@ -19557,6 +19717,7 @@ async def list_pipelines(api_key: str = Security(verify_api_key)):
 ```
 
 ### 5.2. Authentification JWT
+
 
 ```python
 from jose import jwt
@@ -19586,6 +19747,7 @@ async def execute(
 
 Protéger l'API contre abus:
 
+
 ```python
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -19607,6 +19769,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
 
 Permettre requêtes cross-origin pour frontend web:
 
+
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19625,6 +19788,7 @@ app.add_middleware(
 
 ### 8.1. Gunicorn + Workers Uvicorn
 
+
 ```bash
 # Lancer avec multiples workers pour concurrence
 gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
@@ -19633,6 +19797,7 @@ gunicorn -k uvicorn.workers.UvicornWorker -w 4 main:app --bind 0.0.0.0:8000
 ```
 
 ### 8.2. Docker
+
 
 ```dockerfile
 FROM python:3.12-slim
@@ -19645,6 +19810,7 @@ COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
 
 ```yaml
 # docker-compose.yml
@@ -19663,6 +19829,7 @@ services:
 
 ### 8.3. Derrière Reverse Proxy (nginx)
 
+
 ```nginx
 server {
     listen 80;
@@ -19680,12 +19847,14 @@ server {
 
 ### 8.4. HTTPS avec Let's Encrypt
 
+
 ```bash
 # Utiliser certbot avec nginx
 sudo certbot --nginx -d api.taskiq-flow.example.com
 ```
 
 Configurer HTTPS → redirect vers HTTP upstream:
+
 
 ```nginx
 location / {
@@ -19699,6 +19868,7 @@ location / {
 ## 9. Sécurité de l'API
 
 ### 9.1. Authentification par Clé API
+
 
 ```python
 from fastapi import Security, HTTPException
@@ -19717,6 +19887,7 @@ async def list_pipelines(api_key: str = Security(verify_api_key)):
 ```
 
 ### 9.2. Authentification JWT
+
 
 ```python
 from jose import jwt
@@ -19744,6 +19915,7 @@ async def execute(
 Définissez les ACLs par pipeline via `pipeline_acls` dans `TaskiqFlowConfig`,
 puis utilisez `verify_pipeline_access` comme dépendance de route :
 
+
 ```python
 from fastapi import Depends
 from taskiq_flow.config import TaskiqFlowConfig
@@ -19768,6 +19940,7 @@ viz_api = create_visualization_api(broker)  # lit config automatiquement
 ### 9.4. Combinaison Middleware + Dépendances de Route
 
 Pour la production, combinez le middleware global (authentification) avec les dépendances de route (autorisation) :
+
 
 ```python
 from taskiq_flow.security.middleware import SecurityMiddleware
@@ -19810,6 +19983,7 @@ app.add_middleware(
 Ou, pour un câblage automatique complet, utilisez `create_visualization_api` qui
 construit tous les composants depuis `TaskiqFlowConfig` :
 
+
 ```python
 from taskiq_flow import create_visualization_api
 
@@ -19825,6 +19999,7 @@ app = create_visualization_api(broker)  # sécurité auto-configurée depuis con
 - `SecurityMiddleware` place `request.state.user` pour toutes les routes après le routage
 - Les paramètres de chemin FastAPI (ex. `pipeline_id`) ne sont disponibles qu'**après** le routage
 - Les dépendances de route (ex. `Depends(verify_pipeline_access)`) s'exécutent après le routage → elles peuvent lire `pipeline_id` et vérifier les ACLs
+
 ```
 
 **Pourquoi cette approche hybride ?**
@@ -19840,7 +20015,7 @@ app = create_visualization_api(broker)  # sécurité auto-configurée depuis con
 Protégez l'API contre les abus:
 
 ```python
-from slowapi import Limiter, _rate_limit_exceeded_handler
+
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
@@ -19852,6 +20027,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @limiter.limit("10/minute")  # Max 10 exécutions par minute par IP
 async def execute_pipeline(pipeline_id: str, parameters: dict):
     # ...
+
 ```
 
 ---
@@ -19861,7 +20037,7 @@ async def execute_pipeline(pipeline_id: str, parameters: dict):
 ### 11.1. Endpoint Health Check
 
 ```python
-from datetime import datetime, timezone
+
 from fastapi import FastAPI
 import psutil
 
@@ -19875,14 +20051,16 @@ async def health():
         "broker_connecté": broker.is_connected(),
         "memoire_mb": psutil.Process().memory_info().rss / 1024 / 1024
     }
+
 ```
 
 ### 11.2. Métriques avec Prometheus
 
 ```python
-from prometheus_fastapi_instrumentator import Instrumentator
+
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
 ```
 
 Expose `/metrics` avec métriques Prometheus standard (compte requêtes, latence, etc.).
@@ -19890,7 +20068,7 @@ Expose `/metrics` avec métriques Prometheus standard (compte requêtes, latence
 ### 11.3. Versionnement API
 
 ```python
-app = FastAPI(
+
     title="API Taskiq-Flow",
     version="1.0.0",
     docs_url="/docs",
@@ -19902,6 +20080,7 @@ from fastapi import APIRouter
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(viz_api.router)
 app.include_router(api_router)
+
 ```
 
 ---
@@ -19911,7 +20090,7 @@ app.include_router(api_router)
 Gestion centralisée erreurs:
 
 ```python
-from fastapi import Request
+
 from fastapi.responses import JSONResponse
 from taskiq.exceptions import TaskiqError
 
@@ -19925,18 +20104,20 @@ async def taskiq_exception_handler(request: Request, exc: TaskiqError):
             "pipeline_id": getattr(exc, "pipeline_id", None)
         }
     )
+
 ```
 
 Réponses d'erreur standardisées:
 
 ```json
-{
+
   "error": "PipelineExecutionError",
   "message": "Task 'process' échoué après 3 retries",
   "pipeline_id": "analyse_audio_123",
   "step": "extract_audio",
   "timestamp": "2026-05-05T12:00:00Z"
 }
+
 ```
 
 ---
@@ -19946,7 +20127,7 @@ Réponses d'erreur standardisées:
 Client Python pour interagir avec l'API:
 
 ```python
-import httpx
+
 
 class ClientTaskiqFlow:
     def __init__(self, base_url: str, api_key: str = None):
@@ -19979,6 +20160,7 @@ class ClientTaskiqFlow:
 client = ClientTaskiqFlow("http://localhost:8000")
 pipelines = await client.list_pipelines()
 result = await client.execute("my_pipeline", {"data": "test"}, wait=True)
+
 ```
 
 ---
@@ -21840,6 +22022,7 @@ L'optimisation des performances implique des compromis :
 
 Contrôle l'exécution concurrente des tâches au niveau de l'étape :
 
+
 ```python
 # Pipeline Séquentiel
 pipeline.map(process_item, items, max_parallel=10)  # Max 10 concurrentes
@@ -21862,6 +22045,7 @@ mapped = await MapReduce.map(
 
 #### Pour les Tâches Liées aux I/O (appels réseau, I/O disque)
 
+
 ```python
 # Attente I/O élevée, CPU faible : peut gérer beaucoup de tâches concurrentes
 pipeline.map(fetch_url, url_list, max_parallel=50)
@@ -21871,6 +22055,7 @@ pipeline.map(fetch_url, url_list, max_parallel=50)
 **Justification** : Pendant qu'une tâche attend le réseau, une autre utilise le CPU. Une haute concurrence sature les pipelines d'I/O.
 
 #### Pour les Tâches Intensives en CPU (calculs, transcodage)
+
 
 ```python
 # Intensif en CPU : limiter au nombre de cœurs (ou légèrement plus)
@@ -21886,6 +22071,7 @@ pipeline.map(transcode, files, max_parallel=cpu_cores + 2)
 
 Profilez et ajustez :
 
+
 ```python
 # Commencez prudent
 for parallel in [5, 10, 20, 50]:
@@ -21900,6 +22086,7 @@ Trouvez le **coude de la courbe** — point où augmenter le parallélisme donne
 ### 2.3. Limite Globale de Parallélisme
 
 Définissez une limite globale sur tous les pipelines :
+
 
 ```python
 from taskiq_flow.optimization.parallel import set_max_parallel_tasks
@@ -21917,6 +22104,7 @@ Taskiq-Flow peut ordonnancer les tâches selon les besoins CPU/RAM (nécessite u
 
 ### 3.1. Annoter les Tâches avec Besoins en Ressources
 
+
 ```python
 from taskiq_flow import CPUProfile, RAMProfile
 
@@ -21929,6 +22117,7 @@ def heavy_computation(data):
 ```
 
 ### 3.2. Pool de Workers Conscient des Ressources
+
 
 ```python
 from taskiq_flow import ResourceAwareWorkerPool
@@ -21953,6 +22142,7 @@ pool = ResourceAwareWorkerPool(
 
 Passez des références au lieu des données complètes :
 
+
 ```python
 #  Mauvais : copie le jeu de données complet pour chaque appel de tâche
 pipeline.map(process, large_dataset)  # Chaque tâche reçoit une copie complète
@@ -21970,6 +22160,7 @@ pipeline.map(process, item_ids)  # Seuls les IDs sont passés
 
 Utilisez le découpage en chunks :
 
+
 ```python
 def chunked(iterable, chunk_size=100):
     for i in range(0, len(iterable), chunk_size):
@@ -21984,12 +22175,14 @@ for chunk in chunked(large_list, 100):
 
 Les résultats de pipeline restent dans le stockage de suivi. Nettoyez après usage :
 
+
 ```python
 # Après traitement, supprimez l'enregistrement du pipeline
 await tracking.delete_pipeline(pipeline.pipeline_id)
 ```
 
 Ou définissez un TTL sur le stockage :
+
 
 ```python
 RedisPipelineStorage(redis, ttl_seconds=86400)  # Suppression auto après 1 jour
@@ -22003,6 +22196,7 @@ RedisPipelineStorage(redis, ttl_seconds=86400)  # Suppression auto après 1 jour
 
 Chaque étape enregistre la durée automatiquement (avec le suivi activé) :
 
+
 ```python
 status = await tracking.get_status(pipeline_id)
 for step in status.steps:
@@ -22014,6 +22208,7 @@ Identifiez les étapes les plus lentes → cibles d'optimisation.
 ### 5.2. Profilage Mémoire
 
 Utilisez `tracemalloc` de Python :
+
 
 ```python
 import tracemalloc
@@ -22031,6 +22226,7 @@ tracemalloc.stop()
 ```
 
 ### 5.3. Profilage CPU
+
 
 ```python
 import cProfile
@@ -22051,6 +22247,7 @@ stats.print_stats(20)  # Top 20 fonctions
 
 `uvloop` pour une boucle d'événements plus rapide :
 
+
 ```python
 import uvloop
 uvloop.install()  # Remplace la boucle asyncio par défaut
@@ -22065,6 +22262,7 @@ Amélioration benchmark : `uvloop` peut fournir un gain 2×–3× pour les charg
 ### 6.1. Pool de Connexions
 
 Pour les bases de données (PostgreSQL, Redis), réutilisez les connexions :
+
 
 ```python
 from asyncpg import create_pool
@@ -22081,6 +22279,7 @@ async def db_task(query: str):
 
 Au lieu de nombreux petits appels, faites des lots :
 
+
 ```python
 #  N appels séparés
 for item in items:
@@ -22092,6 +22291,7 @@ await db.bulk_insert(items)
 
 ### 6.3. Mise en Cache des Résultats
 
+
 ```python
 from functools import lru_cache
 
@@ -22102,6 +22302,7 @@ def expensive_computation(key: str):
 ```
 
 Ou utilisez un cache Redis :
+
 
 ```python
 import redis
@@ -22125,6 +22326,7 @@ async def cached_task(key: str):
 
 Mise à l'échelle horizontale en lançant plusieurs processus worker :
 
+
 ```bash
 # Terminal 1
 taskiq worker --broker redis://localhost:6379
@@ -22144,6 +22346,7 @@ Tous les workers partagent le même broker (Redis) et traitent les tâches concu
 
 Utilisez un gestionnaire de processus (systemd, supervisord, Docker Compose) :
 
+
 ```yaml
 # docker-compose.yml
 services:
@@ -22162,6 +22365,7 @@ services:
 
 Routez les pipelines critiques vers des files dédiées :
 
+
 ```python
 @broker.task(queue="high_priority")
 def critical_task(): ...
@@ -22178,6 +22382,7 @@ Pour des déploiements mondiaux à faible latence, déployez des workers dans pl
 ## 8. Benchmarking
 
 Mesurez avant et après optimisation :
+
 
 ```python
 import time
@@ -22230,6 +22435,7 @@ async def benchmark(pipeline, iterations=10):
 **Étapes de diagnostic** :
 
 1. Vérifiez les durées d'étapes dans le suivi :
+
    ```python
    status = await tracking.get_status(pipeline_id)
    slowest = max(status.steps, key=lambda s: s.duration_ms)
@@ -22267,6 +22473,7 @@ async def benchmark(pipeline, iterations=10):
 
 Pour des charges spécialisées, implémentez des exécuteurs personnalisés :
 
+
 ```python
 from taskiq_flow import ExecutionEngine
 from taskiq_flow.dataflow import DAG
@@ -22286,6 +22493,7 @@ results = await engine.execute(inputs)
 
 TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
 pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
+
 
 ```python
 from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
@@ -24491,6 +24699,7 @@ Les fonctionnalités de sécurité sont configurées dans
 l'objet :class:`~taskiq_flow.config.TaskiqFlowConfig` ou via des variables
 d'environnement. Les principaux paramètres sont :
 
+
 ```python
 from taskiq_flow import TaskiqFlowConfig
 
@@ -24557,6 +24766,7 @@ TaskIQ-Flow prend en charge deux méthodes d'authentification :
 Les clients doivent inclure leur clé API dans l'en-tête ``X-API-Key`` pour les requêtes HTTP ou dans le champ ``auth`` des messages de connexion WebSocket.
 
 Exemple de requête HTTP :
+
 ```http
 GET /api/pipelines
 X-API-Key: admin-key #pragma: allowlist secret
@@ -24565,6 +24775,7 @@ X-API-Key: admin-key #pragma: allowlist secret
 ### Authentification JWT
 
 Si une clé secrète JWT est configurée (``jwt_secret``), les clients peuvent s'authentifier à l'aide d'un jeton Web Token (JWT) dans l'en-tête ``Authorization`` :
+
 
 ```
 Authorization: Bearer <jwt-token>
@@ -24604,6 +24815,7 @@ correctement derrière un reverse proxy ou un load-balancer qui termine TLS.
 
 Exécutez TaskIQ-Flow derrière un serveur ASGI tel qu'Uvicorn avec Docker :
 
+
 ```dockerfile
 # Dockerfile
 FROM python:3.12-slim
@@ -24617,6 +24829,7 @@ COPY . .
 EXPOSE 8000
 CMD ["uvicorn", "mon_app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
 
 ```yaml
 # docker-compose.yml
@@ -24647,6 +24860,7 @@ volumes:
 ### Reverse Proxy (nginx)
 
 Placez nginx devant l'application pour terminer TLS, renforcer HTTPS et ajouter des en-têtes de sécurité :
+
 
 ```nginx
 # /etc/nginx/sites-available/taskiq-flow
@@ -24748,6 +24962,7 @@ Les connexions WebSocket suivent le même modèle de sécurité que HTTP :
 
 Voici un exemple complet utilisant l'**API actuelle** (``create_visualization_api``, champs plats sur ``TaskiqFlowConfig``) :
 
+
 ```python
 from taskiq import Taskiq, InMemoryBroker
 from taskiq_flow import TaskiqFlowConfig, create_visualization_api
@@ -24794,6 +25009,7 @@ audit_logger = AuditLogger()
 Lancez l'application avec ``uvicorn app:app --host 0.0.0.0 --port 8000``. Tous les endpoints nécessiteront désormais une authentification.
 
 ## Tests de sécurité
+
 
 ```bash
 # Sans identifiants → 401 Unauthorized
@@ -26404,7 +26620,7 @@ WantedBy=multi-user.target
 
 ### 9.3. Monitoring
 
-Utilisez l'endpoint `/health` intégré de l'API FastAPI (voir [Guide API]({{ '/fr/guides/api/' | relative_url })).
+Utilisez l'endpoint `/health` intégré de l'API FastAPI (voir [Guide API]({{ '/fr/guides/api/' | relative_url }})).
 
 ### 9.4. Scalabilité
 
