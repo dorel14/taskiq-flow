@@ -209,7 +209,7 @@ Attach version and other metadata:
 @pipeline_task(
     output="features",
     description="Extract audio features (v2 with improvedtempo estimation)"
-)
+    description="Extract audio features (v2 with improved tempo estimation)"
 def extract(path: str) -> dict:
     ...
 ```
