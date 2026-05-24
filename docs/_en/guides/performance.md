@@ -538,23 +538,38 @@ pipeline = DataflowPipeline(
     resource_aware=True,
 )
 
-@pipeline.task(resource_profile=heavy_profile)
+@broker.task
+@pipeline_task(output="heavy_result", resources=heavy_profile.model_dump())
 def heavy_computation(data: dict) -> dict:
     """This task requires 4 CPU cores and 2 GB of RAM."""
     return process_heavy_data(data)
 
-# Configure the executor to respect resource profiles
+# Configure the executor to compute optimal parallelism
 executor = ResourceAwareExecutor(
-    broker=broker,
-    max_parallel=10,
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=20,
 )
-executor.run_pipeline(pipeline, input_data)
+
+# Get optimal parallelism for the task
+optimal_parallel = executor.get_optimal_parallelism(
+    task_memory_estimate=2048,
+    task_cpu_estimate=4.0,
+)
+
+# Apply optimal parallelism to the pipeline before execution
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [heavy_computation],
+    max_parallel=optimal_parallel,
+)
+results = await pipeline.kiq_dataflow(data=input_data)
 ```
 {% endraw %}
-`ResourceAwareExecutor` evaluates resource profiles of tasks and distributes them
-to available workers based on their capacity. `TaskResourceProfile` lets you
-annotate each task with its estimated resource needs, enabling the executor to
-prevent over-subscription of workers.
+`ResourceAwareExecutor` evaluates resource profiles of tasks and computes optimal
+parallelism via `get_optimal_parallelism()`. Use this value to configure the pipeline's
+`max_parallel` setting before calling `kiq_dataflow()` for execution.
 
 ---
 

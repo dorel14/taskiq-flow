@@ -693,6 +693,7 @@ Centralized error handling:
 ```python
 {% endraw %}
 from fastapi.responses import JSONResponse
+from taskiq.exceptions import TaskiqError
 
 @app.exception_handler(TaskiqError)
 async def taskiq_exception_handler(request: Request, exc: TaskiqError):
