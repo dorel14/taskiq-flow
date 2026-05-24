@@ -518,11 +518,13 @@ results = await engine.execute(inputs)
 ### 11.1. ResourceAwareExecutor et TaskResourceProfile
 
 TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
-pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
+pour calculer le parallélisme optimal selon les ressources CPU et mémoire :
 
 {% raw %}
 ```python
-from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow import pipeline_task
+from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.pipeline import DataflowPipeline
 
 # Définir un profil de ressources pour les tâches lourdes
 heavy_profile = TaskResourceProfile(
@@ -531,22 +533,37 @@ heavy_profile = TaskResourceProfile(
 )
 
 @broker.task
-@heavy_profile
-def heavy_computation(data):
-    # Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM
+@pipeline_task(output="heavy_result", resources=heavy_profile.model_dump())
+def heavy_computation(data: dict) -> dict:
+    """Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM."""
     return process_heavy_data(data)
 
-# Utiliser ResourceAwareExecutor pour l'exécution
+# Configurer l'exécuteur pour calculer le parallélisme optimal
 executor = ResourceAwareExecutor(
-    broker=broker,
-    max_parallel=10,
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=20,
 )
+
+# Obtenir le parallélisme optimal pour la tâche
+optimal_parallel = executor.get_optimal_parallelism(
+    task_memory_estimate=2048,
+    task_cpu_estimate=4.0,
+)
+
+# Construire le pipeline avec le parallélisme optimal
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [heavy_computation],
+    max_parallel=optimal_parallel,
+)
+results = await pipeline.kiq_dataflow(data=input_data)
 ```
 {% endraw %}
-`ResourceAwareExecutor` évalue les profils de ressources des tâches et les
-distribue aux workers disponibles en fonction de leur capacité.
-`TaskResourceProfile` permet d'annoter chaque tâche avec ses besoins estimés
-en mémoire et CPU.
+`ResourceAwareExecutor` évalue les profils de ressources des tâches et calcule
+le parallélisme optimal via `get_optimal_parallelism()`. Utilisez cette valeur
+pour configurer `max_parallel` du pipeline avant d'appeler `kiq_dataflow()`.
 
 ## 13. Résumé
 

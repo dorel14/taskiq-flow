@@ -62,3 +62,4 @@ Updated the code example to show the correct pattern:
    - Changed `@pipeline.task` to correct `@broker.task` + `@pipeline_task` pattern
    - Replaced `executor.run_pipeline()` with correct pattern using `get_optimal_parallelism()`
    - Updated execution to use `pipeline.kiq_dataflow()`
+3. Fixed the same issues in `docs/_fr/guides/performance.md`

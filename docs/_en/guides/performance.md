@@ -515,6 +515,7 @@ engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
 {% endraw %}
+
 ### 11.1. Resource-Aware Execution with `TaskResourceProfile`
 
 Taskiq-Flow provides a resource-aware execution pattern for pipelines that need
@@ -522,20 +523,14 @@ to allocate tasks to workers based on their CPU/RAM requirements:
 
 {% raw %}
 ```python
-from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
-from taskiq_flow.dataflow import DataflowPipeline
+from taskiq_flow import pipeline_task
+from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.pipeline import DataflowPipeline
 
 # Define a resource profile for heavy tasks
 heavy_profile = TaskResourceProfile(
     estimated_memory_mb=2048,
     estimated_cpu_cores=4.0,
-)
-
-# Annotate tasks with resource needs via labels when creating the pipeline
-pipeline = DataflowPipeline(
-    broker=broker,
-    name="resource_aware_pipeline",
-    resource_aware=True,
 )
 
 @broker.task
@@ -558,7 +553,7 @@ optimal_parallel = executor.get_optimal_parallelism(
     task_cpu_estimate=4.0,
 )
 
-# Apply optimal parallelism to the pipeline before execution
+# Build pipeline with optimal parallelism
 pipeline = DataflowPipeline.from_tasks(
     broker,
     [heavy_computation],
