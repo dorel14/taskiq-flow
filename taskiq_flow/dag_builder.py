@@ -233,7 +233,7 @@ class DAGBuilder:
     def _infer_output_name(task: Any) -> str:
         """Infer output name from task."""
         # Use task name as default
-        return task.task_name
+        return str(task.task_name)
 
     @staticmethod
     def _infer_inputs(task: AsyncTaskiqDecoratedTask[Any, Any]) -> list[str]:

@@ -21,6 +21,8 @@ Taskiq-Flow est basé sur deux modèles principaux :
 
 Pour une compréhension approfondie du modèle dataflow, voir le [Guide Dataflow]({{ '/fr/guides/dataflow/' | relative_url }}).
 
+> **Note** : Aucun extra requis. Tout dans ce guide — `Pipeline`, `DataflowPipeline`, `@broker.task`, `PipelineMiddleware` — est inclus dans l'installation de base `taskiq-flow`.
+
 Comprendre ces modèles vous aide à choisir la bonne approche pour votre workflow.
 
 ---

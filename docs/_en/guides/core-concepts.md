@@ -21,6 +21,8 @@ Taskiq-Flow is built on two core models:
 
 For a deep dive into the dataflow model, see the [Dataflow Guide]({{ '/en/guides/dataflow/' | relative_url }}).
 
+> **Note**: Zero extras required. Everything in this guide — `Pipeline`, `DataflowPipeline`, `@broker.task`, `PipelineMiddleware` — ships with the base `taskiq-flow` installation.
+
 Understanding these models helps you choose the right approach for your workflow.
 
 ---

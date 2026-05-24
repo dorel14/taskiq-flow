@@ -37,7 +37,7 @@ def parallel_map(
     pipeline: Pipeline[Any, list[R]] = Pipeline(task.broker)
     for _item in iterable:
         # Add each task as a sequential step
-        pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
+        pipeline = pipeline.call_next(task, **task_kwargs)
     return pipeline
 
 
@@ -76,6 +76,6 @@ def chunked_map(
     # Concurrency control would need to be implemented in the execution
     pipeline: Pipeline[Any, list[R]] = Pipeline(task.broker)
     for _chunk in chunks:
-        pipeline = pipeline.call_next(task, **task_kwargs)  # type: ignore[arg-type]
+        pipeline = pipeline.call_next(task, **task_kwargs)
 
     return pipeline

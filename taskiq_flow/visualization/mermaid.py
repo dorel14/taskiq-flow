@@ -132,13 +132,13 @@ class MermaidGenerator:
             if original is not None and hasattr(original, "_pipeline_metadata"):
                 meta = original._pipeline_metadata
                 if hasattr(meta, "__dict__"):
-                    return meta.__dict__
+                    return dict(meta.__dict__)
                 return meta if isinstance(meta, dict) else {}
 
         if hasattr(task, "_pipeline_metadata"):
             meta = task._pipeline_metadata
             if hasattr(meta, "__dict__"):
-                return meta.__dict__
+                return dict(meta.__dict__)
             return meta if isinstance(meta, dict) else {}
 
         return {}

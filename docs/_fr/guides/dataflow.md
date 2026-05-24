@@ -22,6 +22,8 @@ Le système **dataflow** de Taskiq-Flow est la méthode la plus puissante pour o
 
 Ce guide couvre l'ensemble du système dataflow : le DAG, le registre, les décorateurs, le moteur d'exécution et les patterns avancés.
 
+> **Note** : Toutes les fonctionnalités dataflow décrites dans ce guide sont **core-only** — aucun extra `[brokers]` ou `[scheduler]` requis. `DataflowPipeline`, `ExecutionEngine(resource_aware=True)`, `MapReduce.map()`, et le décorateur `@pipeline_task` fonctionnent tous avec une installation standard `pip install taskiq-flow`.
+
 ---
 
 ## 1. Concepts Fondamentaux

@@ -1,11 +1,18 @@
 """
 Journalisation d'audit pour Taskiq-Flow.
 
-Ce module fournit un système de journalisation d'audit pour suivre
-les accès et les actions sur les pipelines.
+Ce module fournit un système de journalisation d'audit structurée pour suivre
+les accès et les actions sur les pipelines. Les événements sont enregistrés
+avec un horodatage UTC et peuvent être ingérés dans un système SIEM.
+
+Événements journalisés :
+    - Accès aux endpoints (succès / échec)
+    - Tentatives d'authentification (API key, JWT)
+    - Actions sur les pipelines (lecture, exécution)
+    - Événements de sécurité (accès non autorisé, modification de config)
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import logging

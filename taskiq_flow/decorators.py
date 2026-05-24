@@ -347,7 +347,7 @@ def is_pipeline_task(func: Any) -> bool:
 
     """
     metadata = get_pipeline_metadata(func)
-    return metadata.get("is_pipeline_task", False)
+    return bool(metadata.get("is_pipeline_task", False))
 
 
 def get_task_outputs(func: Any) -> list[str]:

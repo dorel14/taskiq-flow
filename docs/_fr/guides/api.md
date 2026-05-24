@@ -555,32 +555,28 @@ async def execute(
 
 ### 9.3. Autorisation au Niveau Pipeline
 
-Utilisez `PipelineAuthorization` avec des dépendances FastAPI pour contrôler l'accès par pipeline :
+Définissez les ACLs par pipeline via `pipeline_acls` dans `TaskiqFlowConfig`,
+puis utilisez `verify_pipeline_access` comme dépendance de route :
 
 ```python
 from fastapi import Depends
+from taskiq_flow.config import TaskiqFlowConfig
 from taskiq_flow.security.authorization import PipelineAuthorization
 from taskiq_flow.security.dependencies import verify_pipeline_access
+from taskiq_flow.api import create_visualization_api
 
-authorization = PipelineAuthorization(rules={
-    "admin": {"read": ["*"], "write": ["*"]},
-    "viewer": {"read": ["audio_*", "report_*"], "write": []},
-})
+config = TaskiqFlowConfig(
+    pipeline_acls={
+        "my_pipeline": {
+            "read": ["admin", "viewer"],
+            "execute": ["admin"],
+        },
+    },
+)
+viz_api = create_visualization_api(broker)  # lit config automatiquement
 
-async def authorized_pipeline_access(
-    pipeline_id: str,
-    user: dict = Depends(get_current_user),
-) -> dict:
-    if not authorization.can_read(pipeline_id, user):
-        raise HTTPException(status_code=403, detail="Accès refusé")
-    return user
-
-@app.get("/pipelines/{pipeline_id}/dag")
-async def get_pipeline_dag(
-    pipeline_id: str,
-    user: dict = Depends(authorized_pipeline_access),
-):
-    return viz_api.get_dag(pipeline_id)
+# verify_pipeline_access dépend de get_current_user + authorization
+# → utilisez-la directement sur vos endpoints protégés
 ```
 
 ### 9.4. Combinaison Middleware + Dépendances de Route
@@ -589,31 +585,60 @@ Pour la production, combinez le middleware global (authentification) avec les d�
 
 ```python
 from taskiq_flow.security.middleware import SecurityMiddleware
-from taskiq_flow.security.auth import TokenAuthProvider
+from taskiq_flow.security.auth import APIKeyAuthProvider, JWTAuthProvider
 from taskiq_flow.security.authorization import PipelineAuthorization
+from taskiq_flow.config import TaskiqFlowConfig
 
-# 1. Middleware global : authentification uniquement
-auth_provider = TokenAuthProvider(secret_key=os.getenv("SECRET_KEY"))
+# 1. Configuration via TaskiqFlowConfig (champs plats, pas de SecurityConfig imbriqué)
+config = TaskiqFlowConfig(
+    security_enabled=True,
+    auth_provider="api_key",
+    api_keys={
+        "admin-key": {
+            "role": "admin",
+            "pipelines": ["*"],
+            "permissions": ["read", "execute", "admin"],
+        },
+    },
+    jwt_secret="super-secret",  # pragma: allowlist secret  # noqa: S105 — valeur de documentation, pas un secret réel
+    require_https=True,
+    pipeline_acls={
+        "my_pipeline": {"read": ["admin"], "execute": ["admin"]},
+    },
+)
+
+# 2. Construire les composants depuis la config
+auth_provider = APIKeyAuthProvider(keys=config.api_keys)
+if config.auth_provider == "jwt":
+    auth_provider = JWTAuthProvider(secret=config.jwt_secret)
+authorization = PipelineAuthorization(pipeline_acls=config.pipeline_acls)
+
+# 3. Middleware global gère authentification + audit
 app.add_middleware(
     SecurityMiddleware,
     auth_provider=auth_provider,
+    authorization=authorization,
 )
+```
 
-# 2. Dépendances de route : autorisation par pipeline
-async def check_pipeline_access(
-    pipeline_id: str = Path(...),
-    user: dict = Depends(get_current_user),
-):
-    if not authorization.can_read(pipeline_id, user.get("roles", [])):
-        raise HTTPException(status_code=403, detail="Accès au pipeline refusé")
-    return user
+Ou, pour un câblage automatique complet, utilisez `create_visualization_api` qui
+construit tous les composants depuis `TaskiqFlowConfig` :
 
-@app.get("/pipelines/{pipeline_id}/visualize")
-async def visualize_pipeline(
-    pipeline_id: str,
-    user: dict = Depends(check_pipeline_access),
-):
-    return viz_api.visualize(pipeline_id)
+```python
+from taskiq_flow import create_visualization_api
+
+config = TaskiqFlowConfig(
+    security_enabled=True,
+    auth_provider="api_key",
+    api_keys={"admin-key": {"role": "admin", "pipelines": ["*"], "permissions": ["read", "execute", "admin"]}},
+)
+app = create_visualization_api(broker)  # sécurité auto-configurée depuis config
+```
+
+### Pourquoi cette approche hybride ?
+- `SecurityMiddleware` place `request.state.user` pour toutes les routes après le routage
+- Les paramètres de chemin FastAPI (ex. `pipeline_id`) ne sont disponibles qu'**après** le routage
+- Les dépendances de route (ex. `Depends(verify_pipeline_access)`) s'exécutent après le routage → elles peuvent lire `pipeline_id` et vérifier les ACLs
 ```
 
 **Pourquoi cette approche hybride ?**

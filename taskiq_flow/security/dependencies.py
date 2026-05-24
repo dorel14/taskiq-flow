@@ -1,15 +1,23 @@
 """
 Dépendances FastAPI pour l'authentification et l'autorisation.
 
-Ce module fournit des dépendances injectables dans les routes
-pour l'authentification (via SecurityMiddleware) et l'autorisation
-basée sur les ACLs de pipelines.
+Ce module expose des dépendances injectables FastAPI utilisées dans les
+routes REST et WebSocket pour :
+
+- Récupérer le fournisseur d'authentification depuis l'état de l'application
+  (:func:`get_auth_provider`).
+- Récupérer le gestionnaire d'autorisation depuis l'état de l'application
+  (:func:`get_authorization`).
+- Extraire l'utilisateur authentifié depuis l'état de la requête
+  (:func:`get_current_user`).
+- Vérifier les droits d'accès à un pipeline avant de servir une route
+  (:func:`verify_pipeline_access`).
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Depends, HTTPException, Request, status
 
@@ -37,7 +45,7 @@ def get_auth_provider(request: Request) -> AuthProvider:
             status_code=500,
             detail="Authentication provider not configured",
         )
-    return provider
+    return cast(AuthProvider, provider)
 
 
 def get_authorization(request: Request) -> PipelineAuthorization:
@@ -60,7 +68,7 @@ def get_authorization(request: Request) -> PipelineAuthorization:
             status_code=500,
             detail="Authorization manager not configured",
         )
-    return authorization
+    return cast(PipelineAuthorization, authorization)
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
@@ -84,7 +92,7 @@ async def get_current_user(request: Request) -> dict[str, Any]:
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return user
+    return cast(dict[str, Any], user)
 
 
 async def verify_pipeline_access(

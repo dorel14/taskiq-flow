@@ -1,11 +1,18 @@
 """
 Middleware de sécurité pour Taskiq-Flow.
 
-Ce module fournit un middleware FastAPI pour la sécurité globale,
-incluant l'authentification, l'autorisation et la limitation de débit.
+Ce module fournit le middleware FastAPI :class:`SecurityMiddleware` qui
+applique les contrôles de sécurité sur chaque requête entrante :
+
+1. **Authentification** via le fournisseur configuré (API key ou JWT).
+2. **Autorisation** : vérification des accès aux pipelines.
+3. **Audit** : journalisation de la requête après passage au handler.
+
+Le rate limiting est géré séparément par ``SlowAPIMiddleware`` (slowapi),
+ajouté par :meth:`PipelineVisualizationAPI._setup_security`.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 import logging
@@ -14,6 +21,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastapi import HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 
 try:
     from fastapi.middleware.base import BaseHTTPMiddleware
@@ -72,10 +80,48 @@ class SecurityMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
             user_context = await self.auth_provider.verify(request)
             if user_context:
                 request.state.user = user_context
-        except HTTPException:
-            raise
+        except HTTPException as e:
+            # Return JSON error response instead of propagating exception
+            return JSONResponse(
+                status_code=e.status_code,
+                content={"detail": e.detail},
+            )
         except Exception as e:
             logger.warning("Authentication failed: %s", e)
+
+        # Authorization check - verify pipeline access
+        if user_context and "/pipelines" in request.url.path:
+            # Extract pipeline_id from path
+            parts = request.url.path.strip("/").split("/")
+            pipeline_id = None
+            for i, part in enumerate(parts):
+                if part == "pipelines" and i + 1 < len(parts):
+                    pipeline_id = parts[i + 1]
+                    break
+
+            # Check whitelist
+            whitelist = user_context.get("pipeline_whitelist", [])
+            if whitelist is None:
+                whitelist = []
+
+            # Empty whitelist means no access to any pipeline endpoint
+            if len(whitelist) == 0:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Forbidden"},
+                )
+
+            # If accessing a specific pipeline (not a list endpoint)
+            # check if it's in the whitelist
+            if (
+                pipeline_id is not None
+                and "*" not in whitelist
+                and pipeline_id not in whitelist
+            ):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Forbidden"},
+                )
 
         # Rate limiting is handled by SlowAPIMiddleware (added to FastAPI app)
         # This SecurityMiddleware handles auth + audit only
@@ -95,8 +141,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
                 # Note: routing not yet performed in middleware,
                 # so we manually parse known segments.
                 parts = request.url.path.strip("/").split("/")
-                if len(parts) >= 2 and parts[0] == "pipelines":
-                    pipeline_id = parts[1]
+                for i, part in enumerate(parts):
+                    if part == "pipelines" and i + 1 < len(parts):
+                        pipeline_id = parts[i + 1]
+                        break
             action = request.method + "_" + request.url.path.replace("/", "_")
             await self.audit_logger.log_access(
                 user_context,

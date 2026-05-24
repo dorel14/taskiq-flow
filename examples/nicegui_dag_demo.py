@@ -132,8 +132,10 @@ def run_nicegui_app() -> None:
     @ui.page("/")
     def dag_viewer_page() -> None:
         """Main page showing the DAG visualization."""
-        ui.label("TaskIQ Flow DAG Visualization").style("font-size: 24px; \
-                                                        font-weight: bold;")
+        ui.label("TaskIQ Flow DAG Visualization").style(
+            "font-size: 24px; \
+                                                        font-weight: bold;"
+        )
         ui.label("Data Processing Pipeline").style("font-size: 18px;")
         ui.separator()
 
@@ -171,5 +173,7 @@ if __name__ in {"__main__", "__mp_main__"}:
     logger.info("")
     logger.info("The Mermaid diagram code has been generated above.")
     logger.info("You can also view the DAG by running the NiceGUI app:")
-    logger.info("  python -c 'from examples.nicegui_dag_demo import\
-                run_nicegui_app; run_nicegui_app()'")
+    logger.info(
+        "  python -c 'from examples.nicegui_dag_demo import\
+                run_nicegui_app; run_nicegui_app()'"
+    )

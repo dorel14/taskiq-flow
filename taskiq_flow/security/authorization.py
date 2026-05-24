@@ -2,10 +2,17 @@
 Autorisation pour Taskiq-Flow.
 
 Ce module gère les listes de contrôle d'accès (ACL) pour les pipelines,
-permettant de définir quels rôles peuvent accéder à quels pipelines.
+permettant de définir quels rôles et permissions peuvent accéder à
+quels pipelines. Les ACLs sont configurées via ``config.pipeline_acls``
+et évaluées par la classe :class:`PipelineAuthorization`.
+
+Permissions disponibles :
+    - ``READ``    — Lire les métadonnées et l'état du pipeline
+    - ``EXECUTE`` — Déclencher l'exécution du pipeline
+    - ``ADMIN``   — Accès complet à la configuration
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 from enum import Enum

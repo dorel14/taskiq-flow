@@ -11,7 +11,6 @@ Version: 1.2.0
 
 import asyncio
 import fnmatch
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
@@ -24,6 +23,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
+from taskiq_flow.serialization import dumps_scientific, loads_scientific
 from taskiq_flow.storage.base import BaseStorageAdapter
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
                         await session.delete(row)
                         await session.commit()
                         return None
-                    return json.loads(row.value)
+                    return loads_scientific(row.value)
             else:
                 with self._sync_session_factory() as session:
                     row = session.query(KVStoreModel).filter_by(key=key).first()
@@ -138,7 +138,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
                         session.delete(row)
                         session.commit()
                         return None
-                    return json.loads(row.value)
+                    return loads_scientific(row.value)
         except Exception as e:
             logger.error("SQLAlchemy get failed for key %s: %s", key, e)
             raise
@@ -151,7 +151,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
     ) -> None:
         """Stocke une valeur avec une clé et un TTL optionnel."""
         try:
-            serialized: str = json.dumps(value, default=str)
+            serialized: str = dumps_scientific(value)
             expires_at: datetime | None = None
             if ttl_seconds is not None and ttl_seconds > 0:
                 # Store UTC time as naive datetime for SQLite
@@ -163,7 +163,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
                 key=key,
                 value=serialized,
                 expires_at=expires_at,
-                metadata_field=json.dumps({"ttl": ttl_seconds}),
+                metadata_field=dumps_scientific({"ttl": ttl_seconds}),
             )
 
             if self.async_mode:
@@ -175,7 +175,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
                     if existing:
                         existing.value = serialized
                         existing.expires_at = expires_at
-                        existing.metadata_field = json.dumps({"ttl": ttl_seconds})
+                        existing.metadata_field = dumps_scientific({"ttl": ttl_seconds})
                     else:
                         session.add(entry)
                     await session.commit()
@@ -185,7 +185,7 @@ class SQLiteStorageAdapter(BaseStorageAdapter):
                     if existing:
                         existing.value = serialized
                         existing.expires_at = expires_at
-                        existing.metadata_field = json.dumps({"ttl": ttl_seconds})
+                        existing.metadata_field = dumps_scientific({"ttl": ttl_seconds})
                     else:
                         session.add(entry)
                     session.commit()

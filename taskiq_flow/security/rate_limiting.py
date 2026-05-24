@@ -1,11 +1,26 @@
 """
 Limitation de débit (Rate Limiting) pour Taskiq-Flow.
 
-Ce module fournit une limitation de débit pour les endpoints API,
-utilisant slowapi pour la gestion des limites.
+Ce module fournit la classe :class:`RateLimiter` qui définit des limites
+de débit par endpoint en utilisant ``slowapi``. Les limites sont appliquées
+automatiquement par :class:`~taskiq_flow.security.middleware.SecurityMiddleware`
+lors de l'initialisation de l'API.
+
+Configuration par défaut des limites :
+    - ``list_pipelines`` : 60 requêtes/minute
+    - ``get_dag`` : 120 requêtes/minute
+    - ``get_critical_path`` : 120 requêtes/minute
+    - ``get_parallel_groups`` : 120 requêtes/minute
+    - ``execute_pipeline`` : 10 requêtes/minute
+    - ``get_status`` : 30 requêtes/minute
+    - ``websocket_connect`` : 5 requêtes/minute
+
+La limite globale par défaut (pour les endpoints non listés) est
+``"100/minute"``, configurable via ``config.rate_limit_default`` ou
+la variable d'environnement ``TASKIQ_FLOW_RATE_LIMIT_DEFAULT``.
 
 Auteur: SoniqueBay Team
-Version: 1.0.2
+Version: 1.2.0
 """
 
 from slowapi import Limiter

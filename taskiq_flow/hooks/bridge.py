@@ -6,10 +6,10 @@ du pipeline via HookManager et les diffuse aux clients WebSocket
 connectés. Gère également la reconnexion et la file d'attente
 des événements pendant la déconnexion.
 
-Supports both FastAPI WebSocket and picows implementations.
+Supports FastAPI WebSocket implementation only.
 
 Author: SoniqueBay Team
-Version: 1.0.2
+Version: 1.1.0
 """
 
 import asyncio
@@ -20,7 +20,7 @@ from typing import Any
 from taskiq_flow.hooks.events import PipelineEvent
 from taskiq_flow.hooks.manager import HookManager
 
-# Try to import both WebSocket implementations
+# Try to import FastAPI WebSocket implementation
 try:
     from taskiq_flow.integration.websocket.fastapi_ws import (
         get_fastapi_ws_manager,
@@ -29,13 +29,6 @@ try:
     FASTAPI_WS_AVAILABLE = True
 except ImportError:
     FASTAPI_WS_AVAILABLE = False
-
-try:
-    from taskiq_flow.integration.websocket.server import get_websocket_server
-
-    PICOWS_AVAILABLE = True
-except ImportError:
-    PICOWS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +56,11 @@ class WebSocketHookBridge:
         # Initialize the appropriate WebSocket manager
         self.websocket_manager: Any | None = None
 
-        if self.use_fastapi:
+        if self.use_fastapi and FASTAPI_WS_AVAILABLE:
             self.websocket_manager = get_fastapi_ws_manager()
             logger.info("Using FastAPI WebSocket manager")
-        elif PICOWS_AVAILABLE:
-            self.websocket_manager = get_websocket_server()
-            logger.info("Using picows WebSocket server")
         else:
-            logger.warning("No WebSocket implementation available")
+            logger.warning("FastAPI WebSocket not available, bridge disabled")
 
         self._registered_events: set[str] = set()
         self._event_queue: deque[tuple[str, dict[str, Any]]] = deque(
@@ -140,18 +130,6 @@ class WebSocketHookBridge:
                     ).timestamp.isoformat(),
                 }
                 # Broadcast to a dummy pipeline to test connection
-                if self.websocket_manager is None:
-                    raise RuntimeError("WebSocket manager not initialized")
-                await self.websocket_manager.broadcast_event("system", heartbeat_data)
-                self._is_connected = True
-            elif PICOWS_AVAILABLE:
-                # picows implementation
-                heartbeat_data = {
-                    "type": "heartbeat",
-                    "timestamp": PipelineEvent(
-                        pipeline_id="system"
-                    ).timestamp.isoformat(),
-                }
                 if self.websocket_manager is None:
                     raise RuntimeError("WebSocket manager not initialized")
                 await self.websocket_manager.broadcast_event("system", heartbeat_data)
@@ -347,13 +325,17 @@ def clear_bridge_cache() -> None:
 
 
 async def start_websocket_server(host: str = "127.0.0.1", port: int = 8765) -> None:
-    """Start the WebSocket server for pipeline event broadcasting."""
-    server = get_websocket_server()
-    asyncio_server = await server.start_server(host, port)
-    try:
-        await asyncio_server.serve_forever()
-    except Exception as exc:  # pragma: no cover
-        logger.exception(f"WebSocket server stopped unexpectedly: {exc}")
+    """
+    Start the WebSocket server for pipeline event broadcasting.
+
+    Deprecated: picows server is removed. Use FastAPI WebSocket integration instead.
+    The FastAPI websocket endpoint is mounted via taskiq_flow.api.routes.websocket.
+    """
+    raise RuntimeError(
+        "picows WebSocket server is removed.\
+        Use FastAPI WebSocket integration instead. "
+        "See taskiq_flow.integration.websocket.fastapi_ws for details."
+    )
 
 
 def setup_websocket_bridge(
