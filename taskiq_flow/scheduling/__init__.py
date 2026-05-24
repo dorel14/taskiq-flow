@@ -8,9 +8,9 @@ Auteur: SoniqueBay Team
 Version: 1.2.0
 """
 
-from .scheduler import (
+from .scheduler import (  # always works (no APScheduler import at top of scheduler.py)
     LabelBasedScheduler,
-)  # always works (no APScheduler import at top of scheduler.py)
+)
 
 try:
     from .scheduler import PipelineScheduler

@@ -8,8 +8,6 @@ Auteur: SoniqueBay Team
 Version: 1.0.2
 """
 
-
-
 from __future__ import annotations
 
 from typing import Any

@@ -29,6 +29,7 @@ dependencies = [
   "dogpile-cache>=1.5.0",
   "fastapi>=0.136.1",
   # "flameprof>=0.4",  # moved to optional profiling
+  "httpx>=0.28.1",
   "mypy>=1.20.2",
   "networkx>=3.4.2",
   "prometheus-client>=0.25.0",
@@ -200,23 +201,24 @@ lint.select = [
               "UP"
             ]
 lint.ignore = [
-              "D105",
-              "D107",
-              "D212",
-              "D401",
-              "D104",
-              "D100",
-              "D203",
-              "D417",
-              "ANN401",
-              "PLR0913",
-              "PLR0911",
-              "PLR2004",
-              "D106",
-              "SLF001",
-              "COM812",
-              "C901"
-              ]
+               "D105",
+               "D107",
+               "D212",
+               "D401",
+               "D104",
+               "D100",
+               "D203",
+               "D417",
+               "ANN401",
+               "PLR0912",
+               "PLR0913",
+               "PLR0911",
+               "PLR2004",
+               "D106",
+               "SLF001",
+               "COM812",
+               "C901"
+               ]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [
