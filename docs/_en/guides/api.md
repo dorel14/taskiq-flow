@@ -542,7 +542,7 @@ Enable cross-origin requests for web frontend:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-dashboard.com"],
+`verify_pipeline_access` as a route dependency:
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
