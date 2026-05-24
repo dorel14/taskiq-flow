@@ -9170,6 +9170,7 @@ engine = GPUOptimizedEngine(broker, dag)
 results = await engine.execute(inputs)
 ```
 
+
 ### 11.1. Resource-Aware Execution with `TaskResourceProfile`
 
 Taskiq-Flow provides a resource-aware execution pattern for pipelines that need
@@ -9177,20 +9178,14 @@ to allocate tasks to workers based on their CPU/RAM requirements:
 
 
 ```python
-from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
-from taskiq_flow.dataflow import DataflowPipeline
+from taskiq_flow import pipeline_task
+from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.pipeline import DataflowPipeline
 
 # Define a resource profile for heavy tasks
 heavy_profile = TaskResourceProfile(
     estimated_memory_mb=2048,
     estimated_cpu_cores=4.0,
-)
-
-# Annotate tasks with resource needs via labels when creating the pipeline
-pipeline = DataflowPipeline(
-    broker=broker,
-    name="resource_aware_pipeline",
-    resource_aware=True,
 )
 
 @broker.task
@@ -9213,7 +9208,7 @@ optimal_parallel = executor.get_optimal_parallelism(
     task_cpu_estimate=4.0,
 )
 
-# Apply optimal parallelism to the pipeline before execution
+# Build pipeline with optimal parallelism
 pipeline = DataflowPipeline.from_tasks(
     broker,
     [heavy_computation],
@@ -22508,11 +22503,13 @@ results = await engine.execute(inputs)
 ### 11.1. ResourceAwareExecutor et TaskResourceProfile
 
 TaskIQ-Flow fournit un exécuteur conscient des ressources qui peut être utilisé
-pour allouer des tâches aux workers en fonction de leurs besoins en ressources :
+pour calculer le parallélisme optimal selon les ressources CPU et mémoire :
 
 
 ```python
-from taskiq_flow import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow import pipeline_task
+from taskiq_flow.optimization import ResourceAwareExecutor, TaskResourceProfile
+from taskiq_flow.pipeline import DataflowPipeline
 
 # Définir un profil de ressources pour les tâches lourdes
 heavy_profile = TaskResourceProfile(
@@ -22521,22 +22518,37 @@ heavy_profile = TaskResourceProfile(
 )
 
 @broker.task
-@heavy_profile
-def heavy_computation(data):
-    # Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM
+@pipeline_task(output="heavy_result", resources=heavy_profile.model_dump())
+def heavy_computation(data: dict) -> dict:
+    """Cette tâche nécessite 4 cœurs CPU et 2 Go de RAM."""
     return process_heavy_data(data)
 
-# Utiliser ResourceAwareExecutor pour l'exécution
+# Configurer l'exécuteur pour calculer le parallélisme optimal
 executor = ResourceAwareExecutor(
-    broker=broker,
-    max_parallel=10,
+    max_cpu_percent=80.0,
+    max_memory_percent=80.0,
+    min_parallel=1,
+    max_parallel=20,
 )
+
+# Obtenir le parallélisme optimal pour la tâche
+optimal_parallel = executor.get_optimal_parallelism(
+    task_memory_estimate=2048,
+    task_cpu_estimate=4.0,
+)
+
+# Construire le pipeline avec le parallélisme optimal
+pipeline = DataflowPipeline.from_tasks(
+    broker,
+    [heavy_computation],
+    max_parallel=optimal_parallel,
+)
+results = await pipeline.kiq_dataflow(data=input_data)
 ```
 
-`ResourceAwareExecutor` évalue les profils de ressources des tâches et les
-distribue aux workers disponibles en fonction de leur capacité.
-`TaskResourceProfile` permet d'annoter chaque tâche avec ses besoins estimés
-en mémoire et CPU.
+`ResourceAwareExecutor` évalue les profils de ressources des tâches et calcule
+le parallélisme optimal via `get_optimal_parallelism()`. Utilisez cette valeur
+pour configurer `max_parallel` du pipeline avant d'appeler `kiq_dataflow()`.
 
 ## 13. Résumé
 
@@ -27287,6 +27299,7 @@ Updated the code example to show the correct pattern:
    - Changed `@pipeline.task` to correct `@broker.task` + `@pipeline_task` pattern
    - Replaced `executor.run_pipeline()` with correct pattern using `get_optimal_parallelism()`
    - Updated execution to use `pipeline.kiq_dataflow()`
+3. Fixed the same issues in `docs/_fr/guides/performance.md`
 
 
 # Code Examples
