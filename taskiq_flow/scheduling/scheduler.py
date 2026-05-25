@@ -13,7 +13,7 @@ Version: 1.0.2
 
 import logging
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from taskiq import AsyncBroker
 
@@ -381,7 +381,7 @@ class PipelineScheduler:
     def __init__(
         self,
         broker: AsyncBroker,
-        scheduler: AsyncIOScheduler | None = None,
+        scheduler: Optional[AsyncIOScheduler] = None,
         job_store_url: str | None = None,
     ) -> None:
         if AsyncIOScheduler is None:
